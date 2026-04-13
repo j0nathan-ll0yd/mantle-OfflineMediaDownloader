@@ -26,7 +26,7 @@ import {validateSchema} from '@mantleframework/validation'
 import {getRequiredEnv} from '@mantleframework/env'
 import {UnexpectedError} from '@mantleframework/errors'
 import {closeCookieExpirationIssueIfResolved, createCookieExpirationIssue, createVideoDownloadFailureIssue} from '#integrations/github/issueService'
-import {createFailureNotification, createMetadataNotification} from '#services/notification/transformers'
+import {createDownloadStartedNotification, createFailureNotification, createMetadataNotification} from '#services/notification/transformers'
 import {classifyVideoError, isRetryExhausted} from '#domain/video/errorClassifier'
 import {CircuitBreaker} from '@mantleframework/resilience'
 
@@ -267,6 +267,32 @@ async function dispatchMetadataNotifications(fileId: string, videoInfo: YtDlpVid
 }
 
 /**
+ * Dispatch DownloadStartedNotification to all users waiting for this file.
+ * Sent when S3 download is about to begin (after metadata fetch succeeded).
+ * @param fileId - The video ID
+ * @param videoInfo - Video metadata from yt-dlp
+ */
+async function dispatchDownloadStartedNotifications(fileId: string, videoInfo: YtDlpVideoInfo): Promise<void> {
+  const queueUrl = getRequiredEnv('SNS_QUEUE_URL')
+
+  const userFiles = await getUserFilesByFileId(fileId)
+  const userIds = userFiles.map((uf) => uf.userId)
+
+  if (userIds.length === 0) {
+    logDebug('No users waiting for file, skipping DownloadStartedNotification')
+    return
+  }
+
+  const results = await Promise.allSettled(userIds.map((userId) => {
+    const {messageBody, messageAttributes} = createDownloadStartedNotification(fileId, videoInfo, userId)
+    return sendMessage({QueueUrl: queueUrl, MessageBody: messageBody, MessageAttributes: messageAttributes})
+  }))
+  const failed = results.filter((r) => r.status === 'rejected').length
+
+  logInfo('Dispatched DownloadStartedNotifications', {fileId, succeeded: userIds.length - failed, failed})
+}
+
+/**
  * Dispatch FailureNotification to all users waiting for this file.
  * Sends alert notifications via SQS to the push notification queue.
  * @param fileId - The video ID
@@ -504,6 +530,12 @@ async function processDownloadRequest(message: ValidatedDownloadQueueMessage, re
 
   // Dispatch MetadataNotification to all users waiting for this file
   await dispatchMetadataNotifications(fileId, videoInfo)
+
+  // Set file status to Downloading (fills the existing enum gap)
+  await updateFile(fileId, {status: FileStatus.Downloading})
+
+  // Dispatch DownloadStartedNotification to all users
+  await dispatchDownloadStartedNotifications(fileId, videoInfo)
 
   // Step 2: Prepare for download (bucket already declared above for S3 check)
 

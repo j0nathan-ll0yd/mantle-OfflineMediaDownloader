@@ -28,6 +28,15 @@
       }
     },
     {
+      "id": "lambda:api/files/[fileId]/index",
+      "type": "Lambda",
+      "properties": {
+        "name": "api/files/[fileId]/index",
+        "trigger": "API Gateway",
+        "purpose": "Delete a file and cascade user-file link, optionally remove S3 object"
+      }
+    },
+    {
       "id": "lambda:api/files/index",
       "type": "Lambda",
       "properties": {
@@ -359,6 +368,11 @@
     {
       "source": "service:API Gateway",
       "target": "lambda:api/feedly/webhook",
+      "relationship": "triggers"
+    },
+    {
+      "source": "service:API Gateway",
+      "target": "lambda:api/files/[fileId]/index",
       "relationship": "triggers"
     },
     {

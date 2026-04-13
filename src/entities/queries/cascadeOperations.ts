@@ -15,9 +15,9 @@
  * @see src/lib/vendor/Drizzle/instrumentation.ts for query metrics
  */
 import {DatabaseOperation} from '@mantleframework/database'
-import {eq} from '@mantleframework/database/orm'
+import {and, eq} from '@mantleframework/database/orm'
 import {defineQuery} from '#db/defineQuery'
-import {accounts, sessions, userDevices, userFiles, users} from '#db/schema'
+import {accounts, fileDownloads, files, sessions, userDevices, userFiles, users} from '#db/schema'
 
 /**
  * Deletes a user and ALL related records atomically.
@@ -80,4 +80,44 @@ export const deleteUserAuthRecords = defineQuery({
 }, async function deleteUserAuthRecords(tx, userId: string): Promise<void> {
   await tx.delete(sessions).where(eq(sessions.userId, userId))
   await tx.delete(accounts).where(eq(accounts.userId, userId))
+})
+
+/**
+ * Deletes a user's link to a file, and if no other users are linked,
+ * removes the file and download records atomically.
+ *
+ * S3 cleanup happens outside this transaction (caller's responsibility).
+ *
+ * @param userId - The user's unique identifier
+ * @param fileId - The file's unique identifier
+ * @returns Object indicating if the user-file link existed and if the file was orphaned
+ */
+export const deleteFileCascade = defineQuery({
+  tables: [
+    {table: userFiles, operations: [DatabaseOperation.Select, DatabaseOperation.Delete]},
+    {table: files, operations: [DatabaseOperation.Select, DatabaseOperation.Delete]},
+    {table: fileDownloads, operations: [DatabaseOperation.Select, DatabaseOperation.Delete]}
+  ],
+  transaction: true
+}, async function deleteFileCascade(tx, userId: string, fileId: string): Promise<{existed: boolean; fileRemoved: boolean}> {
+  // 1. Check if the user-file link exists
+  const [existing] = await tx.select().from(userFiles).where(and(eq(userFiles.userId, userId), eq(userFiles.fileId, fileId))).limit(1)
+  if (!existing) {
+    return {existed: false, fileRemoved: false}
+  }
+
+  // 2. Delete the user-file link
+  await tx.delete(userFiles).where(and(eq(userFiles.userId, userId), eq(userFiles.fileId, fileId)))
+
+  // 3. Count remaining links
+  const remaining = await tx.select().from(userFiles).where(eq(userFiles.fileId, fileId))
+  if (remaining.length > 0) {
+    return {existed: true, fileRemoved: false}
+  }
+
+  // 4. No remaining links — orphaned file, clean up DB records
+  await tx.delete(fileDownloads).where(eq(fileDownloads.fileId, fileId))
+  await tx.delete(files).where(eq(files.fileId, fileId))
+
+  return {existed: true, fileRemoved: true}
 })

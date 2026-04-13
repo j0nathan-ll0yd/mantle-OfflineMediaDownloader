@@ -142,6 +142,46 @@ paths:
           schema: &a1
             default: downloaded
             type: string
+  /files/{fileId}:
+    delete:
+      operationId: deleteFilesByFileId
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.DeleteFileResponse"
+        "400":
+          description: Bad request - validation failed or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.ErrorResponse"
+        "401":
+          description: Unauthorized - authentication required or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.UnauthorizedError"
+        "403":
+          description: Forbidden - authenticated but not authorized for this resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.ForbiddenError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.InternalServerError"
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
   /user:
     delete:
       operationId: deleteUser
@@ -700,6 +740,19 @@ components:
         - status
       additionalProperties: false
       id: ListFilesQuery
+    Models.DeleteFileResponse:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        deleted:
+          type: boolean
+        fileRemoved:
+          type: boolean
+      required:
+        - deleted
+        - fileRemoved
+      additionalProperties: false
+      id: DeleteFileResponse
     Models.PartialDeletionResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object

@@ -35,6 +35,7 @@ module "api" {
       module.lambda_device_event.invoke_arn,
       module.lambda_device_register.invoke_arn,
       module.lambda_feedly_webhook.invoke_arn,
+      module.lambda_file_delete.invoke_arn,
       module.lambda_files_get.invoke_arn,
       module.lambda_user_delete.invoke_arn,
       module.lambda_user_login.invoke_arn,

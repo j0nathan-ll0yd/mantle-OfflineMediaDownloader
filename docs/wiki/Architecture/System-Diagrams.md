@@ -181,6 +181,7 @@ erDiagram
 | ApiGatewayAuthorizer | API Gateway | All authenticated routes | Authorize API requests via Better Auth |
 | CleanupExpiredRecords | CloudWatch Events | Daily schedule (3 AM UTC) | Clean expired records |
 | DeviceEvent | API Gateway | POST /device/event | Log client-side device events |
+| DeleteFile | API Gateway | DELETE /files/{fileId} | Delete file, cascade user-file link, optional S3 cleanup |
 | ListFiles | API Gateway | GET /files | List user's available files |
 | LoginUser | API Gateway | POST /user/login | Authenticate user |
 | MigrateDSQL | Manual | CLI invocation | Run Drizzle migrations on Aurora DSQL |

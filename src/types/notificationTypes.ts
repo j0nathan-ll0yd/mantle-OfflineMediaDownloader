@@ -13,7 +13,7 @@ import type {Result} from '@mantleframework/core'
  * Discriminated union type for file notification payloads.
  * Used in SQS message attributes to route to appropriate handler.
  */
-export type FileNotificationType = 'MetadataNotification' | 'DownloadReadyNotification' | 'FailureNotification'
+export type FileNotificationType = 'MetadataNotification' | 'DownloadReadyNotification' | 'FailureNotification' | 'DownloadStartedNotification'
 
 /**
  * Notification sent when video metadata is fetched but download not yet complete.
@@ -41,6 +41,22 @@ export interface MetadataNotification {
   contentType: string
   /** Status indicator for iOS app (always 'pending' for this notification type) */
   status: 'pending'
+}
+
+/**
+ * Notification sent when the server begins downloading the video to S3.
+ * Allows iOS app to show "downloading on server" status.
+ *
+ * Sent by: StartFileUpload Lambda (after metadata fetch, before S3 download)
+ * Received by: iOS app to show server-side download progress indicator
+ */
+export interface DownloadStartedNotification {
+  /** YouTube video ID (e.g., 'dQw4w9WgXcQ') */
+  fileId: string
+  /** Video title (available since metadata was already fetched) */
+  title: string
+  /** YouTube thumbnail URL (if available) */
+  thumbnailUrl?: string
 }
 
 /**

@@ -31,6 +31,10 @@ locals {
       role_name      = "lambda_file_helpers"
       requires_admin = false
     }
+    "FileDelete" = {
+      role_name      = "lambda_file_delete"
+      requires_admin = false
+    }
     "FilesGet" = {
       role_name      = "lambda_files_get"
       requires_admin = false

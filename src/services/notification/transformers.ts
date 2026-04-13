@@ -5,7 +5,7 @@
  * This is an adapter layer that bridges domain models to infrastructure message formats.
  */
 import type {File} from '#types/domainModels'
-import type {DownloadReadyNotification, FailureNotification, MetadataNotification} from '#types/notificationTypes'
+import type {DownloadReadyNotification, DownloadStartedNotification, FailureNotification, MetadataNotification} from '#types/notificationTypes'
 import type {YtDlpVideoInfo} from '#types/youtube'
 import {stringAttribute} from '@mantleframework/aws'
 
@@ -56,6 +56,25 @@ export function createMetadataNotification(
   return {
     messageBody: JSON.stringify({file, notificationType: 'MetadataNotification'}),
     messageAttributes: {userId: stringAttribute(userId), notificationType: stringAttribute('MetadataNotification')}
+  }
+}
+
+/**
+ * Creates DownloadStartedNotification - sent when S3 download begins
+ * @param fileId - The video ID
+ * @param videoInfo - Video metadata from yt-dlp
+ * @param userId - User ID to send notification to
+ * @returns SQS message body and attributes for routing
+ */
+export function createDownloadStartedNotification(
+  fileId: string,
+  videoInfo: YtDlpVideoInfo,
+  userId: string
+): {messageBody: string; messageAttributes: Record<string, MessageAttributeValue>} {
+  const file: DownloadStartedNotification = {fileId, title: videoInfo.title || '', thumbnailUrl: videoInfo.thumbnail}
+  return {
+    messageBody: JSON.stringify({file, notificationType: 'DownloadStartedNotification'}),
+    messageAttributes: {userId: stringAttribute(userId), notificationType: stringAttribute('DownloadStartedNotification')}
   }
 }
 

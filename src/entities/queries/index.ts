@@ -122,4 +122,4 @@ export {
 export { getFileByKeyPrepared, getSessionByTokenPrepared, getUserFilesPrepared } from './preparedQueries'
 
 // Cascade operations (transaction-wrapped multi-entity operations)
-export { deleteUserAuthRecords, deleteUserCascade, deleteUserRelationships } from './cascadeOperations'
+export { deleteFileCascade, deleteUserAuthRecords, deleteUserCascade, deleteUserRelationships } from './cascadeOperations'

@@ -18,6 +18,10 @@
       "trigger": "API Gateway",
       "purpose": "List files available to authenticated user"
     },
+    "api/files/[fileId]/index": {
+      "trigger": "API Gateway",
+      "purpose": "Delete a file and cascade user-file link, optionally remove S3 object"
+    },
     "api/user/index": {
       "trigger": "API Gateway",
       "purpose": "Delete user and cascade to related records"
