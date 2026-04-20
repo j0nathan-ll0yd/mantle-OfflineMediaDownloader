@@ -73,16 +73,12 @@ export function createMockDrizzleDb(): MockDrizzleDb {
       limit: vi.fn().mockImplementation(() => terminal),
       then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(selectResult).then(resolve, reject)
     }
-    return {
-      from: vi.fn().mockImplementation(() => fromResult)
-    }
+    return {from: vi.fn().mockImplementation(() => fromResult)}
   }
 
   // Insert chain: insert() -> values() -> returning() / onConflictDoUpdate().returning() / onConflictDoNothing().returning()
   const insertChain = () => {
-    const returningFn = vi.fn().mockImplementation(() =>
-      Promise.resolve(insertResult)
-    )
+    const returningFn = vi.fn().mockImplementation(() => Promise.resolve(insertResult))
     const conflictResult = {returning: returningFn}
     return {
       values: vi.fn().mockImplementation(() => ({
@@ -95,22 +91,12 @@ export function createMockDrizzleDb(): MockDrizzleDb {
 
   // Update chain: update() -> set() -> where() -> returning()
   const updateChain = () => {
-    const returningFn = vi.fn().mockImplementation(() =>
-      Promise.resolve(updateResult)
-    )
-    return {
-      set: vi.fn().mockImplementation(() => ({
-        where: vi.fn().mockImplementation(() => ({
-          returning: returningFn
-        }))
-      }))
-    }
+    const returningFn = vi.fn().mockImplementation(() => Promise.resolve(updateResult))
+    return {set: vi.fn().mockImplementation(() => ({where: vi.fn().mockImplementation(() => ({returning: returningFn}))}))}
   }
 
   // Delete chain: delete() -> where()
-  const deleteChain = () => ({
-    where: vi.fn().mockImplementation(() => Promise.resolve(deleteResult))
-  })
+  const deleteChain = () => ({where: vi.fn().mockImplementation(() => Promise.resolve(deleteResult))})
 
   const db: MockDrizzleDb = {
     select: vi.fn().mockImplementation(() => selectChain()),
@@ -121,10 +107,18 @@ export function createMockDrizzleDb(): MockDrizzleDb {
     _insertResult: insertResult,
     _updateResult: updateResult,
     _deleteResult: deleteResult,
-    _setSelectResult: (result: unknown[]) => { selectResult = result },
-    _setInsertResult: (result: unknown[]) => { insertResult = result },
-    _setUpdateResult: (result: unknown[]) => { updateResult = result },
-    _setDeleteResult: (result: unknown[]) => { deleteResult = result }
+    _setSelectResult: (result: unknown[]) => {
+      selectResult = result
+    },
+    _setInsertResult: (result: unknown[]) => {
+      insertResult = result
+    },
+    _setUpdateResult: (result: unknown[]) => {
+      updateResult = result
+    },
+    _setDeleteResult: (result: unknown[]) => {
+      deleteResult = result
+    }
   }
 
   return db

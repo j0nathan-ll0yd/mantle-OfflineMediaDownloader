@@ -5,9 +5,7 @@
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 
-vi.mock('@mantleframework/core', () => ({
-  defineS3Handler: vi.fn(() => (innerHandler: Function) => innerHandler)
-}))
+vi.mock('@mantleframework/core', () => ({defineS3Handler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
 
 vi.mock('@mantleframework/aws', () => ({sendMessage: vi.fn()}))
 
@@ -24,31 +22,33 @@ vi.mock('@mantleframework/errors', () => {
   return {NotFoundError}
 })
 
-vi.mock('@mantleframework/observability', () => ({
-  addAnnotation: vi.fn(),
-  addMetadata: vi.fn(),
-  endSpan: vi.fn(),
-  logDebug: vi.fn(),
-  logError: vi.fn(),
-  logInfo: vi.fn(),
-  metrics: {addMetric: vi.fn()},
-  MetricUnit: {Count: 'Count'},
-  startSpan: vi.fn(() => ({}))
-}))
-
-vi.mock('#entities/queries', () => ({
-  getFilesByKey: vi.fn(),
-  getUserFilesByFileId: vi.fn()
-}))
-
-vi.mock('#services/notification/transformers', () => ({
-  createDownloadReadyNotification: vi.fn(() => ({
-    messageBody: JSON.stringify({file: {fileId: 'file-1'}, notificationType: 'DownloadReadyNotification'}),
-    messageAttributes: {userId: {DataType: 'String', StringValue: 'user-1'}, notificationType: {DataType: 'String', StringValue: 'DownloadReadyNotification'}}
+vi.mock('@mantleframework/observability',
+  () => ({
+    addAnnotation: vi.fn(),
+    addMetadata: vi.fn(),
+    endSpan: vi.fn(),
+    logDebug: vi.fn(),
+    logError: vi.fn(),
+    logInfo: vi.fn(),
+    metrics: {addMetric: vi.fn()},
+    MetricUnit: {Count: 'Count'},
+    startSpan: vi.fn(() => ({}))
   }))
-}))
 
-const {handler} = await import('#lambdas/s3/S3ObjectCreated/index.js')
+vi.mock('#entities/queries', () => ({getFilesByKey: vi.fn(), getUserFilesByFileId: vi.fn()}))
+
+vi.mock('#services/notification/transformers',
+  () => ({
+    createDownloadReadyNotification: vi.fn(() => ({
+      messageBody: JSON.stringify({file: {fileId: 'file-1'}, notificationType: 'DownloadReadyNotification'}),
+      messageAttributes: {
+        userId: {DataType: 'String', StringValue: 'user-1'},
+        notificationType: {DataType: 'String', StringValue: 'DownloadReadyNotification'}
+      }
+    }))
+  }))
+
+const {handler} = (await import('#lambdas/s3/S3ObjectCreated/index.js')) as any
 import {sendMessage} from '@mantleframework/aws'
 import {getFilesByKey, getUserFilesByFileId} from '#entities/queries'
 import {createDownloadReadyNotification} from '#services/notification/transformers'
@@ -68,14 +68,18 @@ describe('S3ObjectCreated Lambda', () => {
     url: 'https://example.cloudfront.net/dQw4w9WgXcQ.mp4',
     contentType: 'video/mp4',
     title: 'Test Video',
-    status: 'Downloaded'
+    status: 'Downloaded',
+    duration: null,
+    uploadDate: null,
+    viewCount: null,
+    thumbnailUrl: null
   }
 
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getFilesByKey).mockResolvedValue([mockFile])
     vi.mocked(getUserFilesByFileId).mockResolvedValue([{userId: 'user-1', fileId: 'dQw4w9WgXcQ', createdAt: new Date()}])
-    vi.mocked(sendMessage).mockResolvedValue({MessageId: 'msg-1'})
+    vi.mocked(sendMessage).mockResolvedValue({MessageId: 'msg-1', $metadata: {}})
   })
 
   it('should find file by key and dispatch notification', async () => {
@@ -125,9 +129,7 @@ describe('S3ObjectCreated Lambda', () => {
       {userId: 'user-1', fileId: 'dQw4w9WgXcQ', createdAt: new Date()},
       {userId: 'user-2', fileId: 'dQw4w9WgXcQ', createdAt: new Date()}
     ])
-    vi.mocked(sendMessage)
-      .mockResolvedValueOnce({MessageId: 'msg-1'})
-      .mockRejectedValueOnce(new Error('SQS failure'))
+    vi.mocked(sendMessage).mockResolvedValueOnce({MessageId: 'msg-1', $metadata: {}}).mockRejectedValueOnce(new Error('SQS failure'))
 
     await handler(makeRecord())
 

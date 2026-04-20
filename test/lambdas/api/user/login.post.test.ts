@@ -25,7 +25,10 @@ vi.mock('@mantleframework/errors', () => {
 vi.mock('@mantleframework/observability', () => ({logInfo: vi.fn()}))
 
 vi.mock('@mantleframework/validation',
-  () => ({defineApiHandler: vi.fn(() => (innerHandler: Function) => innerHandler), z: {object: vi.fn(() => ({})), string: vi.fn(() => ({}))}}))
+  () => ({
+    defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
+    z: {object: vi.fn(() => ({})), string: vi.fn(() => ({}))}
+  }))
 
 vi.mock('#db/client', () => ({getDrizzleClient: vi.fn()}))
 
@@ -33,7 +36,7 @@ vi.mock('#db/schema', () => ({accounts: {}, sessions: {}, users: {}, verificatio
 
 vi.mock('#types/api-schema', () => ({userLoginResponseSchema: {}}))
 
-const {handler} = await import('#lambdas/api/user/login.post.js')
+const {handler} = (await import('#lambdas/api/user/login.post.js')) as any
 import {getAuth} from '@mantleframework/auth'
 
 function createMockAuth(overrides: {signInSocialResult?: object; getSessionResult?: object | null} = {}) {

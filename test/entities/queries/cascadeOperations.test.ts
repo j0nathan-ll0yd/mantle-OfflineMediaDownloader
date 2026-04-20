@@ -5,30 +5,26 @@
  * (!existing -> early return, remaining.length > 0 -> partial return).
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {createMockDrizzleDb, createDefineQueryMock} from '#test/helpers/defineQuery-mock'
+import {createDefineQueryMock, createMockDrizzleDb} from '#test/helpers/defineQuery-mock'
 import {createMockUserFile} from '#test/helpers/entity-fixtures'
 
 const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
-vi.mock('#db/schema', () => ({
-  userFiles: {userId: 'userId', fileId: 'fileId'},
-  userDevices: {userId: 'userId', deviceId: 'deviceId'},
-  sessions: {userId: 'userId'},
-  accounts: {userId: 'userId'},
-  users: {id: 'id'},
-  files: {fileId: 'fileId'},
-  fileDownloads: {fileId: 'fileId'}
-}))
+vi.mock('#db/schema',
+  () => ({
+    userFiles: {userId: 'userId', fileId: 'fileId'},
+    userDevices: {userId: 'userId', deviceId: 'deviceId'},
+    sessions: {userId: 'userId'},
+    accounts: {userId: 'userId'},
+    users: {id: 'id'},
+    files: {fileId: 'fileId'},
+    fileDownloads: {fileId: 'fileId'}
+  }))
 vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm', () => ({
-  and: vi.fn((...args: unknown[]) => args),
-  eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition')
-}))
+vi.mock('@mantleframework/database/orm', () => ({and: vi.fn((...args: unknown[]) => args), eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition')}))
 
-const {deleteUserCascade, deleteUserRelationships, deleteUserAuthRecords, deleteFileCascade} = await import(
-  '#entities/queries/cascadeOperations'
-)
+const {deleteUserCascade, deleteUserRelationships, deleteUserAuthRecords, deleteFileCascade} = await import('#entities/queries/cascadeOperations')
 
 describe('Cascade Operations', () => {
   beforeEach(() => {
@@ -90,7 +86,7 @@ describe('Cascade Operations', () => {
         selectCallCount++
         const result = selectCallCount === 1
           ? [existingLink] // First: existing link found
-          : [otherLink]    // Third: remaining links
+          : [otherLink] // Third: remaining links
         return {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
@@ -119,7 +115,7 @@ describe('Cascade Operations', () => {
         selectCallCount++
         const result = selectCallCount === 1
           ? [existingLink] // First: existing link found
-          : []             // Third: no remaining links (orphaned)
+          : [] // Third: no remaining links (orphaned)
         return {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({

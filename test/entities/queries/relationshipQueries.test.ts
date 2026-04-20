@@ -6,43 +6,58 @@
  * and upsert branching (result.length === 0 -> fetch existing).
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {createMockDrizzleDb, createDefineQueryMock} from '#test/helpers/defineQuery-mock'
-import {createMockUserFile, createMockUserDevice, createMockFile, createMockDevice} from '#test/helpers/entity-fixtures'
+import {createDefineQueryMock, createMockDrizzleDb} from '#test/helpers/defineQuery-mock'
+import {createMockDevice, createMockFile, createMockUserDevice, createMockUserFile} from '#test/helpers/entity-fixtures'
 
 const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
-vi.mock('#db/schema', () => ({
-  userFiles: {userId: 'userId', fileId: 'fileId'},
-  userDevices: {userId: 'userId', deviceId: 'deviceId'},
-  files: {fileId: 'fileId'},
-  devices: {deviceId: 'deviceId'},
-  users: {id: 'id'}
-}))
-vi.mock('#db/zodSchemas', () => ({
-  userFileInsertSchema: {parse: vi.fn((v: unknown) => v)},
-  userDeviceInsertSchema: {parse: vi.fn((v: unknown) => v)}
-}))
-vi.mock('#db/fkEnforcement', () => ({
-  assertUserExists: vi.fn().mockResolvedValue(undefined),
-  assertFileExists: vi.fn().mockResolvedValue(undefined),
-  assertDeviceExists: vi.fn().mockResolvedValue(undefined)
-}))
+vi.mock('#db/schema',
+  () => ({
+    userFiles: {userId: 'userId', fileId: 'fileId'},
+    userDevices: {userId: 'userId', deviceId: 'deviceId'},
+    files: {fileId: 'fileId'},
+    devices: {deviceId: 'deviceId'},
+    users: {id: 'id'}
+  }))
+vi.mock('#db/zodSchemas', () => ({userFileInsertSchema: {parse: vi.fn((v: unknown) => v)}, userDeviceInsertSchema: {parse: vi.fn((v: unknown) => v)}}))
+vi.mock('#db/fkEnforcement',
+  () => ({
+    assertUserExists: vi.fn().mockResolvedValue(undefined),
+    assertFileExists: vi.fn().mockResolvedValue(undefined),
+    assertDeviceExists: vi.fn().mockResolvedValue(undefined)
+  }))
 vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm', () => ({
-  and: vi.fn((...args: unknown[]) => args),
-  eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'),
-  or: vi.fn((...args: unknown[]) => args),
-  inArray: vi.fn((_col: unknown, _vals: unknown) => 'inArray-condition')
-}))
+vi.mock('@mantleframework/database/orm',
+  () => ({
+    and: vi.fn((...args: unknown[]) => args),
+    eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'),
+    or: vi.fn((...args: unknown[]) => args),
+    inArray: vi.fn((_col: unknown, _vals: unknown) => 'inArray-condition')
+  }))
 
 const {
-  getUserFile, getUserFilesByUserId, getUserFileIdsByUserId, getUserFilesByFileId,
-  getFilesForUser, createUserFile, upsertUserFile, deleteUserFile,
-  deleteUserFilesByUserId, deleteUserFilesBatch,
-  getUserDevice, getUserDevicesByUserId, getUserDeviceIdsByUserId, getUserDevicesByDeviceId,
-  getDevicesForUser, getDeviceIdsForUsers, createUserDevice, upsertUserDevice,
-  deleteUserDevice, deleteUserDevicesByUserId, deleteUserDevicesByDeviceId
+  getUserFile,
+  getUserFilesByUserId,
+  getUserFileIdsByUserId,
+  getUserFilesByFileId,
+  getFilesForUser,
+  createUserFile,
+  upsertUserFile,
+  deleteUserFile,
+  deleteUserFilesByUserId,
+  deleteUserFilesBatch,
+  getUserDevice,
+  getUserDevicesByUserId,
+  getUserDeviceIdsByUserId,
+  getUserDevicesByDeviceId,
+  getDevicesForUser,
+  getDeviceIdsForUsers,
+  createUserDevice,
+  upsertUserDevice,
+  deleteUserDevice,
+  deleteUserDevicesByUserId,
+  deleteUserDevicesByDeviceId
 } = await import('#entities/queries/relationshipQueries')
 
 describe('Relationship Queries', () => {

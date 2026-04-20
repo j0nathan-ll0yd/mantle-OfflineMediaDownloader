@@ -5,17 +5,14 @@
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 
-vi.mock('@mantleframework/aws', () => ({
-  getApiKeys: vi.fn(),
-  getUsage: vi.fn(),
-  getUsagePlans: vi.fn()
-}))
+vi.mock('@mantleframework/aws', () => ({getApiKeys: vi.fn(), getUsage: vi.fn(), getUsagePlans: vi.fn()}))
 
-vi.mock('@mantleframework/core', () => ({
-  defineAuthorizerHandler: vi.fn(() => (innerHandler: Function) => innerHandler),
-  defineLambda: vi.fn(),
-  UserStatus: {Authenticated: 'Authenticated', Anonymous: 'Anonymous'}
-}))
+vi.mock('@mantleframework/core',
+  () => ({
+    defineAuthorizerHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
+    defineLambda: vi.fn(),
+    UserStatus: {Authenticated: 'Authenticated', Anonymous: 'Anonymous'}
+  }))
 
 vi.mock('@mantleframework/env', () => ({
   getOptionalEnv: vi.fn((key: string, defaultVal: string) => {
@@ -23,9 +20,7 @@ vi.mock('@mantleframework/env', () => ({
     return envs[key] ?? defaultVal
   }),
   getRequiredEnv: vi.fn((key: string) => {
-    const envs: Record<string, string> = {
-      MULTI_AUTHENTICATION_PATH_PARTS: 'device/register,device/event,files'
-    }
+    const envs: Record<string, string> = {MULTI_AUTHENTICATION_PATH_PARTS: 'device/register,device/event,files'}
     return envs[key] ?? 'mock-value'
   })
 }))
@@ -41,23 +36,24 @@ vi.mock('@mantleframework/errors', () => {
   return {UnexpectedError}
 })
 
-vi.mock('@mantleframework/observability', () => ({
-  addAnnotation: vi.fn(),
-  addMetadata: vi.fn(),
-  endSpan: vi.fn(),
-  logDebug: vi.fn(),
-  logError: vi.fn(),
-  logInfo: vi.fn(),
-  metrics: {addMetric: vi.fn()},
-  MetricUnit: {Count: 'Count'},
-  startSpan: vi.fn(() => ({}))
-}))
+vi.mock('@mantleframework/observability',
+  () => ({
+    addAnnotation: vi.fn(),
+    addMetadata: vi.fn(),
+    endSpan: vi.fn(),
+    logDebug: vi.fn(),
+    logError: vi.fn(),
+    logInfo: vi.fn(),
+    metrics: {addMetric: vi.fn()},
+    MetricUnit: {Count: 'Count'},
+    startSpan: vi.fn(() => ({}))
+  }))
 
 vi.mock('#domain/auth/sessionService', () => ({validateSessionToken: vi.fn()}))
 
 vi.mock('#errors/custom-errors', () => ({providerFailureErrorMessage: 'AWS request failed'}))
 
-const {handler, generateAllow} = await import('#lambdas/standalone/ApiGatewayAuthorizer/index.js')
+const {handler, generateAllow} = (await import('#lambdas/standalone/ApiGatewayAuthorizer/index.js')) as any
 import {getApiKeys, getUsage, getUsagePlans} from '@mantleframework/aws'
 import {validateSessionToken} from '#domain/auth/sessionService'
 import {getOptionalEnv} from '@mantleframework/env'
@@ -68,11 +64,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
   const validApiKey = 'valid-api-key-12345'
 
   const makeEvent = (overrides: Record<string, unknown> = {}) => ({
-    event: {
-      path: '/files',
-      requestContext: {identity: {sourceIp: '192.168.1.1'}},
-      ...overrides
-    },
+    event: {path: '/files', requestContext: {identity: {sourceIp: '192.168.1.1'}}, ...overrides},
     headers: {} as Record<string, string | undefined>,
     queryStringParameters: {ApiKey: validApiKey} as Record<string, string>,
     methodArn
@@ -80,9 +72,9 @@ describe('ApiGatewayAuthorizer Lambda', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(getApiKeys).mockResolvedValue({items: [{id: 'key-1', value: validApiKey, enabled: true}]})
-    vi.mocked(getUsagePlans).mockResolvedValue({items: [{id: 'plan-1'}]})
-    vi.mocked(getUsage).mockResolvedValue({items: {'key-1': [[100, 50]]}})
+    vi.mocked(getApiKeys).mockResolvedValue({items: [{id: 'key-1', value: validApiKey, enabled: true}], $metadata: {}})
+    vi.mocked(getUsagePlans).mockResolvedValue({items: [{id: 'plan-1'}], $metadata: {}})
+    vi.mocked(getUsage).mockResolvedValue({items: {'key-1': [[100, 50]]}, $metadata: {}})
   })
 
   describe('generateAllow', () => {
@@ -131,19 +123,19 @@ describe('ApiGatewayAuthorizer Lambda', () => {
     })
 
     it('should throw Unauthorized when API key does not match', async () => {
-      vi.mocked(getApiKeys).mockResolvedValue({items: [{id: 'key-1', value: 'different-key', enabled: true}]})
+      vi.mocked(getApiKeys).mockResolvedValue({items: [{id: 'key-1', value: 'different-key', enabled: true}], $metadata: {}})
 
       await expect(handler(makeEvent())).rejects.toThrow('Unauthorized')
     })
 
     it('should throw Unauthorized when API key is disabled', async () => {
-      vi.mocked(getApiKeys).mockResolvedValue({items: [{id: 'key-1', value: validApiKey, enabled: false}]})
+      vi.mocked(getApiKeys).mockResolvedValue({items: [{id: 'key-1', value: validApiKey, enabled: false}], $metadata: {}})
 
       await expect(handler(makeEvent())).rejects.toThrow('Unauthorized')
     })
 
     it('should throw UnexpectedError when getApiKeys returns no items', async () => {
-      vi.mocked(getApiKeys).mockResolvedValue({items: undefined})
+      vi.mocked(getApiKeys).mockResolvedValue({items: undefined, $metadata: {}})
 
       await expect(handler(makeEvent())).rejects.toThrow('AWS request failed')
     })
@@ -229,8 +221,12 @@ describe('ApiGatewayAuthorizer Lambda', () => {
 
     it('should not bypass auth in production', async () => {
       vi.mocked(getOptionalEnv).mockImplementation((key: string, defaultVal: string) => {
-        if (key === 'NODE_ENV') return 'production'
-        if (key === 'RESERVED_CLIENT_IP') return '104.1.88.244'
+        if (key === 'NODE_ENV') {
+          return 'production'
+        }
+        if (key === 'RESERVED_CLIENT_IP') {
+          return '104.1.88.244'
+        }
         return defaultVal
       })
       const event = makeEvent({path: '/protected-resource'})
@@ -268,14 +264,14 @@ describe('ApiGatewayAuthorizer Lambda', () => {
     })
 
     it('should throw UnexpectedError when getUsagePlans returns no items', async () => {
-      vi.mocked(getUsagePlans).mockResolvedValue({items: undefined})
+      vi.mocked(getUsagePlans).mockResolvedValue({items: undefined, $metadata: {}})
       const event = makeEvent({path: '/files'})
 
       await expect(handler(event)).rejects.toThrow('AWS request failed')
     })
 
     it('should throw UnexpectedError when getUsage returns no items', async () => {
-      vi.mocked(getUsage).mockResolvedValue({items: undefined})
+      vi.mocked(getUsage).mockResolvedValue({items: undefined, $metadata: {}})
       const event = makeEvent({path: '/files'})
 
       await expect(handler(event)).rejects.toThrow('AWS request failed')

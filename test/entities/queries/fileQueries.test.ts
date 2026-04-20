@@ -6,32 +6,38 @@
  * and non-null assertions on returning().
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {createMockDrizzleDb, createDefineQueryMock} from '#test/helpers/defineQuery-mock'
+import {createDefineQueryMock, createMockDrizzleDb} from '#test/helpers/defineQuery-mock'
 import {createMockFile, createMockFileDownload} from '#test/helpers/entity-fixtures'
 
 const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
-vi.mock('#db/schema', () => ({
-  files: {fileId: 'fileId', key: 'key', status: 'status'},
-  fileDownloads: {fileId: 'fileId'}
-}))
-vi.mock('#db/zodSchemas', () => ({
-  fileInsertSchema: {parse: vi.fn((v: unknown) => v)},
-  fileUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))},
-  fileDownloadInsertSchema: {parse: vi.fn((v: unknown) => v)},
-  fileDownloadUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))}
-}))
+vi.mock('#db/schema', () => ({files: {fileId: 'fileId', key: 'key', status: 'status'}, fileDownloads: {fileId: 'fileId'}}))
+vi.mock('#db/zodSchemas',
+  () => ({
+    fileInsertSchema: {parse: vi.fn((v: unknown) => v)},
+    fileUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))},
+    fileDownloadInsertSchema: {parse: vi.fn((v: unknown) => v)},
+    fileDownloadUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))}
+  }))
 vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm', () => ({
-  eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'),
-  inArray: vi.fn((_col: unknown, _vals: unknown) => 'inArray-condition')
-}))
+vi.mock('@mantleframework/database/orm',
+  () => ({eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'), inArray: vi.fn((_col: unknown, _vals: unknown) => 'inArray-condition')}))
 
 const {
-  getFile, getFileStatus, getFilesBatch, getFilesByKey,
-  createFile, upsertFile, updateFile, deleteFile,
-  getFileDownload, createFileDownload, upsertFileDownload, updateFileDownload, deleteFileDownload
+  getFile,
+  getFileStatus,
+  getFilesBatch,
+  getFilesByKey,
+  createFile,
+  upsertFile,
+  updateFile,
+  deleteFile,
+  getFileDownload,
+  createFileDownload,
+  upsertFileDownload,
+  updateFileDownload,
+  deleteFileDownload
 } = await import('#entities/queries/fileQueries')
 
 describe('File Queries', () => {
@@ -113,9 +119,16 @@ describe('File Queries', () => {
       mockDb._setInsertResult([mockFile])
 
       const result = await createFile({
-        fileId: 'file-1', authorName: 'Author', authorUser: 'user',
-        publishDate: '2021-01-01', description: 'desc', key: 'file.mp4',
-        url: null, contentType: 'video/mp4', title: 'Test', status: 'Queued'
+        fileId: 'file-1',
+        authorName: 'Author',
+        authorUser: 'user',
+        publishDate: '2021-01-01',
+        description: 'desc',
+        key: 'file.mp4',
+        url: null,
+        contentType: 'video/mp4',
+        title: 'Test',
+        status: 'Queued'
       })
 
       expect(result).toEqual(mockFile)
@@ -128,9 +141,16 @@ describe('File Queries', () => {
       mockDb._setInsertResult([mockFile])
 
       const result = await upsertFile({
-        fileId: 'file-1', authorName: 'Author', authorUser: 'user',
-        publishDate: '2021-01-01', description: 'desc', key: 'file.mp4',
-        url: null, contentType: 'video/mp4', title: 'Test', status: 'Queued'
+        fileId: 'file-1',
+        authorName: 'Author',
+        authorUser: 'user',
+        publishDate: '2021-01-01',
+        description: 'desc',
+        key: 'file.mp4',
+        url: null,
+        contentType: 'video/mp4',
+        title: 'Test',
+        status: 'Queued'
       })
 
       expect(result).toEqual(mockFile)
@@ -182,9 +202,7 @@ describe('File Queries', () => {
       const mockDownload = createMockFileDownload()
       mockDb._setInsertResult([mockDownload])
 
-      const result = await createFileDownload({
-        fileId: 'file-1', status: 'Pending', retryCount: 0, maxRetries: 5
-      })
+      const result = await createFileDownload({fileId: 'file-1', status: 'Pending', retryCount: 0, maxRetries: 5})
 
       expect(result).toEqual(mockDownload)
     })
@@ -195,9 +213,7 @@ describe('File Queries', () => {
       const mockDownload = createMockFileDownload()
       mockDb._setInsertResult([mockDownload])
 
-      const result = await upsertFileDownload({
-        fileId: 'file-1', status: 'Pending', retryCount: 0, maxRetries: 5
-      })
+      const result = await upsertFileDownload({fileId: 'file-1', status: 'Pending', retryCount: 0, maxRetries: 5})
 
       expect(result).toEqual(mockDownload)
     })

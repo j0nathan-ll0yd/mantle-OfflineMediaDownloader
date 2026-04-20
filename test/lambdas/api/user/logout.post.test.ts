@@ -22,13 +22,13 @@ vi.mock('@mantleframework/errors', () => {
 
 vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), logInfo: vi.fn()}))
 
-vi.mock('@mantleframework/validation', () => ({defineApiHandler: vi.fn(() => (innerHandler: Function) => innerHandler)}))
+vi.mock('@mantleframework/validation', () => ({defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
 
 vi.mock('#db/client', () => ({getDrizzleClient: vi.fn()}))
 
 vi.mock('#domain/auth/authInstance', () => ({getAuthInstance: vi.fn()}))
 
-const {handler} = await import('#lambdas/api/user/logout.post.js')
+const {handler} = (await import('#lambdas/api/user/logout.post.js')) as any
 import {expireSession, extractBearerToken} from '@mantleframework/auth'
 import {getAuthInstance} from '#domain/auth/authInstance'
 import {getDrizzleClient} from '#db/client'

@@ -5,26 +5,18 @@
  * and map transform (results.map(r => r.file)).
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {createMockDrizzleDb, createDefineQueryMock} from '#test/helpers/defineQuery-mock'
+import {createDefineQueryMock, createMockDrizzleDb} from '#test/helpers/defineQuery-mock'
 import {createMockFile, createMockSession} from '#test/helpers/entity-fixtures'
 
 const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
-vi.mock('#db/schema', () => ({
-  files: {fileId: 'fileId', key: 'key'},
-  sessions: {id: 'id', token: 'token'},
-  userFiles: {userId: 'userId', fileId: 'fileId'}
-}))
+vi.mock('#db/schema', () => ({files: {fileId: 'fileId', key: 'key'}, sessions: {id: 'id', token: 'token'}, userFiles: {userId: 'userId', fileId: 'fileId'}}))
 vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm', () => ({
-  eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'),
-  sql: {placeholder: vi.fn((name: string) => ({placeholder: name}))}
-}))
+vi.mock('@mantleframework/database/orm',
+  () => ({eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'), sql: {placeholder: vi.fn((name: string) => ({placeholder: name}))}}))
 
-const {getFileByKeyPrepared, getUserFilesPrepared, getSessionByTokenPrepared} = await import(
-  '#entities/queries/preparedQueries'
-)
+const {getFileByKeyPrepared, getUserFilesPrepared, getSessionByTokenPrepared} = await import('#entities/queries/preparedQueries')
 
 describe('Prepared Queries', () => {
   beforeEach(() => {
@@ -38,13 +30,7 @@ describe('Prepared Queries', () => {
       // Our mock needs to handle the prepare+execute chain
       const executeMock = vi.fn().mockResolvedValue([mockFile])
       const prepareMock = vi.fn().mockReturnValue({execute: executeMock})
-      mockDb.select.mockImplementation(() => ({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            prepare: prepareMock
-          })
-        })
-      }))
+      mockDb.select.mockImplementation(() => ({from: vi.fn().mockReturnValue({where: vi.fn().mockReturnValue({prepare: prepareMock})})}))
 
       const result = await getFileByKeyPrepared('test.mp4')
 
@@ -54,13 +40,7 @@ describe('Prepared Queries', () => {
     it('should return null when file not found (null coalescing)', async () => {
       const executeMock = vi.fn().mockResolvedValue([])
       const prepareMock = vi.fn().mockReturnValue({execute: executeMock})
-      mockDb.select.mockImplementation(() => ({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            prepare: prepareMock
-          })
-        })
-      }))
+      mockDb.select.mockImplementation(() => ({from: vi.fn().mockReturnValue({where: vi.fn().mockReturnValue({prepare: prepareMock})})}))
 
       const result = await getFileByKeyPrepared('nonexistent.mp4')
 
@@ -75,13 +55,7 @@ describe('Prepared Queries', () => {
       const executeMock = vi.fn().mockResolvedValue([{file: file1}, {file: file2}])
       const prepareMock = vi.fn().mockReturnValue({execute: executeMock})
       mockDb.select.mockImplementation(() => ({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              prepare: prepareMock
-            })
-          })
-        })
+        from: vi.fn().mockReturnValue({innerJoin: vi.fn().mockReturnValue({where: vi.fn().mockReturnValue({prepare: prepareMock})})})
       }))
 
       const result = await getUserFilesPrepared('user-1')
@@ -93,13 +67,7 @@ describe('Prepared Queries', () => {
       const executeMock = vi.fn().mockResolvedValue([])
       const prepareMock = vi.fn().mockReturnValue({execute: executeMock})
       mockDb.select.mockImplementation(() => ({
-        from: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              prepare: prepareMock
-            })
-          })
-        })
+        from: vi.fn().mockReturnValue({innerJoin: vi.fn().mockReturnValue({where: vi.fn().mockReturnValue({prepare: prepareMock})})})
       }))
 
       const result = await getUserFilesPrepared('user-1')
@@ -114,13 +82,7 @@ describe('Prepared Queries', () => {
       const executeMock = vi.fn().mockResolvedValue([mockSession])
       const prepareMock = vi.fn().mockReturnValue({execute: executeMock})
       mockDb.select.mockImplementation(() => ({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockReturnValue({
-              prepare: prepareMock
-            })
-          })
-        })
+        from: vi.fn().mockReturnValue({where: vi.fn().mockReturnValue({limit: vi.fn().mockReturnValue({prepare: prepareMock})})})
       }))
 
       const result = await getSessionByTokenPrepared('valid-token')
@@ -132,13 +94,7 @@ describe('Prepared Queries', () => {
       const executeMock = vi.fn().mockResolvedValue([])
       const prepareMock = vi.fn().mockReturnValue({execute: executeMock})
       mockDb.select.mockImplementation(() => ({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockReturnValue({
-              prepare: prepareMock
-            })
-          })
-        })
+        from: vi.fn().mockReturnValue({where: vi.fn().mockReturnValue({limit: vi.fn().mockReturnValue({prepare: prepareMock})})})
       }))
 
       const result = await getSessionByTokenPrepared('invalid-token')

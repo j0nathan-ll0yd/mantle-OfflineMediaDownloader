@@ -26,7 +26,7 @@ vi.mock('@mantleframework/observability', () => ({logInfo: vi.fn(), metrics: {ad
 
 vi.mock('@mantleframework/validation',
   () => ({
-    defineApiHandler: vi.fn(() => (innerHandler: Function) => innerHandler),
+    defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({optional: vi.fn(() => ({}))}))}
   }))
 
@@ -38,7 +38,7 @@ vi.mock('#entities/queries', () => ({updateUser: vi.fn()}))
 
 vi.mock('#types/api-schema', () => ({userRegistrationResponseSchema: {}}))
 
-const {handler} = await import('#lambdas/api/user/register.post.js')
+const {handler} = (await import('#lambdas/api/user/register.post.js')) as any
 import {getAuth} from '@mantleframework/auth'
 import {updateUser} from '#entities/queries'
 import {metrics} from '@mantleframework/observability'

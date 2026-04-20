@@ -5,34 +5,47 @@
  * and non-null assertions on returning().
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {createMockDrizzleDb, createDefineQueryMock} from '#test/helpers/defineQuery-mock'
-import {createMockSession, createMockAccount, createMockVerification} from '#test/helpers/entity-fixtures'
+import {createDefineQueryMock, createMockDrizzleDb} from '#test/helpers/defineQuery-mock'
+import {createMockAccount, createMockSession, createMockVerification} from '#test/helpers/entity-fixtures'
 
 const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
-vi.mock('#db/schema', () => ({
-  sessions: {id: 'id', token: 'token', userId: 'userId', expiresAt: 'expiresAt'},
-  accounts: {id: 'id', userId: 'userId'},
-  verification: {id: 'id', identifier: 'identifier', expiresAt: 'expiresAt'}
-}))
-vi.mock('#db/zodSchemas', () => ({
-  sessionInsertSchema: {parse: vi.fn((v: unknown) => v)},
-  sessionUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))},
-  accountInsertSchema: {parse: vi.fn((v: unknown) => v)},
-  verificationInsertSchema: {parse: vi.fn((v: unknown) => v)}
-}))
+vi.mock('#db/schema',
+  () => ({
+    sessions: {id: 'id', token: 'token', userId: 'userId', expiresAt: 'expiresAt'},
+    accounts: {id: 'id', userId: 'userId'},
+    verification: {id: 'id', identifier: 'identifier', expiresAt: 'expiresAt'}
+  }))
+vi.mock('#db/zodSchemas',
+  () => ({
+    sessionInsertSchema: {parse: vi.fn((v: unknown) => v)},
+    sessionUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))},
+    accountInsertSchema: {parse: vi.fn((v: unknown) => v)},
+    verificationInsertSchema: {parse: vi.fn((v: unknown) => v)}
+  }))
 vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm', () => ({
-  eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'),
-  lt: vi.fn((_col: unknown, _val: unknown) => 'lt-condition')
-}))
+vi.mock('@mantleframework/database/orm',
+  () => ({eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'), lt: vi.fn((_col: unknown, _val: unknown) => 'lt-condition')}))
 
 const {
-  getSession, getSessionByToken, getSessionsByUserId,
-  createSession, updateSession, deleteSession, deleteSessionsByUserId, deleteExpiredSessions,
-  getAccount, getAccountsByUserId, createAccount, deleteAccount, deleteAccountsByUserId,
-  getVerificationByIdentifier, createVerification, deleteVerification, deleteExpiredVerifications
+  getSession,
+  getSessionByToken,
+  getSessionsByUserId,
+  createSession,
+  updateSession,
+  deleteSession,
+  deleteSessionsByUserId,
+  deleteExpiredSessions,
+  getAccount,
+  getAccountsByUserId,
+  createAccount,
+  deleteAccount,
+  deleteAccountsByUserId,
+  getVerificationByIdentifier,
+  createVerification,
+  deleteVerification,
+  deleteExpiredVerifications
 } = await import('#entities/queries/sessionQueries')
 
 describe('Session Queries', () => {
@@ -104,9 +117,7 @@ describe('Session Queries', () => {
       const mockSession = createMockSession()
       mockDb._setInsertResult([mockSession])
 
-      const result = await createSession({
-        userId: 'user-1', token: 'token-1', expiresAt: new Date()
-      })
+      const result = await createSession({userId: 'user-1', token: 'token-1', expiresAt: new Date()})
 
       expect(result).toEqual(mockSession)
     })
@@ -181,9 +192,7 @@ describe('Session Queries', () => {
       const mockAccount = createMockAccount()
       mockDb._setInsertResult([mockAccount])
 
-      const result = await createAccount({
-        userId: 'user-1', accountId: 'apple-1', providerId: 'apple'
-      })
+      const result = await createAccount({userId: 'user-1', accountId: 'apple-1', providerId: 'apple'})
 
       expect(result).toEqual(mockAccount)
     })
@@ -229,9 +238,7 @@ describe('Session Queries', () => {
       const mockVerification = createMockVerification()
       mockDb._setInsertResult([mockVerification])
 
-      const result = await createVerification({
-        identifier: 'test@example.com', value: 'token-abc', expiresAt: new Date()
-      })
+      const result = await createVerification({identifier: 'test@example.com', value: 'token-abc', expiresAt: new Date()})
 
       expect(result).toEqual(mockVerification)
     })

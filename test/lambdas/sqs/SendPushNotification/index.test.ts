@@ -5,27 +5,29 @@
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 
-vi.mock('@mantleframework/core', () => ({
-  defineSqsHandler: vi.fn(() => (innerHandler: Function) => innerHandler),
-  err: vi.fn((error) => ({ok: false, error})),
-  isErr: vi.fn((result) => !result.ok),
-  isOk: vi.fn((result) => result.ok),
-  ok: vi.fn((value) => ({ok: true, value}))
-}))
+vi.mock('@mantleframework/core',
+  () => ({
+    defineSqsHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
+    err: vi.fn((error) => ({ok: false, error})),
+    isErr: vi.fn((result) => !result.ok),
+    isOk: vi.fn((result) => result.ok),
+    ok: vi.fn((value) => ({ok: true, value}))
+  }))
 
 vi.mock('@mantleframework/aws', () => ({publish: vi.fn()}))
 
-vi.mock('@mantleframework/observability', () => ({
-  addAnnotation: vi.fn(),
-  addMetadata: vi.fn(),
-  endSpan: vi.fn(),
-  logDebug: vi.fn(),
-  logError: vi.fn(),
-  logInfo: vi.fn(),
-  metrics: {addMetric: vi.fn()},
-  MetricUnit: {Count: 'Count'},
-  startSpan: vi.fn(() => ({}))
-}))
+vi.mock('@mantleframework/observability',
+  () => ({
+    addAnnotation: vi.fn(),
+    addMetadata: vi.fn(),
+    endSpan: vi.fn(),
+    logDebug: vi.fn(),
+    logError: vi.fn(),
+    logInfo: vi.fn(),
+    metrics: {addMetric: vi.fn()},
+    MetricUnit: {Count: 'Count'},
+    startSpan: vi.fn(() => ({}))
+  }))
 
 vi.mock('@mantleframework/validation', () => ({validateSchema: vi.fn()}))
 
@@ -40,23 +42,21 @@ vi.mock('@mantleframework/errors', () => {
   return {UnexpectedError}
 })
 
-vi.mock('#entities/queries', () => ({
-  getDevice: vi.fn(),
-  getUserDevicesByUserId: vi.fn()
-}))
+vi.mock('#entities/queries', () => ({getDevice: vi.fn(), getUserDevicesByUserId: vi.fn()}))
 
 vi.mock('#errors/custom-errors', () => ({providerFailureErrorMessage: 'AWS request failed'}))
 
-vi.mock('#services/notification/transformers', () => ({
-  transformToAPNSAlertNotification: vi.fn(() => ({Message: 'alert', TargetArn: 'arn:test'})),
-  transformToAPNSNotification: vi.fn(() => ({Message: 'background', TargetArn: 'arn:test'}))
-}))
+vi.mock('#services/notification/transformers',
+  () => ({
+    transformToAPNSAlertNotification: vi.fn(() => ({Message: 'alert', TargetArn: 'arn:test'})),
+    transformToAPNSNotification: vi.fn(() => ({Message: 'background', TargetArn: 'arn:test'}))
+  }))
 
 vi.mock('#services/notification/endpointCleanup', () => ({cleanupDisabledEndpoints: vi.fn(() => Promise.resolve([]))}))
 
 vi.mock('#types/schemas', () => ({pushNotificationAttributesSchema: {}}))
 
-const {handler} = await import('#lambdas/sqs/SendPushNotification/index.js')
+const {handler} = (await import('#lambdas/sqs/SendPushNotification/index.js')) as any
 import {publish} from '@mantleframework/aws'
 import {validateSchema} from '@mantleframework/validation'
 import {getDevice, getUserDevicesByUserId} from '#entities/queries'
@@ -68,18 +68,22 @@ describe('SendPushNotification Lambda', () => {
   const makeRecord = (notificationType = 'DownloadReadyNotification', userId = 'user-1') => ({
     messageId: 'msg-1',
     body: JSON.stringify({file: {fileId: 'file-1'}, notificationType}),
-    messageAttributes: {
-      notificationType: {stringValue: notificationType},
-      userId: {stringValue: userId}
-    }
+    messageAttributes: {notificationType: {stringValue: notificationType}, userId: {stringValue: userId}}
   })
 
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(validateSchema).mockReturnValue({success: true, data: {notificationType: 'DownloadReadyNotification', userId: 'user-1'}})
     vi.mocked(getUserDevicesByUserId).mockResolvedValue([{userId: 'user-1', deviceId: 'dev-1', createdAt: new Date()}])
-    vi.mocked(getDevice).mockResolvedValue({deviceId: 'dev-1', name: 'iPhone', token: 'tok', systemVersion: '17', systemName: 'iOS', endpointArn: 'arn:aws:sns:endpoint/dev-1'})
-    vi.mocked(publish).mockResolvedValue({MessageId: 'msg-pub-1'})
+    vi.mocked(getDevice).mockResolvedValue({
+      deviceId: 'dev-1',
+      name: 'iPhone',
+      token: 'tok',
+      systemVersion: '17',
+      systemName: 'iOS',
+      endpointArn: 'arn:aws:sns:endpoint/dev-1'
+    })
+    vi.mocked(publish).mockResolvedValue({MessageId: 'msg-pub-1', $metadata: {}})
   })
 
   it('should send background notification to a single device', async () => {
@@ -111,7 +115,7 @@ describe('SendPushNotification Lambda', () => {
   })
 
   it('should discard message with invalid attributes', async () => {
-    vi.mocked(validateSchema).mockReturnValue({success: false, errors: ['invalid']})
+    vi.mocked(validateSchema).mockReturnValue({success: false, errors: {field: ['invalid']}})
 
     await handler(makeRecord())
 
@@ -124,12 +128,22 @@ describe('SendPushNotification Lambda', () => {
       {userId: 'user-1', deviceId: 'dev-1', createdAt: new Date()},
       {userId: 'user-1', deviceId: 'dev-2', createdAt: new Date()}
     ])
-    vi.mocked(getDevice)
-      .mockResolvedValueOnce({deviceId: 'dev-1', name: 'iPhone', token: 'tok1', systemVersion: '17', systemName: 'iOS', endpointArn: 'arn:aws:sns:endpoint/dev-1'})
-      .mockResolvedValueOnce({deviceId: 'dev-2', name: 'iPad', token: 'tok2', systemVersion: '17', systemName: 'iPadOS', endpointArn: 'arn:aws:sns:endpoint/dev-2'})
-    vi.mocked(publish)
-      .mockResolvedValueOnce({MessageId: 'msg-1'})
-      .mockRejectedValueOnce(new Error('SNS failure'))
+    vi.mocked(getDevice).mockResolvedValueOnce({
+      deviceId: 'dev-1',
+      name: 'iPhone',
+      token: 'tok1',
+      systemVersion: '17',
+      systemName: 'iOS',
+      endpointArn: 'arn:aws:sns:endpoint/dev-1'
+    }).mockResolvedValueOnce({
+      deviceId: 'dev-2',
+      name: 'iPad',
+      token: 'tok2',
+      systemVersion: '17',
+      systemName: 'iPadOS',
+      endpointArn: 'arn:aws:sns:endpoint/dev-2'
+    })
+    vi.mocked(publish).mockResolvedValueOnce({MessageId: 'msg-1', $metadata: {}}).mockRejectedValueOnce(new Error('SNS failure'))
 
     await handler(makeRecord())
 
@@ -165,12 +179,15 @@ describe('SendPushNotification Lambda', () => {
       {userId: 'user-1', deviceId: 'dev-1', createdAt: new Date()},
       {userId: 'user-1', deviceId: 'dev-2', createdAt: new Date()}
     ])
-    vi.mocked(getDevice)
-      .mockResolvedValueOnce({deviceId: 'dev-1', name: 'iPhone', token: 'tok1', systemVersion: '17', systemName: 'iOS', endpointArn: 'arn:endpoint/dev-1'})
-      .mockResolvedValueOnce({deviceId: 'dev-2', name: 'iPad', token: 'tok2', systemVersion: '17', systemName: 'iPadOS', endpointArn: 'arn:endpoint/dev-2'})
-    vi.mocked(publish)
-      .mockResolvedValueOnce({MessageId: 'msg-1'})
-      .mockRejectedValueOnce(new Error('fail'))
+    vi.mocked(getDevice).mockResolvedValueOnce({
+      deviceId: 'dev-1',
+      name: 'iPhone',
+      token: 'tok1',
+      systemVersion: '17',
+      systemName: 'iOS',
+      endpointArn: 'arn:endpoint/dev-1'
+    }).mockResolvedValueOnce({deviceId: 'dev-2', name: 'iPad', token: 'tok2', systemVersion: '17', systemName: 'iPadOS', endpointArn: 'arn:endpoint/dev-2'})
+    vi.mocked(publish).mockResolvedValueOnce({MessageId: 'msg-1', $metadata: {}}).mockRejectedValueOnce(new Error('fail'))
 
     await expect(handler(makeRecord())).resolves.toBeUndefined()
   })
@@ -202,13 +219,16 @@ describe('SendPushNotification Lambda', () => {
       {userId: 'user-1', deviceId: 'dev-1', createdAt: new Date()},
       {userId: 'user-1', deviceId: 'dev-2', createdAt: new Date()}
     ])
-    vi.mocked(getDevice)
-      .mockResolvedValueOnce({deviceId: 'dev-1', name: 'iPhone', token: 'tok1', systemVersion: '17', systemName: 'iOS', endpointArn: 'arn:endpoint/dev-1'})
-      .mockResolvedValueOnce({deviceId: 'dev-2', name: 'iPad', token: 'tok2', systemVersion: '17', systemName: 'iPadOS', endpointArn: 'arn:endpoint/dev-2'})
+    vi.mocked(getDevice).mockResolvedValueOnce({
+      deviceId: 'dev-1',
+      name: 'iPhone',
+      token: 'tok1',
+      systemVersion: '17',
+      systemName: 'iOS',
+      endpointArn: 'arn:endpoint/dev-1'
+    }).mockResolvedValueOnce({deviceId: 'dev-2', name: 'iPad', token: 'tok2', systemVersion: '17', systemName: 'iPadOS', endpointArn: 'arn:endpoint/dev-2'})
     // First device succeeds, second has disabled endpoint
-    vi.mocked(publish)
-      .mockResolvedValueOnce({MessageId: 'msg-1'})
-      .mockRejectedValueOnce(new Error('EndpointDisabled'))
+    vi.mocked(publish).mockResolvedValueOnce({MessageId: 'msg-1', $metadata: {}}).mockRejectedValueOnce(new Error('EndpointDisabled'))
     vi.mocked(cleanupDisabledEndpoints).mockRejectedValue(new Error('cleanup failed'))
 
     // Should not throw because at least one device succeeded

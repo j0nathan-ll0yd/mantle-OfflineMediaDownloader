@@ -17,9 +17,9 @@ vi.mock('@mantleframework/observability',
     startSpan: vi.fn(() => 'mock-span')
   }))
 
-vi.mock('@mantleframework/validation', () => ({defineApiHandler: vi.fn(() => (innerHandler: Function) => innerHandler)}))
+vi.mock('@mantleframework/validation', () => ({defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
 
-const {handler} = await import('#lambdas/api/device/event.post.js')
+const {handler} = (await import('#lambdas/api/device/event.post.js')) as any
 import {addAnnotation, endSpan, logInfo, metrics, startSpan} from '@mantleframework/observability'
 
 describe('DeviceEvent Lambda', () => {

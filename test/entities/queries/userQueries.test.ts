@@ -5,21 +5,17 @@
  * non-null assertions on returning(), and Zod validation passthrough.
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {createMockDrizzleDb, createDefineQueryMock} from '#test/helpers/defineQuery-mock'
+import {createDefineQueryMock, createMockDrizzleDb} from '#test/helpers/defineQuery-mock'
 import {createMockUser} from '#test/helpers/entity-fixtures'
 
 const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
 vi.mock('#db/schema', () => ({users: {id: 'id', email: 'email'}}))
-vi.mock('#db/zodSchemas', () => ({
-  userInsertSchema: {parse: vi.fn((v: unknown) => v)},
-  userUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))}
-}))
+vi.mock('#db/zodSchemas',
+  () => ({userInsertSchema: {parse: vi.fn((v: unknown) => v)}, userUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))}}))
 vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm', () => ({
-  eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition')
-}))
+vi.mock('@mantleframework/database/orm', () => ({eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition')}))
 
 const {getUser, getUsersByEmail, createUser, updateUser, deleteUser} = await import('#entities/queries/userQueries')
 

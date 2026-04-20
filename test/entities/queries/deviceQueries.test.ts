@@ -6,26 +6,20 @@
  * and non-null assertions on returning().
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {createMockDrizzleDb, createDefineQueryMock} from '#test/helpers/defineQuery-mock'
+import {createDefineQueryMock, createMockDrizzleDb} from '#test/helpers/defineQuery-mock'
 import {createMockDevice} from '#test/helpers/entity-fixtures'
 
 const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
 vi.mock('#db/schema', () => ({devices: {deviceId: 'deviceId'}}))
-vi.mock('#db/zodSchemas', () => ({
-  deviceInsertSchema: {parse: vi.fn((v: unknown) => v)},
-  deviceUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))}
-}))
+vi.mock('#db/zodSchemas',
+  () => ({deviceInsertSchema: {parse: vi.fn((v: unknown) => v)}, deviceUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))}}))
 vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm', () => ({
-  eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'),
-  inArray: vi.fn((_col: unknown, _vals: unknown) => 'inArray-condition')
-}))
+vi.mock('@mantleframework/database/orm',
+  () => ({eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'), inArray: vi.fn((_col: unknown, _vals: unknown) => 'inArray-condition')}))
 
-const {getDevice, getDevicesBatch, createDevice, upsertDevice, updateDevice, deleteDevice, getAllDevices} = await import(
-  '#entities/queries/deviceQueries'
-)
+const {getDevice, getDevicesBatch, createDevice, upsertDevice, updateDevice, deleteDevice, getAllDevices} = await import('#entities/queries/deviceQueries')
 
 describe('Device Queries', () => {
   beforeEach(() => {

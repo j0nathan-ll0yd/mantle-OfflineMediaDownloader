@@ -29,7 +29,7 @@ vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), logError: v
 
 vi.mock('@mantleframework/validation',
   () => ({
-    defineApiHandler: vi.fn(() => (innerHandler: Function) => innerHandler),
+    defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({})), number: vi.fn(() => ({}))}
   }))
 
@@ -41,7 +41,7 @@ vi.mock('#integrations/github/issueService', () => ({createFailedUserDeletionIss
 
 vi.mock('#services/device/deviceService', () => ({deleteDevice: vi.fn(), getUserDevices: vi.fn()}))
 
-const {handler} = await import('#lambdas/api/user/index.delete.js')
+const {handler} = (await import('#lambdas/api/user/index.delete.js')) as any
 import {deleteUser, deleteUserDevicesByUserId, deleteUserFilesByUserId, getDevicesBatch} from '#entities/queries'
 import {createFailedUserDeletionIssue} from '#integrations/github/issueService'
 import {deleteDevice, getUserDevices} from '#services/device/deviceService'

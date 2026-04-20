@@ -37,7 +37,7 @@ vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn()}))
 
 vi.mock('@mantleframework/validation',
   () => ({
-    defineApiHandler: vi.fn(() => (innerHandler: Function) => innerHandler),
+    defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({optional: vi.fn(() => ({}))}))}
   }))
 
@@ -51,7 +51,7 @@ vi.mock('#types/api-schema', () => ({deviceRegistrationResponseSchema: {}}))
 
 vi.mock('#utils/platform-config', () => ({verifyPlatformConfiguration: vi.fn()}))
 
-const {handler} = await import('#lambdas/api/device/register.post.js')
+const {handler} = (await import('#lambdas/api/device/register.post.js')) as any
 import {createPlatformEndpoint, listSubscriptionsByTopic} from '@mantleframework/aws'
 import {upsertDevice, upsertUserDevice} from '#entities/queries'
 import {getUserDevices, subscribeEndpointToTopic, unsubscribeEndpointToTopic} from '#services/device/deviceService'
@@ -62,7 +62,7 @@ describe('RegisterDevice Lambda', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(createPlatformEndpoint).mockResolvedValue({EndpointArn: 'arn:aws:sns:endpoint/dev-1'})
+    vi.mocked(createPlatformEndpoint).mockResolvedValue({EndpointArn: 'arn:aws:sns:endpoint/dev-1', $metadata: {}})
     vi.mocked(upsertDevice).mockResolvedValue(undefined as never)
     vi.mocked(upsertUserDevice).mockResolvedValue(undefined as never)
   })
@@ -105,7 +105,8 @@ describe('RegisterDevice Lambda', () => {
         Protocol: 'application',
         Owner: '123',
         TopicArn: 'arn:aws:sns:topic'
-      }]
+      }],
+      $metadata: {}
     })
     vi.mocked(unsubscribeEndpointToTopic).mockResolvedValue(undefined as never)
 
@@ -129,7 +130,7 @@ describe('RegisterDevice Lambda', () => {
       {userId: 'user-1', deviceId: 'dev-1', createdAt: new Date()},
       {userId: 'user-1', deviceId: 'dev-2', createdAt: new Date()}
     ])
-    vi.mocked(listSubscriptionsByTopic).mockResolvedValue({Subscriptions: undefined})
+    vi.mocked(listSubscriptionsByTopic).mockResolvedValue({Subscriptions: undefined, $metadata: {}})
 
     await expect(handler({context: {awsRequestId: 'req-1'}, userId: 'user-1', userStatus: 'Authenticated', body: baseBody})).rejects.toThrow(
       'AWS request failed'
@@ -148,7 +149,8 @@ describe('RegisterDevice Lambda', () => {
         Protocol: 'application',
         Owner: '123',
         TopicArn: 'arn:aws:sns:topic'
-      }]
+      }],
+      $metadata: {}
     })
 
     await expect(handler({context: {awsRequestId: 'req-1'}, userId: 'user-1', userStatus: 'Authenticated', body: baseBody})).rejects.toThrow(

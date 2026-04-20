@@ -17,7 +17,7 @@ vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), metrics: {a
 
 vi.mock('@mantleframework/validation',
   () => ({
-    defineApiHandler: vi.fn(() => (innerHandler: Function) => innerHandler),
+    defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({optional: vi.fn(() => ({default: vi.fn()}))})), string: vi.fn(() => ({optional: vi.fn(() => ({default: vi.fn()}))}))}
   }))
 
@@ -44,7 +44,7 @@ vi.mock('#types/api-schema', () => ({fileListResponseSchema: {}}))
 
 vi.mock('#types/enums', () => ({FileStatus: {Queued: 'Queued', Downloading: 'Downloading', Downloaded: 'Downloaded', Failed: 'Failed'}}))
 
-const {handler} = await import('#lambdas/api/files/index.get.js')
+const {handler} = (await import('#lambdas/api/files/index.get.js')) as any
 import {getFilesForUser} from '#entities/queries'
 import {getDefaultFile} from '#config/constants'
 import {buildValidatedResponse} from '@mantleframework/core'
