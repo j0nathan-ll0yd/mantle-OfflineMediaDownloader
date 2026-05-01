@@ -3,7 +3,7 @@
 
 ## Mantle Convention Enforcement
 
-This is a Mantle framework instance (the original project Mantle was extracted from). All code must conform to 92 convention checks (C1-C92).
+This is a Mantle framework instance (the original project Mantle was extracted from). All code must conform to 95 convention checks (C1-C95).
 
 - **Checks**: Imported above from `~/.claude/principles/mantle-checks.md`
 - **Full principles**: `~/.claude/principles/mantle.md` — rationale and deep dives

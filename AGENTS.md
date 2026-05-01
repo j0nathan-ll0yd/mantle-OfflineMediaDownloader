@@ -2,7 +2,7 @@
 
 ## Convention Enforcement
 
-Conventions are enforced by `mantle check` (92 checks, C1-C92) and documented in `~/.claude/principles/mantle.md`. Architecture decisions are recorded as ADRs in `docs/wiki/Decisions/`.
+Conventions are enforced by `mantle check` (95 checks, C1-C95) and documented in `~/.claude/principles/mantle.md`. Architecture decisions are recorded as ADRs in `docs/wiki/Decisions/`.
 
 ---
 
@@ -166,7 +166,7 @@ See [System Diagrams](docs/wiki/Architecture/System-Diagrams.md) for Lambda Trig
 
 ## Conventions Reference
 
-Convention enforcement is handled by `mantle check` (92 checks) and `~/.claude/principles/mantle.md`. Key references:
+Convention enforcement is handled by `mantle check` (95 checks) and `~/.claude/principles/mantle.md`. Key references:
 
 - **Bash Scripts**: [docs/wiki/Bash/Script-Patterns.md](docs/wiki/Bash/Script-Patterns.md)
 - **Mock Patterns**: [docs/wiki/Testing/Mock-Factory-Patterns.md](docs/wiki/Testing/Mock-Factory-Patterns.md)
@@ -345,7 +345,7 @@ See `package.json` for complete command list (cleanup, integration tests, deploy
 
 ## Mantle Spec Conformance — Acknowledged Exceptions
 
-This project passes all Mantle spec checks (C1–C92) with three documented exceptions:
+This project passes all Mantle spec checks (C1–C95) with three documented exceptions:
 
 ### C6: MigrateDSQL dynamic env var substitution
 `src/lambdas/standalone/MigrateDSQL/index.ts:44` uses `process.env[varName]` for dynamic variable substitution in SQL migration files. This is intentional because the variable name is not known at compile time (comes from `${VAR_NAME}` patterns in SQL files), and `getOptionalEnv`/`getRequiredEnv` require a static string key. The eslint-disable comment documents the reason. The access is inside a function body (not module-level).
