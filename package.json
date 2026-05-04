@@ -164,7 +164,7 @@
     "husky": "^9.1.7",
     "istanbul-lib-instrument": "^6.0.3",
     "mock-jwks": "^3.3.5",
-    "puppeteer-core": "^24.41.0",
+    "puppeteer-core": "^24.42.0",
     "repomix": "^1.13.1",
     "ts-morph": "^27.0.2",
     "tsx": "^4.21.0",
