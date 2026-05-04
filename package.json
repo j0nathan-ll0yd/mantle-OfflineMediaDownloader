@@ -135,7 +135,7 @@
     "@aws-sdk/client-sqs": "3.1029.0",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
-    "@huggingface/transformers": "^4.1.0",
+    "@huggingface/transformers": "^4.2.0",
     "@lancedb/lancedb": "^0.27.2",
     "@mantleframework/cli": "link:../mantle/packages/cli",
     "@mantleframework/eslint-config": "link:../mantle/packages/eslint-config",
