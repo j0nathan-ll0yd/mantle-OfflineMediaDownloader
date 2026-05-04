@@ -165,7 +165,7 @@
     "istanbul-lib-instrument": "^6.0.3",
     "mock-jwks": "^3.3.5",
     "puppeteer-core": "^24.41.0",
-    "repomix": "^1.13.1",
+    "repomix": "^1.14.0",
     "ts-morph": "^27.0.2",
     "tsx": "^4.21.0",
     "typescript": "6.0.2",
