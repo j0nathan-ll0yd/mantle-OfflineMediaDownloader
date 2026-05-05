@@ -5,6 +5,7 @@ import {getRequiredEnv} from '@mantleframework/env'
 import {defineMcpHandler, frameworkTools, McpAuthMode} from '@mantleframework/mcp'
 import type {McpDatabaseConnection} from '@mantleframework/mcp'
 
+// mantle-ignore observability-coverage — defineMcpHandler wraps with withObservability internally
 defineLambda({timeout: 30, memorySize: 512, env: ['DATA_BUCKET', 'EVENT_BUS_NAME']})
 
 async function getDevToolsConnection(): Promise<McpDatabaseConnection> {
