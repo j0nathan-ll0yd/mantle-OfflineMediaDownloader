@@ -16,9 +16,6 @@ api_quota_limit          = 10000
 # Protect production data
 dsql_deletion_protection = true
 
-# Monitoring
-enable_cloudwatch_dashboard = false # Use AWS Console on-demand ($3/month savings)
-
 # Production concurrency
 reserved_concurrency_start_file_upload = 10
 

@@ -25,7 +25,7 @@ export default defineConfig({
     {name: 'api_throttle_rate_limit', type: 'number', description: 'API Gateway throttle rate limit', default: '50'},
     {name: 'api_quota_limit', type: 'number', description: 'API Gateway daily quota limit', default: '10000'},
     {name: 'dsql_deletion_protection', type: 'bool', description: 'Enable deletion protection for DSQL cluster', default: 'true'},
-    {name: 'enable_cloudwatch_dashboard', type: 'bool', description: 'Enable CloudWatch dashboard (costs $3/month per environment)', default: 'false'},
+
     {
       name: 'cors_allowed_origins',
       type: 'list(string)',
@@ -36,6 +36,7 @@ export default defineConfig({
   ],
   eventbridge: {
     bus: 'MediaDownloader',
+    dlqAlarm: false,
     sqsTargets: [
       {
         detailType: 'DownloadRequested',
@@ -52,7 +53,8 @@ export default defineConfig({
   },
   observability: {
     adot: true,
-    metricsNamespace: 'MediaDownloader'
+    metricsNamespace: 'MediaDownloader',
+    disableMetrics: true
   },
   secrets: {
     provider: 'sops',
