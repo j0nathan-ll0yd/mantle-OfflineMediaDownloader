@@ -69,7 +69,7 @@ Revisit this decision if:
 3. lat.md gains institutional backing (for example, Linux Foundation or major vendor adoption)
 
 ## Related
-- Mantle convention checks (`~/.claude/principles/mantle-checks.md`), covering C1-C92
+- Mantle convention checks (`~/.claude/principles/mantle-checks.md`), covering C1-C95
 - `validate-doc-sync.sh` Check #7, expanded to scan AGENTS.md/CLAUDE.md
 - `mantle check docs`, new CLI subcommand added alongside this ADR
 - [lat.md repository](https://github.com/1st1/lat.md), the evaluated tool
