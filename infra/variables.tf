@@ -42,6 +42,12 @@ variable "dsql_endpoint" {
   default     = ""
 }
 
+variable "multi_authentication_path_parts" {
+  description = "multi authentication path parts"
+  type        = string
+  default     = ""
+}
+
 variable "node_env" {
   description = "node env"
   type        = string
@@ -54,8 +60,45 @@ variable "reserved_client_ip" {
   default     = ""
 }
 
-variable "multi_authentication_path_parts" {
-  description = "multi authentication path parts"
+variable "data_bucket" {
+  description = "data bucket"
+  type        = string
+  default     = ""
+}
+
+variable "github_personal_token" {
+  description = "github personal token"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "path" {
+  description = "path"
+  type        = string
+  default     = ""
+}
+
+variable "ytdlp_sleep_requests" {
+  description = "ytdlp sleep requests"
+  type        = string
+  default     = ""
+}
+
+variable "ytdlp_sleep_interval" {
+  description = "ytdlp sleep interval"
+  type        = string
+  default     = ""
+}
+
+variable "ytdlp_max_sleep_interval" {
+  description = "ytdlp max sleep interval"
+  type        = string
+  default     = ""
+}
+
+variable "ytdlp_binary_path" {
+  description = "ytdlp binary path"
   type        = string
   default     = ""
 }
@@ -90,43 +133,6 @@ variable "apns_host" {
   description = "apns host"
   type        = string
   default     = ""
-}
-
-variable "path" {
-  description = "path"
-  type        = string
-  default     = ""
-}
-
-variable "ytdlp_sleep_requests" {
-  description = "ytdlp sleep requests"
-  type        = string
-  default     = ""
-}
-
-variable "ytdlp_sleep_interval" {
-  description = "ytdlp sleep interval"
-  type        = string
-  default     = ""
-}
-
-variable "ytdlp_max_sleep_interval" {
-  description = "ytdlp max sleep interval"
-  type        = string
-  default     = ""
-}
-
-variable "ytdlp_binary_path" {
-  description = "ytdlp binary path"
-  type        = string
-  default     = ""
-}
-
-variable "github_personal_token" {
-  description = "github personal token"
-  type        = string
-  default     = ""
-  sensitive   = true
 }
 
 variable "auth_secret" {
