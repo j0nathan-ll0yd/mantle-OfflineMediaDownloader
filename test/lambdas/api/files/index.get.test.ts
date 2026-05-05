@@ -17,11 +17,10 @@ vi.mock('@mantleframework/core',
 
 vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
 
-vi.mock('@mantleframework/validation',
-  () => ({
-    defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
-    z: {object: vi.fn(() => ({optional: vi.fn(() => ({default: vi.fn()}))})), string: vi.fn(() => ({optional: vi.fn(() => ({default: vi.fn()}))}))}
-  }))
+vi.mock('@mantleframework/validation', () => {
+  const chainable = (): Record<string, unknown> => new Proxy({}, {get: () => chainable})
+  return {defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler), z: new Proxy({}, {get: () => chainable})}
+})
 
 vi.mock('#config/constants',
   () => ({
