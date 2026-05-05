@@ -152,7 +152,7 @@
     "@vitest/coverage-v8": "^4.1.4",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-vitest": "^7.0.1",
-    "dependency-cruiser": "^17.3.10",
+    "dependency-cruiser": "^17.4.0",
     "dprint": "^0.54.0",
     "drizzle-kit": "^0.31.10",
     "esbuild": "^0.28.0",
