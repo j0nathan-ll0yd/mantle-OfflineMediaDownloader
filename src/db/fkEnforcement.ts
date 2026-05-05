@@ -11,24 +11,11 @@
  * @see https://docs.aws.amazon.com/aurora-dsql/latest/userguide/working-with-postgresql-compatibility-unsupported-features.html
  */
 import {eq} from '@mantleframework/database/orm'
+import {ForeignKeyViolationError} from '@mantleframework/errors'
 import {getDrizzleClient} from './client.js'
 import {devices, files, users} from './schema.js'
 
-/**
- * Error thrown when a foreign key constraint would be violated.
- */
-export class ForeignKeyViolationError extends Error {
-  readonly table: string
-  readonly column: string
-  readonly value: string
-  constructor(table: string, column: string, value: string) {
-    super(`Foreign key violation: ${table}.${column} = ${value} does not exist`)
-    this.name = 'ForeignKeyViolationError'
-    this.table = table
-    this.column = column
-    this.value = value
-  }
-}
+export { ForeignKeyViolationError }
 
 /**
  * Asserts that a user exists in the database.
