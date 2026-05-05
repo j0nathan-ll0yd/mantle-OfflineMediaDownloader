@@ -216,6 +216,14 @@ Convention enforcement is handled by `mantle check` (95 checks) and `~/.claude/p
 Queued | Downloading | Downloaded | Failed
 ```
 
+## MCP Tools (Developer Debugging)
+
+This instance can register framework MCP tools at `src/lambdas/mcp/DevTools/`. Access via Claude Code MCP integration with bearer token auth.
+
+**Framework tools (from `@mantleframework/mcp/tools`):** fetch_lambda_logs, query_database, describe_database_schema, verify_credentials, list_s3_objects, get_s3_object, list_eventbridge_rules, trace_lambda_invocations
+
+**Usage:** These tools are read-only. Use them for debugging server-side errors, verifying deploys, and inspecting database state. Prefer these over manual `aws` CLI commands (C95).
+
 ## Development Workflow
 
 ### Essential Commands

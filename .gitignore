@@ -98,3 +98,6 @@ deployment-logs/
 .claude/
 .beads/
 .logs/
+
+# Agent enforcement symlinks
+.claude/rules/

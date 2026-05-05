@@ -32,6 +32,9 @@ importers:
       '@mantleframework/errors':
         specifier: link:../mantle/packages/errors
         version: link:../mantle/packages/errors
+      '@mantleframework/mcp':
+        specifier: link:../mantle/packages/mcp
+        version: link:../mantle/packages/mcp
       '@mantleframework/observability':
         specifier: link:../mantle/packages/observability
         version: link:../mantle/packages/observability

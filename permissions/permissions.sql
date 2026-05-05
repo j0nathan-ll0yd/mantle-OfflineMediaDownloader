@@ -1,17 +1,22 @@
 -- Per-Lambda PostgreSQL roles with fine-grained table permissions
 -- Auto-generated from @RequiresTable decorators
--- Generated at: 2026-04-19T23:19:17.255Z
+-- Generated at: 2026-05-05T15:19:23.447Z
 
 -- CREATE ROLES
 
 CREATE ROLE lambda_api_gateway_authorizer WITH LOGIN;
 CREATE ROLE lambda_device_register WITH LOGIN;
+CREATE ROLE lambda_download_orchestrator WITH LOGIN;
+CREATE ROLE lambda_endpoint_cleanup_helpers WITH LOGIN;
+CREATE ROLE lambda_failure_handler WITH LOGIN;
 CREATE ROLE lambda_feedly_webhook WITH LOGIN;
 CREATE ROLE lambda_file_helpers WITH LOGIN;
 CREATE ROLE lambda_files_by_id_delete WITH LOGIN;
 CREATE ROLE lambda_files_get WITH LOGIN;
 CREATE ROLE lambda_prune_devices WITH LOGIN;
+CREATE ROLE lambda_push_helpers WITH LOGIN;
 CREATE ROLE lambda_s3_object_created WITH LOGIN;
+CREATE ROLE lambda_s3_recovery WITH LOGIN;
 CREATE ROLE lambda_send_push_notification WITH LOGIN;
 CREATE ROLE lambda_start_file_upload WITH LOGIN;
 CREATE ROLE lambda_user_delete WITH LOGIN;
@@ -30,6 +35,20 @@ GRANT SELECT, UPDATE ON sessions TO lambda_api_gateway_authorizer;
 GRANT DELETE, INSERT, SELECT, UPDATE ON devices TO lambda_device_register;
 GRANT DELETE, INSERT, SELECT ON user_devices TO lambda_device_register;
 
+-- DownloadOrchestrator
+GRANT INSERT, SELECT, UPDATE ON file_downloads TO lambda_download_orchestrator;
+GRANT INSERT, SELECT, UPDATE ON files TO lambda_download_orchestrator;
+GRANT SELECT ON user_files TO lambda_download_orchestrator;
+
+-- EndpointCleanupHelpers
+GRANT DELETE, SELECT ON devices TO lambda_endpoint_cleanup_helpers;
+GRANT DELETE, SELECT ON user_devices TO lambda_endpoint_cleanup_helpers;
+
+-- FailureHandler
+GRANT INSERT, SELECT, UPDATE ON file_downloads TO lambda_failure_handler;
+GRANT SELECT, UPDATE ON files TO lambda_failure_handler;
+GRANT SELECT ON user_files TO lambda_failure_handler;
+
 -- FeedlyWebhook
 GRANT INSERT, SELECT ON file_downloads TO lambda_feedly_webhook;
 GRANT INSERT, SELECT ON files TO lambda_feedly_webhook;
@@ -44,16 +63,26 @@ GRANT DELETE, SELECT ON files TO lambda_files_by_id_delete;
 GRANT DELETE, SELECT ON user_files TO lambda_files_by_id_delete;
 
 -- FilesGet
-GRANT SELECT ON files TO lambda_files_get;
+GRANT INSERT, SELECT ON file_downloads TO lambda_files_get;
+GRANT INSERT, SELECT ON files TO lambda_files_get;
 GRANT SELECT ON user_files TO lambda_files_get;
 
 -- PruneDevices
 GRANT DELETE, SELECT ON devices TO lambda_prune_devices;
 GRANT DELETE, SELECT ON user_devices TO lambda_prune_devices;
 
+-- PushHelpers
+GRANT SELECT ON devices TO lambda_push_helpers;
+GRANT SELECT ON user_devices TO lambda_push_helpers;
+
 -- S3ObjectCreated
 GRANT SELECT ON files TO lambda_s3_object_created;
 GRANT SELECT ON user_files TO lambda_s3_object_created;
+
+-- S3Recovery
+GRANT INSERT, SELECT, UPDATE ON file_downloads TO lambda_s3_recovery;
+GRANT INSERT, SELECT, UPDATE ON files TO lambda_s3_recovery;
+GRANT SELECT ON user_files TO lambda_s3_recovery;
 
 -- SendPushNotification
 GRANT DELETE, SELECT ON devices TO lambda_send_push_notification;
@@ -67,8 +96,8 @@ GRANT SELECT ON user_files TO lambda_start_file_upload;
 -- UserDelete
 GRANT DELETE, SELECT ON devices TO lambda_user_delete;
 GRANT DELETE, SELECT ON user_devices TO lambda_user_delete;
-GRANT DELETE ON user_files TO lambda_user_delete;
-GRANT DELETE ON users TO lambda_user_delete;
+GRANT DELETE, SELECT ON user_files TO lambda_user_delete;
+GRANT DELETE, SELECT ON users TO lambda_user_delete;
 
 -- UserLogin
 GRANT SELECT, INSERT, UPDATE ON users TO lambda_user_login;
@@ -95,19 +124,24 @@ GRANT SELECT, UPDATE, INSERT ON users TO lambda_user_register;
 GRANT SELECT, INSERT, DELETE ON verification TO lambda_user_register;
 
 -- UserSubscribe
-GRANT DELETE ON devices TO lambda_user_subscribe;
+GRANT DELETE, SELECT ON devices TO lambda_user_subscribe;
 GRANT DELETE, SELECT ON user_devices TO lambda_user_subscribe;
 
 -- AWS IAM GRANT
 
 AWS IAM GRANT lambda_api_gateway_authorizer TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-ApiGatewayAuthorizer';
 AWS IAM GRANT lambda_device_register TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-DeviceRegister';
+AWS IAM GRANT lambda_download_orchestrator TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-DownloadOrchestrator';
+AWS IAM GRANT lambda_endpoint_cleanup_helpers TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-EndpointCleanupHelpers';
+AWS IAM GRANT lambda_failure_handler TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-FailureHandler';
 AWS IAM GRANT lambda_feedly_webhook TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-FeedlyWebhook';
 AWS IAM GRANT lambda_file_helpers TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-FileHelpers';
 AWS IAM GRANT lambda_files_by_id_delete TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-FilesByIdDelete';
 AWS IAM GRANT lambda_files_get TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-FilesGet';
 AWS IAM GRANT lambda_prune_devices TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-PruneDevices';
+AWS IAM GRANT lambda_push_helpers TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-PushHelpers';
 AWS IAM GRANT lambda_s3_object_created TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-S3ObjectCreated';
+AWS IAM GRANT lambda_s3_recovery TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-S3Recovery';
 AWS IAM GRANT lambda_send_push_notification TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-SendPushNotification';
 AWS IAM GRANT lambda_start_file_upload TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-StartFileUpload';
 AWS IAM GRANT lambda_user_delete TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-UserDelete';

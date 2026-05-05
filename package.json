@@ -102,6 +102,7 @@
     "@mantleframework/observability": "link:../mantle/packages/observability",
     "@mantleframework/resilience": "link:../mantle/packages/resilience",
     "@mantleframework/security": "link:../mantle/packages/security",
+    "@mantleframework/mcp": "link:../mantle/packages/mcp",
     "@mantleframework/validation": "link:../mantle/packages/validation",
     "@octokit/rest": "^22.0.1",
     "apns2": "12.2.0",
