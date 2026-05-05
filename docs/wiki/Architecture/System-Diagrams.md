@@ -180,6 +180,7 @@ erDiagram
 |--------|-------------|--------|---------|
 | ApiGatewayAuthorizer | API Gateway | All authenticated routes | Authorize API requests via Better Auth |
 | CleanupExpiredRecords | CloudWatch Events | Daily schedule (3 AM UTC) | Clean expired records |
+| DevTools | Lambda Function URL | MCP JSON-RPC 2.0 | MCP DevTools server with 8 framework debugging tools |
 | DeviceEvent | API Gateway | POST /device/event | Log client-side device events |
 | DeleteFile | API Gateway | DELETE /files/{fileId} | Delete file, cascade user-file link, optional S3 cleanup |
 | ListFiles | API Gateway | GET /files | List user's available files |

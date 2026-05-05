@@ -100,6 +100,15 @@
       }
     },
     {
+      "id": "lambda:mcp/DevTools",
+      "type": "Lambda",
+      "properties": {
+        "name": "mcp/DevTools",
+        "trigger": "Lambda Function URL",
+        "purpose": "MCP DevTools server exposing 8 framework debugging tools via JSON-RPC 2.0"
+      }
+    },
+    {
       "id": "lambda:s3/S3ObjectCreated",
       "type": "Lambda",
       "properties": {
