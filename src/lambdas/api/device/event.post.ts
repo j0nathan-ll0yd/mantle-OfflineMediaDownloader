@@ -14,7 +14,6 @@ import {defineApiHandler} from '@mantleframework/validation'
 
 const api = defineApiHandler({auth: 'none', operationName: 'DeviceEvent'})
 export const handler = api(async ({event, context}) => {
-  // Track device event received
   metrics.addMetric('DeviceEventReceived', MetricUnit.Count, 1)
 
   const span = startSpan('device-event-log')

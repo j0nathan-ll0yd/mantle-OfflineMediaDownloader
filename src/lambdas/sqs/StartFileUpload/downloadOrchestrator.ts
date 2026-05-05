@@ -61,7 +61,6 @@ export async function processDownloadRequest(message: ValidatedDownloadQueueMess
     logInfo('Processing download request', {fileId, correlationId, receiveCount})
   }
 
-  // Get existing download state for retry counting
   const {retryCount: existingRetryCount, maxRetries: existingMaxRetries} = await getExistingDownloadState(fileId)
 
   await updateDownloadState(fileId, DownloadStatus.InProgress, undefined, existingRetryCount)

@@ -646,7 +646,8 @@ export async function downloadVideoToS3(
 
     return {fileSize, s3Url, duration}
   } catch (error) {
-    logError('downloadVideoToS3 error', {error: error instanceof Error ? error.message : String(error)})
+    const message = error instanceof Error ? error.message : String(error)
+    logError('downloadVideoToS3 error', {error: message})
 
     // Always try to clean up temp file
     try {
@@ -658,23 +659,14 @@ export async function downloadVideoToS3(
     // Publish failure metric (flushed by Powertools middleware in calling Lambda)
     metrics.addMetric('VideoDownloadFailure', MetricUnit.Count, 1)
 
-    // Re-throw CookieExpirationError without wrapping
-    if (error instanceof CookieExpirationError) {
-      // Track auth failure with error type for CloudWatch alarm
-      const errorSeverity = classifyCookieError(error.message)
-      metrics.addDimension('ErrorType', errorSeverity || 'unknown')
-      metrics.addMetric('YouTubeAuthFailure', MetricUnit.Count, 1)
-      throw error
-    }
-
-    // Check if error message contains cookie expiration indicators
-    const message = error instanceof Error ? error.message : String(error)
+    // Classify cookie/auth errors and rethrow with metrics
     if (isCookieExpirationError(message)) {
-      // Track auth failure with error type for CloudWatch alarm
       const errorSeverity = classifyCookieError(message)
       metrics.addDimension('ErrorType', errorSeverity || 'unknown')
       metrics.addMetric('YouTubeAuthFailure', MetricUnit.Count, 1)
-      throw new CookieExpirationError(`YouTube cookie expiration or bot detection: ${message}`)
+      throw error instanceof CookieExpirationError
+        ? error
+        : new CookieExpirationError(`YouTube cookie expiration or bot detection: ${message}`)
     }
 
     throw new UnexpectedError(`Failed to download video to S3: ${message}`)

@@ -21,7 +21,6 @@ defineLambda({secrets: {AUTH_SECRET: 'platform.key'}})
 
 const api = defineApiHandler({auth: 'authorizer', operationName: 'LogoutUser'})
 export const handler = api(async ({event, context, userId}) => {
-  // Extract Bearer token from Authorization header
   const token = extractBearerToken(event.headers?.['authorization'])
   if (!token) {
     throw new UnauthorizedError('Missing Authorization header')
@@ -35,6 +34,5 @@ export const handler = api(async ({event, context, userId}) => {
 
   logInfo('LogoutUser: session expired successfully', {userId})
 
-  // Return 204 No Content
   return buildValidatedResponse(context, 204)
 })
