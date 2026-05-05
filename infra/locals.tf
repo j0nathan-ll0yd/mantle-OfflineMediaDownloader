@@ -22,5 +22,6 @@ locals {
     LOG_LEVEL                          = var.log_level
     ENVIRONMENT                        = var.environment
     METRICS_NAMESPACE                  = "MediaDownloader"
+    POWERTOOLS_METRICS_DISABLED        = var.disable_metrics ? "true" : ""
   }
 }

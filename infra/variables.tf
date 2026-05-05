@@ -36,6 +36,12 @@ variable "log_retention_days" {
   default     = 14
 }
 
+variable "disable_metrics" {
+  description = "Disable CloudWatch custom metrics emission (sets POWERTOOLS_METRICS_DISABLED)"
+  type        = bool
+  default     = false
+}
+
 variable "dsql_endpoint" {
   description = "Aurora DSQL cluster endpoint (set after initial provisioning or pass from database module)"
   type        = string
@@ -195,12 +201,6 @@ variable "dsql_deletion_protection" {
   description = "Enable deletion protection for DSQL cluster"
   type        = bool
   default     = true
-}
-
-variable "enable_cloudwatch_dashboard" {
-  description = "Enable CloudWatch dashboard (costs $3/month per environment)"
-  type        = bool
-  default     = false
 }
 
 variable "cors_allowed_origins" {

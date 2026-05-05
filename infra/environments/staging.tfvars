@@ -19,8 +19,8 @@ api_quota_limit          = 1000
 # Allow destruction in staging
 dsql_deletion_protection = false
 
-# Disable monitoring to reduce costs
-enable_cloudwatch_dashboard = false
+# Disable metrics emission in staging (POWERTOOLS_METRICS_DISABLED)
+disable_metrics = true
 
 # Disable reserved concurrency in staging (low-quota account)
 reserved_concurrency_start_file_upload = -1
