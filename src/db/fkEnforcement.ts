@@ -15,7 +15,7 @@ import {ForeignKeyViolationError} from '@mantleframework/errors'
 import {getDrizzleClient} from './client.js'
 import {devices, files, users} from './schema.js'
 
-export {ForeignKeyViolationError}
+export { ForeignKeyViolationError }
 
 /**
  * Asserts that a user exists in the database.
