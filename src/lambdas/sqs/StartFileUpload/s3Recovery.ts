@@ -5,7 +5,7 @@
  * Used when a download completed but the database update failed.
  */
 import {headObject} from '@mantleframework/aws'
-import {emitEvent, isOk, S3BucketName} from '@mantleframework/core'
+import {CloudFrontDistributionId, emitEvent, isOk, S3BucketName} from '@mantleframework/core'
 import {logDebug, logInfo, metrics, MetricUnit} from '@mantleframework/observability'
 import {getRequiredEnv} from '@mantleframework/env'
 import type {File} from '#types/domainModels'
@@ -50,7 +50,7 @@ export async function recoverFromS3(message: ValidatedDownloadQueueMessage, s3Si
   const {fileId, correlationId, sourceUrl} = message
   const fileUrl = sourceUrl || `https://www.youtube.com/watch?v=${fileId}`
   const fileName = `${fileId}.mp4`
-  const cloudfrontDomain = getRequiredEnv('CLOUDFRONT_DOMAIN')
+  const cloudfrontDomain = CloudFrontDistributionId(getRequiredEnv('CLOUDFRONT_DOMAIN'))
 
   logInfo('Recovering file from S3', {fileId, correlationId, s3Size})
   metrics.addMetric('S3FileRecoveryAttempt', MetricUnit.Count, 1)

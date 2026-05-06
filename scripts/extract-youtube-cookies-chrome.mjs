@@ -155,8 +155,8 @@ async function main() {
 
     // Check for auth cookies
     const authCookieNames = ['SID', 'SSID', 'HSID', 'APISID', 'SAPISID', 'LOGIN_INFO']
-    const cookieNames = youtubeCookies.map((c) => c.name)
-    const authCookiesFound = authCookieNames.filter((name) => cookieNames.includes(name))
+    const cookieNames = new Set(youtubeCookies.map((c) => c.name))
+    const authCookiesFound = authCookieNames.filter((name) => cookieNames.has(name))
 
     console.log(`  Auth cookies found: ${authCookiesFound.length} (${authCookiesFound.join(', ')})`)
 

@@ -8,7 +8,7 @@
  * Input: Authenticated or anonymous request
  * Output: APIGatewayProxyResult with file list
  *
- * @see {@link ../../../services/file/fileInitService.ts} for file transformation
+ * @see {@link file://../../../services/file/fileInitService.ts} for file transformation
  */
 import {buildValidatedResponse, defineLambda, UserStatus} from '@mantleframework/core'
 

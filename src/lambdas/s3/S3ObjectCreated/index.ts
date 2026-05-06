@@ -10,6 +10,7 @@
  */
 import {sendMessage} from '@mantleframework/aws'
 import {defineS3Handler} from '@mantleframework/core'
+import {SqsQueueUrl} from '@mantleframework/core'
 import {getRequiredEnv} from '@mantleframework/env'
 import {NotFoundError} from '@mantleframework/errors'
 import {addAnnotation, addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
@@ -40,7 +41,7 @@ async function getUsersOfFile(file: File): Promise<string[]> {
 /** Dispatches DownloadReadyNotification to a user via SQS */
 function dispatchFileNotificationToUser(file: File, userId: string) {
   const {messageBody, messageAttributes} = createDownloadReadyNotification(file, userId)
-  const sendMessageParams = {MessageBody: messageBody, MessageAttributes: messageAttributes, QueueUrl: getRequiredEnv('SNS_QUEUE_URL')}
+  const sendMessageParams = {MessageBody: messageBody, MessageAttributes: messageAttributes, QueueUrl: SqsQueueUrl(getRequiredEnv('SNS_QUEUE_URL'))}
   logDebug('sendMessage <=', sendMessageParams)
   return sendMessage(sendMessageParams)
 }

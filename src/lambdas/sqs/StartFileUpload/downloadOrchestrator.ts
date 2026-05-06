@@ -6,7 +6,7 @@
  * S3 upload, metadata update, and event emission.
  */
 import {getFileDownload, updateFile} from '#entities/queries'
-import {emitEvent, isOk, S3BucketName} from '@mantleframework/core'
+import {CloudFrontDistributionId, emitEvent, isOk, S3BucketName} from '@mantleframework/core'
 import {logDebug, logInfo, metrics, MetricUnit} from '@mantleframework/observability'
 import type {File} from '#types/domainModels'
 import type {DownloadCompletedDetail} from '#types/events'
@@ -113,7 +113,7 @@ export async function processDownloadRequest(message: ValidatedDownloadQueueMess
   logDebug('downloadVideoToS3 =>', uploadResult)
 
   // Step 3: Update permanent File entity with metadata
-  const cloudfrontDomain = getRequiredEnv('CLOUDFRONT_DOMAIN')
+  const cloudfrontDomain = CloudFrontDistributionId(getRequiredEnv('CLOUDFRONT_DOMAIN'))
   const fileData: File = {
     fileId: videoInfo.id,
     key: fileName,
