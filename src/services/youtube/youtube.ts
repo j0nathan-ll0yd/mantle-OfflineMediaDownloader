@@ -5,7 +5,7 @@ import type {YtDlpVideoInfo} from '#types/youtube'
 import {metrics, MetricUnit} from '@mantleframework/observability'
 import {logDebug, logError} from '@mantleframework/observability'
 import {CookieExpirationError} from '#errors/custom-errors'
-import {UnexpectedError} from '@mantleframework/errors'
+import {getErrorMessage, UnexpectedError} from '@mantleframework/errors'
 import {createUpload} from '@mantleframework/aws'
 import {getOptionalEnv, getRequiredEnv} from '@mantleframework/env'
 import {err, ok} from '@mantleframework/core'
@@ -264,7 +264,7 @@ function getVideoInfo(binaryPath: string, args: string[]): Promise<YtDlpVideoInf
         try {
           resolve(JSON.parse(stdout))
         } catch (parseError) {
-          reject(new Error(`Failed to parse yt-dlp JSON output: ${parseError}`))
+          reject(new Error(`Failed to parse yt-dlp JSON output: ${getErrorMessage(parseError)}`))
         }
       } else {
         reject(new Error(stderr || `yt-dlp exited with code ${code}`))

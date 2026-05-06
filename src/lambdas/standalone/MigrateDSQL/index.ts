@@ -4,6 +4,7 @@ import {defineLambda, withObservability} from '@mantleframework/core'
 import {logInfo} from '@mantleframework/observability'
 import {applyPermissions, runMigrations} from '@mantleframework/database'
 import type {MigrateResult, PermissionsResult} from '@mantleframework/database'
+import {DsqlClusterArn} from '@mantleframework/core'
 import {getRequiredEnv} from '@mantleframework/env'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -16,7 +17,12 @@ interface MigrateDSQLResult {
 }
 
 export const handler = withObservability({operationName: 'MigrateDSQL'}, async () => {
-  const database = {provider: 'aurora-dsql' as const, endpoint: getRequiredEnv('DSQL_ENDPOINT'), region: getRequiredEnv('AWS_REGION'), isAdmin: true}
+  const database = {
+    provider: 'aurora-dsql' as const,
+    endpoint: DsqlClusterArn(getRequiredEnv('DSQL_ENDPOINT')),
+    region: getRequiredEnv('AWS_REGION'),
+    isAdmin: true
+  }
   const logger = (msg: string) => logInfo(msg)
 
   // 1. Schema migrations (DDL) -- append-only, tracked

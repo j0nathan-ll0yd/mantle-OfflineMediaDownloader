@@ -13,11 +13,18 @@ import {
   withTransaction as _withTransaction
 } from '@mantleframework/database'
 import type {DatabaseConfig, TransactionClient} from '@mantleframework/database'
+import {DsqlClusterArn} from '@mantleframework/core'
 import {getRequiredEnv} from '@mantleframework/env'
 
 function getDbConfig(): DatabaseConfig {
   const username = getRequiredEnv('DSQL_ROLE_NAME')
-  return {provider: 'aurora-dsql', endpoint: getRequiredEnv('DSQL_ENDPOINT'), region: getRequiredEnv('DSQL_REGION'), username, isAdmin: username === 'admin'}
+  return {
+    provider: 'aurora-dsql',
+    endpoint: DsqlClusterArn(getRequiredEnv('DSQL_ENDPOINT')),
+    region: getRequiredEnv('DSQL_REGION'),
+    username,
+    isAdmin: username === 'admin'
+  }
 }
 
 /** Returns a Drizzle client configured for the project's Aurora DSQL instance. */

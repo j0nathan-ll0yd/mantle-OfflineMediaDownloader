@@ -4,7 +4,7 @@
  * Sends APNS push notifications to individual devices via SNS.
  * Routes to alert or background delivery based on notification type.
  *
- * @see {@link ./transformers.ts} for APNS payload construction
+ * @see {@link file://./transformers.ts} for APNS payload construction
  */
 import {getDevice as getDeviceRecord, getUserDevicesByUserId} from '#entities/queries'
 import {publish} from '@mantleframework/aws'

@@ -4,11 +4,12 @@
  * Dispatches push notifications to users via SQS.
  * Handles metadata, download-started, and failure notifications.
  *
- * @see {@link ../transformers.ts} for notification message construction
+ * @see {@link file://../transformers.ts} for notification message construction
  */
 import {getUserFilesByFileId} from '#entities/queries'
 import {sendMessage} from '@mantleframework/aws'
 import {logDebug, logInfo} from '@mantleframework/observability'
+import {SqsQueueUrl} from '@mantleframework/core'
 import {getRequiredEnv} from '@mantleframework/env'
 import {
   createDownloadProgressNotification,
@@ -26,7 +27,7 @@ import type {YtDlpVideoInfo} from '#types/youtube'
  * @param videoInfo - Video metadata from yt-dlp
  */
 export async function dispatchMetadataNotifications(fileId: string, videoInfo: YtDlpVideoInfo): Promise<void> {
-  const queueUrl = getRequiredEnv('SNS_QUEUE_URL')
+  const queueUrl = SqsQueueUrl(getRequiredEnv('SNS_QUEUE_URL'))
 
   const userFiles = await getUserFilesByFileId(fileId)
   const userIds = userFiles.map((uf) => uf.userId)
@@ -54,7 +55,7 @@ export async function dispatchMetadataNotifications(fileId: string, videoInfo: Y
  * @returns The list of userIds that were notified (for reuse in progress notifications)
  */
 export async function dispatchDownloadStartedNotifications(fileId: string, videoInfo: YtDlpVideoInfo): Promise<string[]> {
-  const queueUrl = getRequiredEnv('SNS_QUEUE_URL')
+  const queueUrl = SqsQueueUrl(getRequiredEnv('SNS_QUEUE_URL'))
 
   const userFiles = await getUserFilesByFileId(fileId)
   const userIds = userFiles.map((uf) => uf.userId)
@@ -87,7 +88,7 @@ export async function dispatchDownloadProgressNotifications(fileId: string, prog
     return
   }
 
-  const queueUrl = getRequiredEnv('SNS_QUEUE_URL')
+  const queueUrl = SqsQueueUrl(getRequiredEnv('SNS_QUEUE_URL'))
 
   const results = await Promise.allSettled(userIds.map((userId) => {
     const {messageBody, messageAttributes} = createDownloadProgressNotification(fileId, progressPercent, userId)
@@ -115,7 +116,7 @@ export async function dispatchFailureNotifications(
   retryExhausted: boolean,
   title?: string
 ): Promise<void> {
-  const queueUrl = getRequiredEnv('SNS_QUEUE_URL')
+  const queueUrl = SqsQueueUrl(getRequiredEnv('SNS_QUEUE_URL'))
 
   const userFiles = await getUserFilesByFileId(fileId)
   const userIds = userFiles.map((uf) => uf.userId)

@@ -6,6 +6,7 @@
  */
 import {sendMessage} from '@mantleframework/aws'
 import {logDebug} from '@mantleframework/observability'
+import {SqsQueueUrl} from '@mantleframework/core'
 import {getRequiredEnv} from '@mantleframework/env'
 import {createFile, createFileDownload, getFile as getFileRecord, getFilesForUser} from '#entities/queries'
 import {createDownloadReadyNotification} from '#services/notification/transformers'
@@ -62,7 +63,7 @@ export async function getFile(fileId: string): Promise<File | undefined> {
  */
 export async function sendFileNotification(file: File, userId: string) {
   const {messageBody, messageAttributes} = createDownloadReadyNotification(file, userId)
-  const sendMessageParams = {MessageBody: messageBody, MessageAttributes: messageAttributes, QueueUrl: getRequiredEnv('SNS_QUEUE_URL')}
+  const sendMessageParams = {MessageBody: messageBody, MessageAttributes: messageAttributes, QueueUrl: SqsQueueUrl(getRequiredEnv('SNS_QUEUE_URL'))}
   logDebug('sendMessage', {queueUrl: sendMessageParams.QueueUrl})
   const sendMessageResponse = await sendMessage(sendMessageParams)
   logDebug('sendMessage completed', {messageId: sendMessageResponse?.MessageId})
