@@ -19,7 +19,10 @@ runs:
           aarch64|arm64) SOPS_ARCH="arm64" ;;
           *) SOPS_ARCH="amd64" ;;
         esac
-        curl -sSLo /usr/local/bin/sops \
+        INSTALL_DIR="${HOME}/.local/bin"
+        mkdir -p "$INSTALL_DIR"
+        curl -sSLo "${INSTALL_DIR}/sops" \
           "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.${SOPS_ARCH}"
-        chmod +x /usr/local/bin/sops
-        sops --version
+        chmod +x "${INSTALL_DIR}/sops"
+        echo "$INSTALL_DIR" >> "$GITHUB_PATH"
+        "${INSTALL_DIR}/sops" --version
