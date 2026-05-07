@@ -9,7 +9,7 @@ permissions: {}
 
 jobs:
   mutation-test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 60
     permissions:
       contents: read

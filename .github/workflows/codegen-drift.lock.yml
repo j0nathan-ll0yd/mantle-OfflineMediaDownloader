@@ -71,7 +71,7 @@ jobs:
   activation:
     needs: pre_activation
     if: needs.pre_activation.outputs.activated == 'true'
-    runs-on: ubuntu-slim
+    runs-on: [self-hosted, linux, arm64, node]
     permissions:
       actions: read
       contents: read
@@ -309,7 +309,7 @@ jobs:
 
   agent:
     needs: activation
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     permissions:
       contents: read
     env:
@@ -901,7 +901,7 @@ jobs:
     if: >
       always() && (needs.agent.result != 'skipped' || needs.activation.outputs.lockdown_check_failed == 'true' ||
       needs.activation.outputs.stale_lock_file_failed == 'true')
-    runs-on: ubuntu-slim
+    runs-on: [self-hosted, linux, arm64, node]
     permissions:
       contents: read
       discussions: write
@@ -1037,7 +1037,7 @@ jobs:
       - agent
     if: >
       always() && needs.agent.result != 'skipped' && (needs.agent.outputs.output_types != '' || needs.agent.outputs.has_patch == 'true')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     permissions:
       contents: read
     outputs:
@@ -1216,7 +1216,7 @@ jobs:
             }
 
   pre_activation:
-    runs-on: ubuntu-slim
+    runs-on: [self-hosted, linux, arm64, node]
     outputs:
       activated: ${{ steps.check_membership.outputs.is_team_member == 'true' }}
       matched_command: ''
@@ -1251,7 +1251,7 @@ jobs:
       - agent
       - detection
     if: (!cancelled()) && needs.agent.result != 'skipped' && needs.detection.result == 'success'
-    runs-on: ubuntu-slim
+    runs-on: [self-hosted, linux, arm64, node]
     permissions:
       contents: read
       discussions: write

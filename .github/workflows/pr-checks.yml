@@ -13,7 +13,7 @@ concurrency:
 jobs:
   # Quick validation (no build required)
   quick-checks:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 10
     permissions:
       contents: read
@@ -59,7 +59,7 @@ jobs:
   # Final status check for branch protection
   pr-ready:
     needs: [full-ci, integration]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, base]
     timeout-minutes: 5
     if: always()
     permissions:

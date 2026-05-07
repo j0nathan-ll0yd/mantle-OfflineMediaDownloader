@@ -16,7 +16,7 @@ concurrency:
 jobs:
   # Parallel job 1: Validation checks (TypeSpec, API docs, config)
   validate:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 10
     permissions:
       contents: read
@@ -101,7 +101,7 @@ jobs:
 
   # Parallel job 2: Type checking and linting
   lint-and-types:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 15
     permissions:
       contents: read
@@ -175,7 +175,7 @@ jobs:
 
   # Parallel job 3: Build and validate artifacts
   build-and-validate:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 15
     permissions:
       contents: read
@@ -234,7 +234,7 @@ jobs:
   # Final job: Run tests after all checks pass
   test:
     needs: [validate, lint-and-types, build-and-validate]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 15
     permissions:
       contents: read

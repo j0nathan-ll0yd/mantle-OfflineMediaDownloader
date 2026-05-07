@@ -26,7 +26,7 @@ jobs:
     # TEMPORARILY DISABLED: Re-enable after AWS environment setup is complete
     if: false
     name: Rollback ${{ inputs.environment }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 30
     environment: ${{ inputs.environment }}
     permissions:

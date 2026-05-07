@@ -32,7 +32,7 @@ jobs:
   # ==========================================================================
   build:
     name: Build & Test
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 15
     permissions:
       contents: read
@@ -97,7 +97,7 @@ jobs:
     if: false
     name: Deploy Production
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 45
     environment: production  # No approval required - auto-deploy
     permissions:
