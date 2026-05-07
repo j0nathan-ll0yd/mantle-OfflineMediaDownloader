@@ -58,7 +58,7 @@ jobs:
 
   # Final status check for branch protection
   pr-ready:
-    needs: [full-ci, integration]
+    needs: [quick-checks, full-ci, integration]
     runs-on: [self-hosted, linux, arm64, base]
     timeout-minutes: 5
     if: always()
