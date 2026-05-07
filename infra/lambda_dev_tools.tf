@@ -41,8 +41,8 @@ module "lambda_dev_tools" {
     "S3ReadAccess" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
-        Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:ListBucket"]
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:ListBucket"]
         Resource = [
           module.storage_files.bucket_arn,
           "${module.storage_files.bucket_arn}/*"
@@ -63,7 +63,7 @@ module "lambda_dev_tools" {
         Effect   = "Allow"
         Action   = ["events:ListRules", "events:ListTargetsByRule"]
         Resource = "arn:aws:events:${module.core.region}:${module.core.account_id}:rule/${local.event_bus_name}/*"
-      }, {
+        }, {
         Effect   = "Allow"
         Action   = ["events:DescribeEventBus"]
         Resource = module.eventbridge.bus_arn

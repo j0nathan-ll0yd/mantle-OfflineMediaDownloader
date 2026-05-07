@@ -22,13 +22,13 @@ module "lambda_files_by_id_delete" {
   api_gateway_enabled = true
 
   environment_variables = merge(local.common_lambda_env, {
-      DSQL_ROLE_NAME = local.lambda_dsql_roles["FilesByIdDelete"].role_name
-      DSQL_ENDPOINT = module.database.cluster_endpoint
-      DSQL_REGION = module.core.region
-      BUCKET = module.storage_files.bucket_id
+    DSQL_ROLE_NAME = local.lambda_dsql_roles["FilesByIdDelete"].role_name
+    DSQL_ENDPOINT  = module.database.cluster_endpoint
+    DSQL_REGION    = module.core.region
+    BUCKET         = module.storage_files.bucket_id
   })
 
-    additional_policy_arns = [module.database.connect_policy_arn]
+  additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "S3Access" = jsonencode({
