@@ -6,7 +6,7 @@
  * These helpers provide graceful degradation when features aren't available.
  */
 
-const LOCALSTACK_ENDPOINT = 'http://localhost:4566'
+const LOCALSTACK_ENDPOINT = process.env.AWS_ENDPOINT_URL ?? 'http://localhost:4566'
 
 /**
  * Check if LocalStack API Gateway is available.

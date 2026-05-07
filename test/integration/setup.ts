@@ -47,7 +47,7 @@ process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'SILENT'
  * Uses exponential backoff with environment-aware timeouts.
  */
 async function waitForLocalStack(): Promise<void> {
-  const localstackUrl = 'http://localhost:4566/_localstack/health'
+  const localstackUrl = `${process.env.AWS_ENDPOINT_URL ?? 'http://localhost:4566'}/_localstack/health`
   const startTime = Date.now()
   let delay: number = POLLING.initialDelay
   let attempt = 0
