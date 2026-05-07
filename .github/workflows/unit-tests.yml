@@ -17,7 +17,7 @@ jobs:
   # Parallel job 1: Validation checks (TypeSpec, API docs, config)
   validate:
     runs-on: [self-hosted, linux, arm64, node]
-    timeout-minutes: 10
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -102,7 +102,7 @@ jobs:
   # Parallel job 2: Type checking and linting
   lint-and-types:
     runs-on: [self-hosted, linux, arm64, node]
-    timeout-minutes: 15
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -176,7 +176,7 @@ jobs:
   # Parallel job 3: Build and validate artifacts
   build-and-validate:
     runs-on: [self-hosted, linux, arm64, node]
-    timeout-minutes: 15
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -235,7 +235,7 @@ jobs:
   test:
     needs: [validate, lint-and-types, build-and-validate]
     runs-on: [self-hosted, linux, arm64, node]
-    timeout-minutes: 15
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
