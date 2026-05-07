@@ -10,7 +10,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -144,7 +144,7 @@ jobs:
             layers/yt-dlp/cookies/youtube-cookies.enc > layers/yt-dlp/cookies/youtube-cookies.txt
 
       - name: Build project
-        run: pnpm run build
+        run: pnpm run build:ci
 
       - name: Check types
         run: pnpm run check:types
