@@ -1,7 +1,7 @@
 /**
  * Unit tests for DeviceEvent Lambda (POST /device/event)
  *
- * Tests event logging, metrics, and tracing span management.
+ * Tests event logging, metrics, and device validation.
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
@@ -11,49 +11,65 @@ vi.mock('@mantleframework/core', () => ({buildValidatedResponse: vi.fn((_ctx, co
 
 vi.mock('@mantleframework/observability',
   () => ({
-    addAnnotation: vi.fn(),
-    endSpan: vi.fn(),
     logInfo: vi.fn(),
     metrics: {addMetric: vi.fn()},
     MetricUnit: {Count: 'Count'},
-    startSpan: vi.fn(() => 'mock-span')
   }))
 
-vi.mock('@mantleframework/validation', () => ({defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
+vi.mock('@mantleframework/validation', async () => {
+  const {z} = await import('zod')
+  return {z, defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}
+})
+
+vi.mock('#entities/queries', () => ({
+  createDeviceEvents: vi.fn(() => [{id: 'evt-1'}]),
+  getUserDevicesByDeviceId: vi.fn(() => [{userId: 'user-1', deviceId: 'dev-123'}]),
+  updateDevice: vi.fn(),
+}))
 
 const {handler} = (await import('#lambdas/api/device/event.post.js')) as unknown as MockedModule<typeof EventMod>
-import {addAnnotation, endSpan, logInfo, metrics, startSpan} from '@mantleframework/observability'
+import {logInfo, metrics} from '@mantleframework/observability'
+import {createDeviceEvents, updateDevice} from '#entities/queries'
 
 describe('DeviceEvent Lambda', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('should log event with deviceId from header', async () => {
-    const result = await handler({event: {headers: {'x-device-uuid': 'dev-123'}, body: '{"action":"download_started"}'}, context: {awsRequestId: 'req-1'}})
+  const makeCtx = (deviceId?: string, userId?: string) => ({
+    event: {headers: deviceId ? {'x-device-uuid': deviceId} : {}},
+    context: {awsRequestId: 'req-1'},
+    userId,
+    body: {events: [{eventType: 'push_delivered', timestamp: '2026-05-09T12:00:00Z', correlationId: 'notif-1'}]},
+  })
 
-    expect(logInfo).toHaveBeenCalledWith('Event received', {deviceId: 'dev-123', message: '{"action":"download_started"}'})
-    expect(addAnnotation).toHaveBeenCalledWith('mock-span', 'deviceId', 'dev-123')
+  it('should insert events and return 204', async () => {
+    const result = await handler(makeCtx('dev-123'))
+
+    expect(createDeviceEvents).toHaveBeenCalledWith([
+      expect.objectContaining({deviceId: 'dev-123', eventType: 'push_delivered', correlationId: 'notif-1'}),
+    ])
+    expect(updateDevice).toHaveBeenCalledWith('dev-123', expect.objectContaining({lastSeenAt: expect.any(Date)}))
     expect(result.statusCode).toBe(204)
   })
 
-  it('should handle missing deviceId header', async () => {
-    await handler({event: {headers: {}, body: 'test message'}, context: {awsRequestId: 'req-1'}})
+  it('should return 400 when deviceId header is missing', async () => {
+    const result = await handler(makeCtx())
 
-    expect(addAnnotation).not.toHaveBeenCalled()
-    expect(logInfo).toHaveBeenCalledWith('Event received', {deviceId: undefined, message: 'test message'})
+    expect(result.statusCode).toBe(400)
+    expect(createDeviceEvents).not.toHaveBeenCalled()
   })
 
   it('should track DeviceEventReceived metric', async () => {
-    await handler({event: {headers: {}, body: 'test'}, context: {awsRequestId: 'req-1'}})
+    await handler(makeCtx('dev-123'))
 
     expect(metrics.addMetric).toHaveBeenCalledWith('DeviceEventReceived', 'Count', 1)
+    expect(metrics.addMetric).toHaveBeenCalledWith('DeviceEventBatchSize', 'Count', 1)
   })
 
-  it('should start and end tracing span', async () => {
-    await handler({event: {headers: {}, body: 'test'}, context: {awsRequestId: 'req-1'}})
+  it('should log ingested events', async () => {
+    await handler(makeCtx('dev-123'))
 
-    expect(startSpan).toHaveBeenCalledWith('device-event-log')
-    expect(endSpan).toHaveBeenCalledWith('mock-span')
+    expect(logInfo).toHaveBeenCalledWith('Device events ingested', {deviceId: 'dev-123', received: 1, inserted: 1})
   })
 })

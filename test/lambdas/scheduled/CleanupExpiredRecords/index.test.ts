@@ -41,14 +41,37 @@ const drizzleMock = createChainableMock()
 
 vi.mock('#db/client', () => ({getDrizzleClient: vi.fn(() => Promise.resolve(drizzleMock.db))}))
 
+vi.mock('drizzle-zod', () => {
+  const passthrough = () => ({parse: (v: unknown) => v, safeParse: (v: unknown) => ({success: true, data: v}), optional: () => passthrough()})
+  return {createInsertSchema: () => passthrough(), createSelectSchema: () => passthrough(), createUpdateSchema: () => passthrough()}
+})
+
 vi.mock('#db/schema',
   () => ({
+    accounts: {id: 'id'},
+    deviceEvents: {id: 'id'},
+    devices: {id: 'id'},
     fileDownloads: {fileId: 'fileId', status: 'status', updatedAt: 'updatedAt'},
+    files: {fileId: 'fileId', status: 'status'},
     sessions: {id: 'id', expiresAt: 'expiresAt'},
+    userDevices: {userId: 'userId', deviceId: 'deviceId'},
+    userFiles: {userId: 'userId', fileId: 'fileId'},
+    users: {id: 'id'},
     verification: {id: 'id', expiresAt: 'expiresAt'}
   }))
 
-vi.mock('#types/enums', () => ({DownloadStatus: {Completed: 'Completed', Failed: 'Failed'}}))
+vi.mock('#types/enums', () => ({
+  DownloadStatus: {Pending: 'Pending', InProgress: 'InProgress', Scheduled: 'Scheduled', Completed: 'Completed', Failed: 'Failed'},
+  FileStatus: {Queued: 'Queued', Downloading: 'Downloading', Downloaded: 'Downloaded', Failed: 'Failed'},
+  ResponseStatus: {Dispatched: 'Dispatched', Initiated: 'Initiated', Accepted: 'Accepted', Success: 'Success'},
+}))
+
+vi.mock('#types/sharedPrimitives', () => ({
+  downloadStatusZodSchema: {optional: () => ({})},
+  fileStatusZodSchema: {optional: () => ({})}
+}))
+
+vi.mock('#entities/queries', () => ({deleteExpiredDeviceEvents: vi.fn(() => Promise.resolve(0))}))
 
 vi.mock('#utils/time', () => ({secondsAgo: vi.fn(() => new Date('2024-01-01T00:00:00Z')), TIME: {DAY_SEC: 86400}}))
 
