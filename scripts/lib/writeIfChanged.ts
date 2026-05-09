@@ -22,12 +22,9 @@ export interface WriteResult {
  * Matches common timestamp patterns in generated files.
  */
 function stripTimestamps(content: string): string {
-  return content
-    // ISO timestamps: 2024-01-19T12:34:56.789Z
-    .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?/g, 'TIMESTAMP')
-    // Comment lines with "Generated at:" or "Generated:"
-    .replace(/^.*Generated at:.*$/gm, 'GENERATED_LINE')
-    .replace(/^.*Generated:.*$/gm, 'GENERATED_LINE')
+  return content // ISO timestamps: 2024-01-19T12:34:56.789Z
+    .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?/g, 'TIMESTAMP') // Comment lines with "Generated at:" or "Generated:"
+    .replace(/^.*Generated at:.*$/gm, 'GENERATED_LINE').replace(/^.*Generated:.*$/gm, 'GENERATED_LINE')
 }
 
 /**

@@ -1,28 +1,32 @@
-import {describe, it, expect, vi, beforeEach} from 'vitest'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
 
 // Mock the LanceDB and embedding modules before importing the search module
-vi.mock('@lancedb/lancedb', () => ({
-  connect: vi.fn().mockResolvedValue({
-    openTable: vi.fn().mockResolvedValue({
-      vectorSearch: vi.fn().mockReturnValue({
-        limit: vi.fn().mockReturnThis(),
-        toArray: vi.fn().mockResolvedValue([
-          {filePath: 'src/lib/system/errors.ts', name: 'CustomLambdaError', type: 'class', startLine: 10, text: 'class CustomLambdaError', _distance: 0.3},
-          {filePath: 'src/lib/lambda/responses.ts', name: 'buildErrorResponse', type: 'function', startLine: 50, text: 'function buildErrorResponse', _distance: 0.35},
-          {filePath: 'src/util/something.ts', name: 'irrelevant', type: 'function', startLine: 1, text: 'irrelevant', _distance: 0.8}
-        ])
+vi.mock('@lancedb/lancedb',
+  () => ({
+    connect: vi.fn().mockResolvedValue({
+      openTable: vi.fn().mockResolvedValue({
+        vectorSearch: vi.fn().mockReturnValue({
+          limit: vi.fn().mockReturnThis(),
+          toArray: vi.fn().mockResolvedValue([
+            {filePath: 'src/lib/system/errors.ts', name: 'CustomLambdaError', type: 'class', startLine: 10, text: 'class CustomLambdaError', _distance: 0.3},
+            {
+              filePath: 'src/lib/lambda/responses.ts',
+              name: 'buildErrorResponse',
+              type: 'function',
+              startLine: 50,
+              text: 'function buildErrorResponse',
+              _distance: 0.35
+            },
+            {filePath: 'src/util/something.ts', name: 'irrelevant', type: 'function', startLine: 1, text: 'irrelevant', _distance: 0.8}
+          ])
+        })
       })
     })
-  })
-}))
+  }))
 
-vi.mock('../embeddings.js', () => ({
-  generateEmbedding: vi.fn().mockResolvedValue(new Array(384).fill(0.1))
-}))
+vi.mock('../embeddings.js', () => ({generateEmbedding: vi.fn().mockResolvedValue(new Array(384).fill(0.1))}))
 
-vi.mock('@huggingface/transformers', () => ({
-  pipeline: vi.fn().mockResolvedValue(vi.fn())
-}))
+vi.mock('@huggingface/transformers', () => ({pipeline: vi.fn().mockResolvedValue(vi.fn())}))
 
 // Import after mocks are set up
 const searchModule = await import('../searchCodebase.js')
@@ -68,11 +72,7 @@ describe('searchCodebase', () => {
     })
 
     it('filters results by maxDistance', async () => {
-      const results = await searchModule.search('test query', {
-        limit: 5,
-        expand: false,
-        maxDistance: 0.5
-      })
+      const results = await searchModule.search('test query', {limit: 5, expand: false, maxDistance: 0.5})
 
       // Should filter out the result with distance 0.8
       expect(results.every((r) => r._distance < 0.5)).toBe(true)
@@ -139,14 +139,13 @@ describe('searchCodebase', () => {
         {filePath: 'test.ts', name: 'config', type: 'variable', startLine: 1, text: 'const config', _distance: 0.3}
       ]
 
-      vi.mocked((await import('@lancedb/lancedb')).connect).mockResolvedValueOnce({
-        openTable: vi.fn().mockResolvedValue({
-          vectorSearch: vi.fn().mockReturnValue({
-            limit: vi.fn().mockReturnThis(),
-            toArray: vi.fn().mockResolvedValue(mockResults)
+      vi.mocked((await import('@lancedb/lancedb')).connect).mockResolvedValueOnce(
+        {
+          openTable: vi.fn().mockResolvedValue({
+            vectorSearch: vi.fn().mockReturnValue({limit: vi.fn().mockReturnThis(), toArray: vi.fn().mockResolvedValue(mockResults)})
           })
-        })
-      } as never)
+        } as never
+      )
 
       const results = await searchModule.search('test', {expand: false})
 

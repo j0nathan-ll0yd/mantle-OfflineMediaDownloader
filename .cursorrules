@@ -53,9 +53,9 @@ await deleteUser()
 // WRONG - Raw response
 return {statusCode: 200, body: JSON.stringify(data)}
 
-// RIGHT - Use helper
-import {response} from '#util/response'
-return response(200, data)
+// RIGHT - Use defineApiHandler with buildValidatedResponse
+import {buildValidatedResponse} from '@mantleframework/validation'
+return buildValidatedResponse(200, data, schema)
 ```
 
 ## Cursor-Specific Patterns
@@ -70,13 +70,11 @@ return response(200, data)
 #### Lambda Handler Pattern
 ```typescript
 import {Tracer} from '@aws-lambda-powertools/tracer'
-import {createAuthenticatedHandler} from '#util/createAuthenticatedHandler'
-import {response} from '#util/response'
+import {defineApiHandler} from '@mantleframework/validation'
+import {buildValidatedResponse} from '@mantleframework/validation'
 import {ResponseStatus} from '#types/enums'
 
-const tracer = new Tracer()
-
-export const handler = createAuthenticatedHandler(async (event, userId) => {
+export const handler = defineApiHandler({auth: 'authorizer'}, async ({event, userId}) => {
   // Handler logic
   return response(200, {status: ResponseStatus.Success})
 })

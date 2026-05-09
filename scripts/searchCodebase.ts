@@ -10,7 +10,7 @@ const TABLE_NAME = 'code_chunks'
  */
 const QUERY_EXPANSIONS: Record<string, string[]> = {
   'error handling': ['CustomLambdaError', 'try catch', 'buildErrorResponse', 'ValidationError', 'errors.ts'],
-  'authentication': ['Bearer token', 'session', 'authorize', 'login', 'Better Auth', 'ApiGatewayAuthorizer'],
+  authentication: ['Bearer token', 'session', 'authorize', 'login', 'Better Auth', 'ApiGatewayAuthorizer'],
   'cascade deletion': ['Promise.allSettled', 'deleteUser', 'UserDelete', 'delete child first', 'relationship'],
   's3 upload': ['createS3Upload', 'PutObject', 'downloadVideoToS3', 'StartFileUpload'],
   'push notification': ['APNS', 'SNS', 'SendPushNotification', 'device token', 'notification'],
@@ -83,20 +83,15 @@ function applyTypeBoost(results: SearchResult[], query: string): SearchResult[] 
   // Boost TypeSpec for API-related queries
   const typespecBoost = lowerQuery.includes('api') || lowerQuery.includes('schema') ? 1.1 : 0.9
 
-  return results
-    .map((r) => {
-      let boost = TYPE_BOOSTS[r.type] || 1.0
-      if (r.type === 'documentation') {
-        boost = docBoost
-      } else if (r.type.startsWith('typespec')) {
-        boost = typespecBoost
-      }
-      return {
-        ...r,
-        adjustedDistance: r._distance / boost
-      }
-    })
-    .sort((a, b) => (a.adjustedDistance || a._distance) - (b.adjustedDistance || b._distance))
+  return results.map((r) => {
+    let boost = TYPE_BOOSTS[r.type] || 1.0
+    if (r.type === 'documentation') {
+      boost = docBoost
+    } else if (r.type.startsWith('typespec')) {
+      boost = typespecBoost
+    }
+    return {...r, adjustedDistance: r._distance / boost}
+  }).sort((a, b) => (a.adjustedDistance || a._distance) - (b.adjustedDistance || b._distance))
 }
 
 /**

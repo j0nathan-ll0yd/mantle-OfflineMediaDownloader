@@ -14,13 +14,7 @@ interface SearchResult {
 interface QueryEvaluation {
   query: string
   expectedFiles: string[]
-  results: Array<{
-    file: string
-    name: string
-    type: string
-    distance: number
-    relevant: boolean
-  }>
+  results: Array<{file: string; name: string; type: string; distance: number; relevant: boolean}>
   metrics: {
     precisionAt5: number
     firstRelevantRank: number
@@ -149,10 +143,7 @@ function isRelevant(filePath: string, name: string, expectedPatterns: string[]):
 /**
  * Calculate evaluation metrics for a query
  */
-function calculateMetrics(
-  results: QueryEvaluation['results'],
-  expectedPatterns: string[]
-): QueryEvaluation['metrics'] {
+function calculateMetrics(results: QueryEvaluation['results'], expectedPatterns: string[]): QueryEvaluation['metrics'] {
   const relevantResults = results.filter((r) => r.relevant)
   const irrelevantResults = results.filter((r) => !r.relevant)
 
@@ -164,33 +155,22 @@ function calculateMetrics(
   const firstRelevantRank = firstRelevantIndex >= 0 ? firstRelevantIndex + 1 : 0
 
   // Coverage: how many expected patterns were found
-  const foundPatterns = expectedPatterns.filter((pattern) =>
-    results.some((r) => `${r.file}:${r.name}`.toLowerCase().includes(pattern.toLowerCase()))
-  )
+  const foundPatterns = expectedPatterns.filter((pattern) => results.some((r) => `${r.file}:${r.name}`.toLowerCase().includes(pattern.toLowerCase())))
   const coverage = foundPatterns.length / expectedPatterns.length
 
   // Average distances
-  const avgDistanceRelevant =
-    relevantResults.length > 0
-      ? relevantResults.reduce((sum, r) => sum + r.distance, 0) / relevantResults.length
-      : 0
+  const avgDistanceRelevant = relevantResults.length > 0
+    ? relevantResults.reduce((sum, r) => sum + r.distance, 0) / relevantResults.length
+    : 0
 
-  const avgDistanceIrrelevant =
-    irrelevantResults.length > 0
-      ? irrelevantResults.reduce((sum, r) => sum + r.distance, 0) / irrelevantResults.length
-      : 0
+  const avgDistanceIrrelevant = irrelevantResults.length > 0
+    ? irrelevantResults.reduce((sum, r) => sum + r.distance, 0) / irrelevantResults.length
+    : 0
 
   // Distance gap between relevant and irrelevant (higher is better)
   const distanceGap = avgDistanceIrrelevant - avgDistanceRelevant
 
-  return {
-    precisionAt5,
-    firstRelevantRank,
-    coverage,
-    avgDistanceRelevant,
-    avgDistanceIrrelevant,
-    distanceGap
-  }
+  return {precisionAt5, firstRelevantRank, coverage, avgDistanceRelevant, avgDistanceIrrelevant, distanceGap}
 }
 
 /**
@@ -211,11 +191,7 @@ async function runSearch(query: string, limit = 5): Promise<SearchResult[]> {
 /**
  * Evaluate a single query
  */
-async function evaluateQuery(
-  query: string,
-  expectedPatterns: string[],
-  limit = 5
-): Promise<QueryEvaluation> {
+async function evaluateQuery(query: string, expectedPatterns: string[], limit = 5): Promise<QueryEvaluation> {
   const searchResults = await runSearch(query, limit)
 
   const results = searchResults.map((r) => ({
@@ -228,12 +204,7 @@ async function evaluateQuery(
 
   const metrics = calculateMetrics(results, expectedPatterns)
 
-  return {
-    query,
-    expectedFiles: expectedPatterns,
-    results,
-    metrics
-  }
+  return {query, expectedFiles: expectedPatterns, results, metrics}
 }
 
 /**
@@ -315,8 +286,7 @@ export async function runEvaluation(): Promise<EvaluationReport> {
     timestamp: new Date().toISOString(),
     totalQueries: evaluations.length,
     averagePrecisionAt5: evaluations.reduce((sum, e) => sum + e.metrics.precisionAt5, 0) / evaluations.length,
-    averageFirstRelevantRank:
-      evaluations.reduce((sum, e) => sum + (e.metrics.firstRelevantRank || 6), 0) / evaluations.length,
+    averageFirstRelevantRank: evaluations.reduce((sum, e) => sum + (e.metrics.firstRelevantRank || 6), 0) / evaluations.length,
     averageCoverage: evaluations.reduce((sum, e) => sum + e.metrics.coverage, 0) / evaluations.length,
     queries: evaluations
   }

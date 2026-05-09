@@ -16,8 +16,4 @@ import {defineConfig} from 'drizzle-kit'
  *
  * @see docs/wiki/Conventions/Database-Migrations.md
  */
-export default defineConfig({
-  dialect: 'postgresql',
-  schema: './src/db/schema.ts',
-  out: './migrations'
-})
+export default defineConfig({dialect: 'postgresql', schema: './src/db/schema.ts', out: './migrations'})

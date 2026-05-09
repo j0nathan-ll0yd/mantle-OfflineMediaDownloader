@@ -42,7 +42,9 @@ function calculateSimilarity(obj1: FixtureData | null | undefined, obj2: Fixture
   const intersection = new Set([...keys1].filter((k) => keys2.has(k)))
   const union = new Set([...keys1, ...keys2])
 
-  if (union.size === 0) return 1
+  if (union.size === 0) {
+    return 1
+  }
 
   const keySimilarity = intersection.size / union.size
 

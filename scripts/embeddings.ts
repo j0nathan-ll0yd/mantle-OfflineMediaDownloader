@@ -9,7 +9,8 @@ async function getExtractor(): Promise<FeatureExtractionPipeline> {
   if (!extractor) {
     // Dynamic import avoids TS2590 from pipeline's complex overload union
     const {pipeline} = await import('@huggingface/transformers')
-    extractor = (await (pipeline as unknown as (...args: unknown[]) => Promise<unknown>)('feature-extraction', 'Xenova/all-MiniLM-L6-v2')) as FeatureExtractionPipeline
+    extractor =
+      (await (pipeline as unknown as (...args: unknown[]) => Promise<unknown>)('feature-extraction', 'Xenova/all-MiniLM-L6-v2')) as FeatureExtractionPipeline
   }
   return extractor
 }

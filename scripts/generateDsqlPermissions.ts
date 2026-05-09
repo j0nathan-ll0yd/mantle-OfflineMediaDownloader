@@ -49,11 +49,7 @@ function lambdaNameToRoleName(lambdaName: string): string {
   if (lambdaName === 'MigrateDSQL') {
     return 'admin'
   }
-  return 'lambda_' + lambdaName
-    .replace(/([A-Z])/g, '_$1')
-    .toLowerCase()
-    .replace(/^_/, '')
-    .replace(/_{2,}/g, '_')
+  return 'lambda_' + lambdaName.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '').replace(/_{2,}/g, '_')
 }
 
 /**
@@ -61,7 +57,7 @@ function lambdaNameToRoleName(lambdaName: string): string {
  * Groups operations by table for cleaner SQL.
  */
 function generateGrants(roleName: string, tables: TablePermission[]): string[] {
-  return tables.map(t => {
+  return tables.map((t) => {
     const ops = t.operations.join(', ')
     return `GRANT ${ops} ON ${t.table} TO ${roleName};`
   })
@@ -173,7 +169,7 @@ function generateSqlMigration(manifest: PermissionsManifest): string {
       continue // Admin has full access, no explicit grants needed
     }
     const roleName = lambdaNameToRoleName(lambdaName)
-    const tableList = perms.tables.map(t => t.table).join(', ')
+    const tableList = perms.tables.map((t) => t.table).join(', ')
     lines.push(`-- ${lambdaName}: ${tableList}`)
     const grants = generateGrants(roleName, perms.tables)
     lines.push(...grants)
@@ -268,15 +264,9 @@ async function main(): Promise<void> {
   // These Lambdas use sessionService, BetterAuth, or Drizzle directly instead of entity queries
   const manualOverrides: Record<string, LambdaPermissions> = {
     // Uses sessionService -> entity queries (indirect, not traced)
-    ApiGatewayAuthorizer: {
-      tables: [{table: 'sessions', operations: ['SELECT']}],
-      computedAccessLevel: 'readonly'
-    },
+    ApiGatewayAuthorizer: {tables: [{table: 'sessions', operations: ['SELECT']}], computedAccessLevel: 'readonly'},
     // Uses sessionService -> entity queries (indirect, not traced)
-    RefreshToken: {
-      tables: [{table: 'sessions', operations: ['SELECT', 'UPDATE']}],
-      computedAccessLevel: 'readwrite'
-    },
+    RefreshToken: {tables: [{table: 'sessions', operations: ['SELECT', 'UPDATE']}], computedAccessLevel: 'readwrite'},
     // Uses BetterAuth which manages sessions/accounts/users internally
     LoginUser: {
       tables: [
@@ -386,7 +376,7 @@ async function main(): Promise<void> {
   console.log('  3. Run: cd infra && tofu validate')
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('Failed to generate DSQL permissions:', error)
   process.exit(1)
 })

@@ -101,3 +101,9 @@ deployment-logs/
 
 # Agent enforcement symlinks
 .claude/rules/
+
+# Mantle CLI temp directories
+.mantle-openapi-tmp-*
+
+# Config coverage reports (generated)
+config/coverage/

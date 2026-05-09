@@ -12,7 +12,6 @@ target: github-copilot
 This file must be kept in sync with:
 - AGENTS.md (primary source of truth)
 - CLAUDE.md (Claude AI configuration)
-- GEMINI.md (Google Gemini configuration)
 
 When updating project rules, conventions, or critical policies,
 ensure all files are updated to maintain consistency across AI assistants.

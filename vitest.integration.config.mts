@@ -15,7 +15,6 @@ export default defineConfig({
       '#entities': resolve(__dirname, 'src/entities'),
       '#lambdas': resolve(__dirname, 'src/lambdas'),
       '#lib': resolve(__dirname, 'src/lib'),
-      '#util': resolve(__dirname, 'src/util'),
       '#types': resolve(__dirname, 'src/types'),
       '#db': resolve(__dirname, 'src/db'),
       '#domain': resolve(__dirname, 'src/domain'),

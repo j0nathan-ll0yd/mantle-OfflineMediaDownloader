@@ -32,7 +32,7 @@ import {isNotNull, or} from 'drizzle-orm'
 import {eq} from 'drizzle-orm'
 import {symmetricDecrypt, symmetricEncrypt} from 'better-auth/crypto'
 import {getRequiredEnv} from '@mantleframework/env'
-import {getDrizzleClient, closeDrizzleClient} from '#db/client'
+import {closeDrizzleClient, getDrizzleClient} from '#db/client'
 import {accounts} from '#db/schema'
 
 // ---------------------------------------------------------------------------
@@ -98,21 +98,9 @@ async function main(): Promise<void> {
 
   // Query all account rows that have at least one non-null token column
   console.log('Querying accounts with OAuth tokens...')
-  const rows = await db
-    .select({
-      id: accounts.id,
-      accessToken: accounts.accessToken,
-      refreshToken: accounts.refreshToken,
-      idToken: accounts.idToken,
-    })
-    .from(accounts)
-    .where(
-      or(
-        isNotNull(accounts.accessToken),
-        isNotNull(accounts.refreshToken),
-        isNotNull(accounts.idToken),
-      ),
-    ) as AccountRow[]
+  const rows = await db.select({id: accounts.id, accessToken: accounts.accessToken, refreshToken: accounts.refreshToken, idToken: accounts.idToken}).from(
+    accounts
+  ).where(or(isNotNull(accounts.accessToken), isNotNull(accounts.refreshToken), isNotNull(accounts.idToken))) as AccountRow[]
 
   console.log(`Found ${rows.length} account row(s) with at least one token column.`)
 
@@ -130,16 +118,25 @@ async function main(): Promise<void> {
 
   for (const row of rows) {
     if (row.accessToken !== null) {
-      if (isLikelyEncrypted(row.accessToken)) alreadyEncryptedCount++
-      else totalAccessTokens++
+      if (isLikelyEncrypted(row.accessToken)) {
+        alreadyEncryptedCount++
+      } else {
+        totalAccessTokens++
+      }
     }
     if (row.refreshToken !== null) {
-      if (isLikelyEncrypted(row.refreshToken)) alreadyEncryptedCount++
-      else totalRefreshTokens++
+      if (isLikelyEncrypted(row.refreshToken)) {
+        alreadyEncryptedCount++
+      } else {
+        totalRefreshTokens++
+      }
     }
     if (row.idToken !== null) {
-      if (isLikelyEncrypted(row.idToken)) alreadyEncryptedCount++
-      else totalIdTokens++
+      if (isLikelyEncrypted(row.idToken)) {
+        alreadyEncryptedCount++
+      } else {
+        totalIdTokens++
+      }
     }
   }
 
@@ -192,10 +189,7 @@ async function main(): Promise<void> {
       const hasUpdates = Object.keys(updates).length > 0
 
       if (hasUpdates) {
-        await db
-          .update(accounts)
-          .set({...updates, updatedAt: new Date()})
-          .where(eq(accounts.id, row.id))
+        await db.update(accounts).set({...updates, updatedAt: new Date()}).where(eq(accounts.id, row.id))
         processedRows++
         console.log(`  [OK] Row ${row.id}: encrypted ${Object.keys(updates).join(', ')}`)
       } else {

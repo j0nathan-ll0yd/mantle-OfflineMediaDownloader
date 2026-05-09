@@ -19,7 +19,7 @@ export default createMantleEslintConfig({
     '**/.idea',
     '**/.webpackCache',
     'src/types/terraform.d.ts',
-    '.dependency-cruiser.cjs',
+    'config/.dependency-cruiser.cjs',
     '**/*.fixture.ts',
     'infra/cloudfront-functions/**/*'
   ],

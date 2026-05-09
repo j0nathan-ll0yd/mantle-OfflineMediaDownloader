@@ -68,11 +68,11 @@
   },
 
   "includes": [
-    "src/**/*.{ts,tsx,js,jsx}",
-    "test/**/*.{ts,tsx,js,jsx}",
-    "config/**/*.{ts,js,json}",
-    "*.json",
-    "*.mjs"
+    "../src/**/*.{ts,tsx,js,jsx}",
+    "../test/**/*.{ts,tsx,js,jsx}",
+    "./**/*.{ts,js,json}",
+    "../*.json",
+    "../*.mjs"
   ],
 
   "excludes": [
@@ -81,8 +81,8 @@
     "**/build",
     "**/coverage",
     "**/.git",
-    ".omc/**",
-    "infra/**"
+    "../.omc/**",
+    "../infra/**"
   ],
 
   "plugins": [

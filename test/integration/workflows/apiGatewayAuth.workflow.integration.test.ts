@@ -11,7 +11,7 @@ process.env.MULTI_AUTHENTICATION_PATH_PARTS = 'files'
 
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi} from 'vitest'
 import type {APIGatewayRequestAuthorizerEvent} from 'aws-lambda'
-import {createMockContext} from '#util/vitest-setup'
+import {createMockContext} from '../../helpers/lambda-fixtures'
 import {createObservabilityMock} from '@mantleframework/testing/lambda-mocks'
 
 // Test helpers
