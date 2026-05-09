@@ -9,9 +9,8 @@ coverage
 dist
 docs/source
 
-# Dependency cruiser generated files
-dependency-graph.svg
-dependency-report.html
+# Generated reports (dependency cruiser, mutation testing)
+reports/
 secure
 local
 temp
@@ -29,14 +28,8 @@ infra/.terraform.lock.hcl
 infra/.terraform.tfstate.lock.info
 .webpackCache
 .python-version
-layers/yt-dlp/bin/ffmpeg
 layers/yt-dlp/cookies/*
 !layers/yt-dlp/cookies/youtube-cookies.enc
-layers/ffmpeg/bin/ffmpeg
-layers/quickjs/bin/qjs
-layers/bgutil/build/
-layers/bgutil/bgutil-layer.zip
-layers/deno/build/
 
 # Playwright browser state (contains session data)
 playwright-state/
@@ -80,8 +73,6 @@ coverage-reports/
 
 # Mutation testing (Stryker)
 stryker-tmp/
-reports/stryker-incremental.json
-reports/mutation/
 *.webm
 stryker.log
 build/lambdas/*.zip

@@ -8,7 +8,7 @@
  * 4. Devices and UserDevices associations
  *
  * These tests verify database operations using the postgres-helpers
- * against a real PostgreSQL instance (docker-compose.test.yml).
+ * against a real PostgreSQL instance (docker/docker-compose.test.yml).
  */
 
 // Set environment variables before imports

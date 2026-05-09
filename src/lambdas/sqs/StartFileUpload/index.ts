@@ -19,7 +19,7 @@ import {processDownloadRequest} from './downloadOrchestrator.js'
 
 defineLambda({
   packageType: 'container',
-  dockerfile: 'Dockerfile.download',
+  dockerfile: 'docker/Dockerfile.download',
   architecture: 'x86_64',
   memorySize: 2048,
   ephemeralStorage: 10240,

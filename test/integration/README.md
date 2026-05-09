@@ -143,7 +143,7 @@ These are configured in `test/integration/setup.ts`.
 
 ## LocalStack Configuration
 
-LocalStack is configured via `docker-compose.localstack.yml`:
+LocalStack is configured via `docker/docker-compose.localstack.yml`:
 
 - **Endpoint**: http://localhost:4566
 - **Services**: S3, DynamoDB, SNS, SQS, Lambda, CloudWatch, API Gateway
