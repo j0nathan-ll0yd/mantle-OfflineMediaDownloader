@@ -89,10 +89,5 @@ export default defineConfig({
       {source: '#types/notification-schemas', prefix: 'Notifications.'}
     ]
   },
-  ci: {mantleRepo: 'j0nathan-ll0yd/mantle', mantleRef: 'main', mantleAuthSecret: 'MANTLE_DEPLOY_KEY', deploy: false},
-  layers: [
-    {name: 'yt-dlp', path: 'layers/yt-dlp', compatibleArchitectures: ['x86_64'], description: 'yt-dlp binary and YouTube cookies'},
-    {name: 'bgutil', path: 'layers/bgutil/build', compatibleArchitectures: ['x86_64'], description: 'bgutil PO-token provider for yt-dlp'},
-    {name: 'ffmpeg', path: 'layers/ffmpeg', compatibleArchitectures: ['x86_64'], description: 'ffmpeg binary for video/audio stream merging'}
-  ]
+  ci: {mantleRepo: 'j0nathan-ll0yd/mantle', mantleRef: 'main', mantleAuthSecret: 'MANTLE_DEPLOY_KEY', deploy: false}
 })
