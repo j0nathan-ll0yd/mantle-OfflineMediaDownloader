@@ -58,6 +58,7 @@ jobs:
         run: mkdir -p reports/mutation
 
       - uses: ./.github/actions/build-project
+      - uses: ./.github/actions/setup-gh
 
       - name: Download previous incremental file
         run: |

@@ -25,6 +25,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: ./.github/actions/setup-node-pnpm
+      - uses: ./.github/actions/setup-gh
 
       - name: Update AGENTS.md with recent PRs
         run: pnpm run update:agents:prs
