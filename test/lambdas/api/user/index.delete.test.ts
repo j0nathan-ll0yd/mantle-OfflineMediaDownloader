@@ -86,7 +86,15 @@ describe('UserDelete Lambda', () => {
   })
 
   it('should return 207 when device deletions fail', async () => {
-    const mockDevice = {deviceId: 'dev-1', name: 'iPhone', token: 'tok', systemVersion: '17', systemName: 'iOS', endpointArn: 'arn:aws:sns:endpoint', lastSeenAt: null}
+    const mockDevice = {
+      deviceId: 'dev-1',
+      name: 'iPhone',
+      token: 'tok',
+      systemVersion: '17',
+      systemName: 'iOS',
+      endpointArn: 'arn:aws:sns:endpoint',
+      lastSeenAt: null
+    }
     vi.mocked(getUserDevices).mockResolvedValue([{userId: 'user-1', deviceId: 'dev-1', createdAt: new Date()}])
     vi.mocked(getDevicesBatch).mockResolvedValue([mockDevice])
     vi.mocked(deleteUserFilesByUserId).mockResolvedValue(undefined as never)
@@ -124,7 +132,15 @@ describe('UserDelete Lambda', () => {
   })
 
   it('should delete user and devices in correct cascade order', async () => {
-    const mockDevice = {deviceId: 'dev-1', name: 'iPhone', token: 'tok', systemVersion: '17', systemName: 'iOS', endpointArn: 'arn:aws:sns:endpoint', lastSeenAt: null}
+    const mockDevice = {
+      deviceId: 'dev-1',
+      name: 'iPhone',
+      token: 'tok',
+      systemVersion: '17',
+      systemName: 'iOS',
+      endpointArn: 'arn:aws:sns:endpoint',
+      lastSeenAt: null
+    }
     vi.mocked(getUserDevices).mockResolvedValue([{userId: 'user-1', deviceId: 'dev-1', createdAt: new Date()}])
     vi.mocked(getDevicesBatch).mockResolvedValue([mockDevice])
     vi.mocked(deleteUserFilesByUserId).mockResolvedValue(undefined as never)
