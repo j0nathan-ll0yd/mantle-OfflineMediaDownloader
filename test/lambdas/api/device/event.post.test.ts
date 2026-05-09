@@ -40,7 +40,7 @@ describe('DeviceEvent Lambda', () => {
     event: {headers: deviceId ? {'x-device-uuid': deviceId} : {}},
     context: {awsRequestId: 'req-1'},
     userId,
-    body: {events: [{eventType: 'push_delivered', timestamp: '2026-05-09T12:00:00Z', correlationId: 'notif-1'}]},
+    body: {events: [{eventType: 'push_delivered' as const, timestamp: '2026-05-09T12:00:00Z', correlationId: 'notif-1'}]},
   })
 
   it('should insert events and return 204', async () => {

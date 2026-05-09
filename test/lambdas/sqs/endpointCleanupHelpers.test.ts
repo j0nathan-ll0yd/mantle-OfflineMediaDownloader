@@ -1,8 +1,10 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {SQSRecord} from 'aws-lambda'
+import type {MockedModule} from '#test/helpers/handler-test-types'
+import type * as EndpointMod from '#lambdas/sqs/EndpointCleanupHelpers/index.js'
 
 vi.mock('@mantleframework/core', () => ({
-  defineSqsHandler: (_config: unknown) => (fn: (record: SQSRecord) => Promise<void>) => fn,
+  defineSqsHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
 }))
 
 vi.mock('@mantleframework/observability', () => ({
@@ -20,7 +22,7 @@ vi.mock('@mantleframework/validation', async () => {
 vi.mock('#entities/queries', () => ({getDeviceByEndpointArn: vi.fn()}))
 vi.mock('../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js', () => ({cleanupDisabledEndpoint: vi.fn()}))
 
-const {handler} = await import('#lambdas/sqs/EndpointCleanupHelpers/index.js')
+const {handler} = (await import('#lambdas/sqs/EndpointCleanupHelpers/index.js')) as unknown as MockedModule<typeof EndpointMod>
 import {getDeviceByEndpointArn} from '#entities/queries'
 import {cleanupDisabledEndpoint} from '../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js'
 import {logError, logInfo} from '@mantleframework/observability'
@@ -54,13 +56,14 @@ describe('EndpointCleanupHelpers', () => {
 
     vi.mocked(getDeviceByEndpointArn).mockResolvedValue({
       deviceId: 'device-123',
-      deviceToken: 'token',
+      name: 'iPhone',
+      token: 'token',
       endpointArn,
-      platform: 'ios',
-      createdAt: new Date(),
+      systemVersion: '17.0',
+      systemName: 'iOS',
       lastSeenAt: null,
     })
-    vi.mocked(cleanupDisabledEndpoint).mockResolvedValue(undefined)
+    vi.mocked(cleanupDisabledEndpoint).mockResolvedValue({ok: true, value: {deviceId: 'device-123', endpointArn}} as never)
 
     const body = makeSnsWrappedEvent({
       EventType: 'EndpointDisabled',
@@ -110,7 +113,7 @@ describe('EndpointCleanupHelpers', () => {
   })
 
   it('should handle no device found for endpoint', async () => {
-    vi.mocked(getDeviceByEndpointArn).mockResolvedValue(undefined)
+    vi.mocked(getDeviceByEndpointArn).mockResolvedValue(null)
 
     const body = makeSnsWrappedEvent({
       EventType: 'EndpointDisabled',
