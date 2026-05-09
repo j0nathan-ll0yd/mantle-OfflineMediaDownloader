@@ -1,0 +1,29 @@
+name: 'Setup GitHub CLI'
+description: 'Install GitHub CLI (gh) if not already available'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install gh CLI
+      shell: bash
+      run: |
+        if command -v gh &> /dev/null; then
+          echo "gh already installed: $(gh --version | head -1)"
+          exit 0
+        fi
+
+        GH_VERSION="2.74.1"
+        ARCH="$(uname -m)"
+        case "$ARCH" in
+          aarch64|arm64) ARCH="arm64" ;;
+          x86_64)        ARCH="amd64" ;;
+          *)             echo "::error::Unsupported architecture: $ARCH"; exit 1 ;;
+        esac
+
+        INSTALL_DIR="${RUNNER_TOOL_CACHE:-/tmp}/gh-cli"
+        mkdir -p "$INSTALL_DIR"
+        curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz" \
+          | tar xz --strip-components=1 -C "$INSTALL_DIR"
+
+        echo "${INSTALL_DIR}/bin" >> "$GITHUB_PATH"
+        echo "gh ${GH_VERSION} installed to ${INSTALL_DIR}/bin"

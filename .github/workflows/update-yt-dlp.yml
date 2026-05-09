@@ -20,6 +20,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-gh
 
       - name: Check for yt-dlp updates
         id: check

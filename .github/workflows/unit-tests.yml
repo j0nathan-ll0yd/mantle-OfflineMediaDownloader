@@ -11,7 +11,7 @@ permissions: {}
 
 concurrency:
   group: unit-tests-${{ github.head_ref || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 
 jobs:
   # Parallel job 1: Validation checks (TypeSpec, API docs, config)
