@@ -51,7 +51,7 @@ export default defineConfig({
     ]
   },
   observability: {adot: true, metricsNamespace: 'MediaDownloader', disableMetrics: true},
-  secrets: {provider: 'sops', filePattern: 'secrets.{env}.enc.yaml'},
+  secrets: {provider: 'sops', filePattern: 'secrets/secrets.{env}.enc.yaml'},
   sns: {
     topics: [
       {name: 'push-notifications'}

@@ -2,17 +2,17 @@
 # Each environment can have different encryption keys if needed
 #
 # Files:
-#   secrets.staging.yaml -> secrets.staging.enc.yaml (staging credentials)
-#   secrets.prod.yaml    -> secrets.prod.enc.yaml (production credentials)
+#   secrets/secrets.staging.yaml -> secrets/secrets.staging.enc.yaml (staging credentials)
+#   secrets/secrets.prod.yaml    -> secrets/secrets.prod.enc.yaml (production credentials)
 #   layers/yt-dlp/cookies/youtube-cookies.txt -> youtube-cookies.enc (binary mode)
 
 creation_rules:
   # Staging secrets
-  - path_regex: secrets\.staging\.yaml$
+  - path_regex: secrets/secrets\.staging\.yaml$
     age: age18jlkflydzmmclcds8h5lrn8em6y8kldvuh4wf8zdsvdsyx6uaddsnavfhv
 
   # Production secrets
-  - path_regex: secrets\.prod\.yaml$
+  - path_regex: secrets/secrets\.prod\.yaml$
     age: age18jlkflydzmmclcds8h5lrn8em6y8kldvuh4wf8zdsvdsyx6uaddsnavfhv
 
   # YouTube cookies (encrypted as binary blob)

@@ -68,7 +68,7 @@
     "state:verify:production": "./bin/verify-state.sh --env production",
     "state:verify:staging": "./bin/verify-state.sh --env staging",
     "test": "export LOG_LEVEL=${LOG_LEVEL:-SILENT} && vitest run --config vitest.config.mts",
-    "test:eslint:rules": "node eslint-local-rules/test/no-direct-aws-sdk-import.test.cjs && node eslint-local-rules/test/no-domain-leakage.test.cjs && node eslint-local-rules/test/use-entity-mock-helper.test.cjs && node eslint-local-rules/test/integration-test-localstack.test.cjs && node eslint-local-rules/test/aws-sdk-mock-pattern.test.cjs",
+    "test:eslint:rules": "node config/eslint-local-rules/test/no-direct-aws-sdk-import.test.cjs && node config/eslint-local-rules/test/no-domain-leakage.test.cjs && node config/eslint-local-rules/test/use-entity-mock-helper.test.cjs && node config/eslint-local-rules/test/integration-test-localstack.test.cjs && node config/eslint-local-rules/test/aws-sdk-mock-pattern.test.cjs",
     "test:integration": "export LOG_LEVEL=${LOG_LEVEL:-SILENT} POWERTOOLS_LOG_LEVEL=${POWERTOOLS_LOG_LEVEL:-SILENT} NODE_NO_WARNINGS=1 && USE_LOCALSTACK=true vitest run --config vitest.integration.config.mts",
     "test:mutation": "stryker run config/stryker.config.json",
     "test:mutation:auth": "stryker run config/stryker.config.json --mutate 'src/lambdas/standalone/ApiGatewayAuthorizer/**/*.ts,src/lambdas/api/user/**/*.ts'",

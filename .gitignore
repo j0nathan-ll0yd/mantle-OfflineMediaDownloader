@@ -16,8 +16,8 @@ local
 temp
 node_modules
 secrets.yaml
-secrets.staging.yaml
-secrets.prod.yaml
+secrets/secrets.staging.yaml
+secrets/secrets.prod.yaml
 secrets.enc.yaml
 youtube-cookies.txt
 cloudformation.json

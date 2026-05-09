@@ -23,7 +23,10 @@ AWS Serverless media downloader service built with OpenTofu and TypeScript. Down
 ### Project Structure
 ```
 .
+├── config/                # Tool configuration (ESLint rules, dependency-cruiser, repomix, etc.)
+├── docker/                # Dockerfiles and docker-compose files
 ├── infra/                 # AWS Infrastructure definitions (OpenTofu)
+├── secrets/               # SOPS-encrypted environment secrets
 ├── src/
 │   ├── db/
 │   │   ├── defineQuery.ts            # createQueryFactory(getDrizzleClient) — project-local query factory
