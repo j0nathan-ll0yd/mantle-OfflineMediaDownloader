@@ -2,14 +2,14 @@
 # Ejected: mantle generate infra does not support SNS delivery status configuration
 
 locals {
-  apns_platform   = var.environment == "production" ? "APNS" : "APNS_SANDBOX"
-  apns_app_name   = "${module.core.name_prefix}-MediaDownloader"
-  sns_log_group   = "sns/${module.core.region}/${module.core.account_id}/app/${local.apns_platform}/${local.apns_app_name}"
+  apns_platform = var.environment == "production" ? "APNS" : "APNS_SANDBOX"
+  apns_app_name = "${module.core.name_prefix}-MediaDownloader"
+  sns_log_group = "sns/${module.core.region}/${module.core.account_id}/app/${local.apns_platform}/${local.apns_app_name}"
 }
 
 # Pre-create log groups so metric filters can reference them immediately
 resource "aws_cloudwatch_log_group" "sns_delivery_success" {
-  name              = "${local.sns_log_group}"
+  name              = local.sns_log_group
   retention_in_days = var.log_retention_days
   tags              = module.core.common_tags
 }

@@ -19,9 +19,9 @@ module "lambda_migrate_dsql" {
   timeout            = 300
 
   environment_variables = {
-    DSQL_ENDPOINT         = module.database.cluster_endpoint
-    DSQL_REGION           = module.core.region
-    DSQL_ROLE_NAME        = "admin"
+    DSQL_ENDPOINT     = module.database.cluster_endpoint
+    DSQL_REGION       = module.core.region
+    DSQL_ROLE_NAME    = "admin"
     METRICS_NAMESPACE = "MediaDownloader"
     AWS_ACCOUNT_ID    = module.core.account_id
     RESOURCE_PREFIX   = module.core.name_prefix

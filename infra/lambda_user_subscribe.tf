@@ -22,20 +22,20 @@ module "lambda_user_subscribe" {
   api_gateway_enabled = true
 
   environment_variables = merge(local.common_lambda_env, {
-      DSQL_ROLE_NAME = local.lambda_dsql_roles["UserSubscribe"].role_name
-      DSQL_ENDPOINT = module.database.cluster_endpoint
-      DSQL_REGION = module.core.region
-      PLATFORM_APPLICATION_ARN = aws_sns_platform_application.apns.arn
+    DSQL_ROLE_NAME           = local.lambda_dsql_roles["UserSubscribe"].role_name
+    DSQL_ENDPOINT            = module.database.cluster_endpoint
+    DSQL_REGION              = module.core.region
+    PLATFORM_APPLICATION_ARN = aws_sns_platform_application.apns.arn
   })
 
-    additional_policy_arns = [module.database.connect_policy_arn]
+  additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SNSAccess" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = ["sns:DeleteEndpoint","sns:Subscribe","sns:Unsubscribe"]
+        Action   = ["sns:DeleteEndpoint", "sns:Subscribe", "sns:Unsubscribe"]
         Resource = ["${aws_sns_platform_application.apns.arn}"]
       }]
     })

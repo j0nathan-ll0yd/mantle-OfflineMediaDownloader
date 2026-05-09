@@ -6,43 +6,43 @@
 module "lambda_prune_devices" {
   source = "../../../Repositories/mantle/modules/lambda"
 
-  function_name      = "PruneDevices"
-  name_prefix        = module.core.name_prefix
-  source_dir         = "${path.module}/../build/lambdas/PruneDevices"
-  assume_role_policy = module.core.lambda_assume_role_policy
-  xray_policy_arn    = module.core.lambda_xray_policy_arn
-  region             = module.core.region
-  account_id         = module.core.account_id
-  environment        = var.environment
-  log_retention_days = var.log_retention_days
-  log_level          = var.log_level
-  tags               = module.core.common_tags
-  timeout            = 300
+  function_name       = "PruneDevices"
+  name_prefix         = module.core.name_prefix
+  source_dir          = "${path.module}/../build/lambdas/PruneDevices"
+  assume_role_policy  = module.core.lambda_assume_role_policy
+  xray_policy_arn     = module.core.lambda_xray_policy_arn
+  region              = module.core.region
+  account_id          = module.core.account_id
+  environment         = var.environment
+  log_retention_days  = var.log_retention_days
+  log_level           = var.log_level
+  tags                = module.core.common_tags
+  timeout             = 300
   schedule_expression = "rate(1 day)"
-  layers             = [local.adot_layer_arn]
+  layers              = [local.adot_layer_arn]
 
   api_gateway_enabled = false
 
   environment_variables = merge(local.common_lambda_env, {
-      DSQL_ROLE_NAME = local.lambda_dsql_roles["PruneDevices"].role_name
-      DSQL_ENDPOINT = module.database.cluster_endpoint
-      DSQL_REGION = module.core.region
-      APNS_SIGNING_KEY = data.sops_file.secrets.data["apns.staging.signingKey"]
-      APNS_TEAM = data.sops_file.secrets.data["apns.staging.team"]
-      APNS_KEY_ID = data.sops_file.secrets.data["apns.staging.keyId"]
-      APNS_DEFAULT_TOPIC = data.sops_file.secrets.data["apns.staging.defaultTopic"]
-      APNS_HOST = "api.sandbox.push.apple.com"
+    DSQL_ROLE_NAME     = local.lambda_dsql_roles["PruneDevices"].role_name
+    DSQL_ENDPOINT      = module.database.cluster_endpoint
+    DSQL_REGION        = module.core.region
+    APNS_SIGNING_KEY   = data.sops_file.secrets.data["apns.staging.signingKey"]
+    APNS_TEAM          = data.sops_file.secrets.data["apns.staging.team"]
+    APNS_KEY_ID        = data.sops_file.secrets.data["apns.staging.keyId"]
+    APNS_DEFAULT_TOPIC = data.sops_file.secrets.data["apns.staging.defaultTopic"]
+    APNS_HOST          = "api.sandbox.push.apple.com"
   })
 
-    additional_policy_arns = [module.database.connect_policy_arn]
+  additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SNSAccess" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = ["sns:DeleteEndpoint","sns:Subscribe","sns:Unsubscribe"]
-        Resource = ["${aws_sns_topic.push_notifications.arn}","${aws_sns_platform_application.apns.arn}","${aws_sns_platform_application.apns.arn}/*"]
+        Action   = ["sns:DeleteEndpoint", "sns:Subscribe", "sns:Unsubscribe"]
+        Resource = ["${aws_sns_topic.push_notifications.arn}", "${aws_sns_platform_application.apns.arn}", "${aws_sns_platform_application.apns.arn}/*"]
       }]
     })
   }
