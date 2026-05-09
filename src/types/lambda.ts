@@ -339,6 +339,8 @@ export interface CleanupResult {
   sessionsDeleted: number
   /** Number of verification tokens deleted */
   verificationTokensDeleted: number
+  /** Number of device events deleted (90-day retention) */
+  deviceEventsDeleted: number
   /** Error messages for any failed operations */
   errors: string[]
   [key: string]: unknown

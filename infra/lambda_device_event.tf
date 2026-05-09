@@ -4,7 +4,7 @@
 # --- DeviceEvent ---
 
 module "lambda_device_event" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "DeviceEvent"
   name_prefix        = module.core.name_prefix
@@ -22,12 +22,12 @@ module "lambda_device_event" {
   api_gateway_enabled = true
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME = local.lambda_dsql_roles["DeviceEvent"].role_name
-    DSQL_ENDPOINT  = module.database.cluster_endpoint
-    DSQL_REGION    = module.core.region
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["DeviceEvent"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 }
 
 resource "aws_api_gateway_resource" "device_event" {

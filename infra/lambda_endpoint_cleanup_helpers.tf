@@ -4,7 +4,7 @@
 # --- EndpointCleanupHelpers ---
 
 module "lambda_endpoint_cleanup_helpers" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "EndpointCleanupHelpers"
   name_prefix        = module.core.name_prefix
@@ -22,12 +22,12 @@ module "lambda_endpoint_cleanup_helpers" {
   api_gateway_enabled = false
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME = local.lambda_dsql_roles["EndpointCleanupHelpers"].role_name
-    DSQL_ENDPOINT  = module.database.cluster_endpoint
-    DSQL_REGION    = module.core.region
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["EndpointCleanupHelpers"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SNSAccess" = jsonencode({
@@ -35,8 +35,11 @@ module "lambda_endpoint_cleanup_helpers" {
       Statement = [{
         Effect   = "Allow"
         Action   = ["sns:DeleteEndpoint"]
-        Resource = ["${aws_sns_topic.push_notifications.arn}", "${aws_sns_platform_application.apns.arn}", "${aws_sns_platform_application.apns.arn}/*"]
+        Resource = ["${aws_sns_topic.push_notifications.arn}","${aws_sns_platform_application.apns.arn}","${aws_sns_platform_application.apns.arn}/*"]
       }]
     })
   }
+
+  sqs_trigger_arn     = module.queue_EndpointEvents.queue_arn
+  sqs_trigger_enabled = true
 }

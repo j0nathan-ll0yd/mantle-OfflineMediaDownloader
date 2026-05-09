@@ -4,7 +4,7 @@
 # --- DownloadOrchestrator ---
 
 module "lambda_download_orchestrator" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "DownloadOrchestrator"
   name_prefix        = module.core.name_prefix
@@ -22,30 +22,30 @@ module "lambda_download_orchestrator" {
   api_gateway_enabled = false
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME           = local.lambda_dsql_roles["DownloadOrchestrator"].role_name
-    DSQL_ENDPOINT            = module.database.cluster_endpoint
-    DSQL_REGION              = module.core.region
-    BUCKET                   = module.storage_files.bucket_id
-    CLOUDFRONT_DOMAIN        = module.storage_files.cloudfront_domain_name
-    SNS_QUEUE_URL            = module.queue_SendPushNotification.queue_url
-    GITHUB_PERSONAL_TOKEN    = var.github_personal_token
-    PATH                     = var.path
-    YTDLP_SLEEP_REQUESTS     = var.ytdlp_sleep_requests
-    YTDLP_SLEEP_INTERVAL     = var.ytdlp_sleep_interval
-    YTDLP_MAX_SLEEP_INTERVAL = var.ytdlp_max_sleep_interval
-    YTDLP_BINARY_PATH        = var.ytdlp_binary_path
-    EVENT_BUS_NAME           = local.event_bus_name
-    EVENT_SOURCE             = "media-downloader"
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["DownloadOrchestrator"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
+      BUCKET = module.storage_files.bucket_id
+      CLOUDFRONT_DOMAIN = module.storage_files.cloudfront_domain_name
+      SNS_QUEUE_URL = module.queue_SendPushNotification.queue_url
+      GITHUB_PERSONAL_TOKEN = var.github_personal_token
+      PATH = var.path
+      YTDLP_SLEEP_REQUESTS = var.ytdlp_sleep_requests
+      YTDLP_SLEEP_INTERVAL = var.ytdlp_sleep_interval
+      YTDLP_MAX_SLEEP_INTERVAL = var.ytdlp_max_sleep_interval
+      YTDLP_BINARY_PATH = var.ytdlp_binary_path
+      EVENT_BUS_NAME = local.event_bus_name
+      EVENT_SOURCE = "media-downloader"
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "S3Access" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = ["s3:AbortMultipartUpload", "s3:HeadObject", "s3:ListMultipartUploadParts", "s3:PutObject"]
+        Action   = ["s3:AbortMultipartUpload","s3:HeadObject","s3:ListMultipartUploadParts","s3:PutObject"]
         Resource = "${module.storage_files.bucket_arn}/*"
       }]
     })

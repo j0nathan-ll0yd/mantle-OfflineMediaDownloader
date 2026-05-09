@@ -3,14 +3,14 @@
 
 # S3 bucket + CloudFront distribution for files
 module "storage_files" {
-  source               = "../../mantle/modules/storage"
-  bucket_name          = "files"
-  name_prefix          = module.core.name_prefix
-  project_name         = var.project_name
-  tags                 = module.core.common_tags
+  source       = "../../../Repositories/mantle/modules/storage"
+  bucket_name  = "files"
+  name_prefix  = module.core.name_prefix
+  project_name = var.project_name
+  tags         = module.core.common_tags
   bucket_name_override = "${module.core.name_prefix}-mantle-offlinemediadownloader-videos"
 
-  cloudfront_enabled          = true
+  cloudfront_enabled    = true
   intelligent_tiering_enabled = true
   lambda_notifications = [
     {

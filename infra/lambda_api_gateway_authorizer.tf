@@ -4,7 +4,7 @@
 # --- ApiGatewayAuthorizer ---
 
 module "lambda_api_gateway_authorizer" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "ApiGatewayAuthorizer"
   name_prefix        = module.core.name_prefix
@@ -22,16 +22,16 @@ module "lambda_api_gateway_authorizer" {
   api_gateway_enabled = false
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME                  = local.lambda_dsql_roles["ApiGatewayAuthorizer"].role_name
-    DSQL_ENDPOINT                   = module.database.cluster_endpoint
-    DSQL_REGION                     = module.core.region
-    AUTH_SECRET                     = data.sops_file.secrets.data["platform.key"]
-    MULTI_AUTHENTICATION_PATH_PARTS = "device/register,device/event,files"
-    RESERVED_CLIENT_IP              = "104.1.88.244"
-    NODE_ENV                        = var.node_env
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["ApiGatewayAuthorizer"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
+      AUTH_SECRET = data.sops_file.secrets.data["platform.key"]
+      MULTI_AUTHENTICATION_PATH_PARTS = "device/register,device/event,files"
+      RESERVED_CLIENT_IP = "104.1.88.244"
+      NODE_ENV = var.node_env
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "ApiGatewayAccess" = jsonencode({

@@ -12,6 +12,7 @@ import {defineScheduledHandler} from '@mantleframework/core'
 import {and, eq, lt, or} from '@mantleframework/database/orm'
 import {addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
 import {getDrizzleClient} from '#db/client'
+import {deleteExpiredDeviceEvents} from '#entities/queries'
 import {fileDownloads, sessions, verification} from '#db/schema'
 import {DownloadStatus} from '#types/enums'
 import type {CleanupResult} from '#types/lambda'
@@ -70,7 +71,7 @@ const scheduled = defineScheduledHandler({operationName: 'CleanupExpiredRecords'
 export const handler = scheduled(async (): Promise<CleanupResult> => {
   metrics.addMetric('CleanupRun', MetricUnit.Count, 1)
   const span = startSpan('cleanup-records')
-  const result: CleanupResult = {fileDownloadsDeleted: 0, sessionsDeleted: 0, verificationTokensDeleted: 0, errors: []}
+  const result: CleanupResult = {fileDownloadsDeleted: 0, sessionsDeleted: 0, verificationTokensDeleted: 0, deviceEventsDeleted: 0, errors: []}
 
   logInfo('CleanupExpiredRecords starting')
 
@@ -101,11 +102,22 @@ export const handler = scheduled(async (): Promise<CleanupResult> => {
     result.errors.push(`Verification cleanup failed: ${message}`)
   }
 
-  const totalDeleted = result.fileDownloadsDeleted + result.sessionsDeleted + result.verificationTokensDeleted
+  try {
+    const cutoffTime = secondsAgo(90 * TIME.DAY_SEC)
+    result.deviceEventsDeleted = await deleteExpiredDeviceEvents(cutoffTime)
+    logDebug('Cleaned up device events', {count: result.deviceEventsDeleted})
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    logError('Failed to cleanup device events', {error: message})
+    result.errors.push(`DeviceEvents cleanup failed: ${message}`)
+  }
+
+  const totalDeleted = result.fileDownloadsDeleted + result.sessionsDeleted + result.verificationTokensDeleted + result.deviceEventsDeleted
   metrics.addMetric('RecordsCleanedUp', MetricUnit.Count, totalDeleted)
   addMetadata(span, 'fileDownloadsDeleted', result.fileDownloadsDeleted)
   addMetadata(span, 'sessionsDeleted', result.sessionsDeleted)
   addMetadata(span, 'verificationTokensDeleted', result.verificationTokensDeleted)
+  addMetadata(span, 'deviceEventsDeleted', result.deviceEventsDeleted)
   addMetadata(span, 'totalDeleted', totalDeleted)
   addMetadata(span, 'errors', result.errors.length)
   endSpan(span)

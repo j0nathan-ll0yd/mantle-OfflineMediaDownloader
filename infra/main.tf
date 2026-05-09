@@ -21,42 +21,42 @@ provider "aws" {
 }
 
 module "core" {
-  source       = "../../mantle/modules/core"
+  source       = "../../../Repositories/mantle/modules/core"
   project_name = var.project_name
   environment  = var.environment
 }
 
 module "api" {
-  source      = "../../mantle/modules/api-gateway"
+  source      = "../../../Repositories/mantle/modules/api-gateway"
   name_prefix = module.core.name_prefix
   tags        = module.core.common_tags
 
   redeployment_trigger = sha1(join(",", [
-    module.lambda_device_event.invoke_arn,
-    module.lambda_device_register.invoke_arn,
-    module.lambda_feedly_webhook.invoke_arn,
-    module.lambda_files_get.invoke_arn,
-    module.lambda_files_by_id_delete.invoke_arn,
-    module.lambda_user_delete.invoke_arn,
-    module.lambda_user_login.invoke_arn,
-    module.lambda_user_logout.invoke_arn,
-    module.lambda_user_refresh.invoke_arn,
-    module.lambda_user_register.invoke_arn,
-    module.lambda_user_subscribe.invoke_arn,
-    "auth:none",
-    "auth:authorizer-optional",
-    "auth:authorizer",
-    "auth:authorizer-optional",
-    "auth:authorizer",
-    "auth:authorizer",
-    "auth:none",
-    "auth:authorizer",
-    "auth:authorizer",
-    "auth:none",
-    "auth:authorizer",
-    module.lambda_api_gateway_authorizer.invoke_arn,
-    "authorizer_ttl:0",
-  ]))
+      module.lambda_device_event.invoke_arn,
+      module.lambda_device_register.invoke_arn,
+      module.lambda_feedly_webhook.invoke_arn,
+      module.lambda_files_get.invoke_arn,
+      module.lambda_files_by_id_delete.invoke_arn,
+      module.lambda_user_delete.invoke_arn,
+      module.lambda_user_login.invoke_arn,
+      module.lambda_user_logout.invoke_arn,
+      module.lambda_user_refresh.invoke_arn,
+      module.lambda_user_register.invoke_arn,
+      module.lambda_user_subscribe.invoke_arn,
+      "auth:authorizer-optional",
+      "auth:authorizer-optional",
+      "auth:authorizer",
+      "auth:authorizer-optional",
+      "auth:authorizer",
+      "auth:authorizer",
+      "auth:none",
+      "auth:authorizer",
+      "auth:authorizer",
+      "auth:none",
+      "auth:authorizer",
+      module.lambda_api_gateway_authorizer.invoke_arn,
+      "authorizer_ttl:0",
+    ]))
 
   authorizer_lambda_invoke_arn = module.lambda_api_gateway_authorizer.invoke_arn
   authorizer_enabled           = true

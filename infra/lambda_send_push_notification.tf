@@ -4,7 +4,7 @@
 # --- SendPushNotification ---
 
 module "lambda_send_push_notification" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "SendPushNotification"
   name_prefix        = module.core.name_prefix
@@ -22,20 +22,20 @@ module "lambda_send_push_notification" {
   api_gateway_enabled = false
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME = local.lambda_dsql_roles["SendPushNotification"].role_name
-    DSQL_ENDPOINT  = module.database.cluster_endpoint
-    DSQL_REGION    = module.core.region
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["SendPushNotification"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SNSAccess" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = ["sns:DeleteEndpoint", "sns:Publish"]
-        Resource = ["${aws_sns_topic.push_notifications.arn}", "${aws_sns_platform_application.apns.arn}", "${aws_sns_platform_application.apns.arn}/*"]
+        Action   = ["sns:DeleteEndpoint","sns:Publish"]
+        Resource = ["${aws_sns_topic.push_notifications.arn}","${aws_sns_platform_application.apns.arn}","${aws_sns_platform_application.apns.arn}/*"]
       }]
     })
   }

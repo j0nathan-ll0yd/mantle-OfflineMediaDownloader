@@ -1,30 +1,46 @@
-/**
- * DeviceEvent Lambda
- *
- * Receives and logs events from the iOS client for debugging and analytics.
- * Simple pass-through to CloudWatch logs for later analysis.
- *
- * Trigger: API Gateway POST /device/event
- * Input: JSON payload with device ID and event message
- * Output: 204 No Content on success
- */
 import {buildValidatedResponse} from '@mantleframework/core'
-import {addAnnotation, endSpan, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
+import {logInfo, metrics, MetricUnit} from '@mantleframework/observability'
 import {defineApiHandler} from '@mantleframework/validation'
+import {createDeviceEvents, getUserDevicesByDeviceId, updateDevice} from '#entities/queries'
+import {clientEventBatchRequestSchema} from '#types/client-event-schemas'
+import type {ClientEvent} from '#types/client-event-schemas'
 
-const api = defineApiHandler({auth: 'none', operationName: 'DeviceEvent'})
-export const handler = api(async ({event, context}) => {
-  metrics.addMetric('DeviceEventReceived', MetricUnit.Count, 1)
+function extractCorrelationId(event: ClientEvent): string | undefined {
+  if ('correlationId' in event) {
+    return event.correlationId
+  }
+  return undefined
+}
 
-  const span = startSpan('device-event-log')
+const api = defineApiHandler({auth: 'authorizer-optional', schema: clientEventBatchRequestSchema, operationName: 'DeviceEvent'})
+export const handler = api(async ({event, context, userId, body}) => {
   const deviceId = event.headers['x-device-uuid']
-  if (deviceId) {
-    addAnnotation(span, 'deviceId', deviceId)
+  if (!deviceId) {
+    return buildValidatedResponse(context, 400)
   }
 
-  const message = event.body
-  logInfo('Event received', {deviceId, message})
-  endSpan(span)
+  if (userId) {
+    const userDevices = await getUserDevicesByDeviceId(deviceId)
+    if (!userDevices.some((ud) => ud.userId === userId)) {
+      return buildValidatedResponse(context, 403)
+    }
+  }
+
+  const eventsToInsert = body.events.map((evt) => ({
+    deviceId,
+    eventType: evt.eventType,
+    timestamp: new Date(evt.timestamp),
+    properties: JSON.stringify(evt),
+    correlationId: extractCorrelationId(evt)
+  }))
+
+  const inserted = await createDeviceEvents(eventsToInsert)
+
+  await updateDevice(deviceId, {lastSeenAt: new Date()})
+
+  metrics.addMetric('DeviceEventReceived', MetricUnit.Count, body.events.length)
+  metrics.addMetric('DeviceEventBatchSize', MetricUnit.Count, body.events.length)
+  logInfo('Device events ingested', {deviceId, received: body.events.length, inserted: inserted.length})
 
   return buildValidatedResponse(context, 204)
 })

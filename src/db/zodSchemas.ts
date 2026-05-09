@@ -5,7 +5,7 @@
  * Domain code should import from this module for entity validation.
  */
 import {createInsertSchema, createSelectSchema, createUpdateSchema} from 'drizzle-zod'
-import {accounts, devices, fileDownloads, files, sessions, userDevices, userFiles, users, verification} from './schema.js'
+import {accounts, deviceEvents, devices, fileDownloads, files, sessions, userDevices, userFiles, users, verification} from './schema.js'
 import {downloadStatusZodSchema, fileStatusZodSchema} from '#types/sharedPrimitives'
 
 // User schemas
@@ -42,6 +42,10 @@ export const accountUpdateSchema = createUpdateSchema(accounts)
 export const verificationInsertSchema = createInsertSchema(verification)
 export const verificationSelectSchema = createSelectSchema(verification)
 export const verificationUpdateSchema = createUpdateSchema(verification)
+
+// DeviceEvent schemas
+export const deviceEventInsertSchema = createInsertSchema(deviceEvents)
+export const deviceEventSelectSchema = createSelectSchema(deviceEvents)
 
 // Relationship schemas (insert only - no updates on junction tables)
 export const userFileInsertSchema = createInsertSchema(userFiles)
