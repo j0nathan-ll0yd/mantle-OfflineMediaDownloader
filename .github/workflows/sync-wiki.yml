@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   sync-wiki:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, base]
     timeout-minutes: 10
 
     steps:

@@ -107,7 +107,7 @@ describe('External Services Failure Scenario Tests', () => {
 
   describe('SQS Message Handling', () => {
     test('should handle queue not found error', async () => {
-      const invalidQueueUrl = 'http://localhost:4566/000000000000/nonexistent-queue'
+      const invalidQueueUrl = `${process.env.AWS_ENDPOINT_URL ?? 'http://localhost:4566'}/000000000000/nonexistent-queue`
       const originalQueueUrl = process.env.SNS_QUEUE_URL
 
       try {

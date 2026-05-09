@@ -13,7 +13,7 @@ permissions: {}
 jobs:
   vale:
     name: Lint Documentation
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 10
     permissions:
       contents: read

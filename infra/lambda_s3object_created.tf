@@ -22,13 +22,13 @@ module "lambda_s3object_created" {
   api_gateway_enabled = false
 
   environment_variables = merge(local.common_lambda_env, {
-      DSQL_ROLE_NAME = local.lambda_dsql_roles["S3ObjectCreated"].role_name
-      DSQL_ENDPOINT = module.database.cluster_endpoint
-      DSQL_REGION = module.core.region
-      SNS_QUEUE_URL = module.queue_SendPushNotification.queue_url
+    DSQL_ROLE_NAME = local.lambda_dsql_roles["S3ObjectCreated"].role_name
+    DSQL_ENDPOINT  = module.database.cluster_endpoint
+    DSQL_REGION    = module.core.region
+    SNS_QUEUE_URL  = module.queue_SendPushNotification.queue_url
   })
 
-    additional_policy_arns = [module.database.connect_policy_arn]
+  additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SQSSend_Sendpushnotification" = jsonencode({

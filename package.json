@@ -15,6 +15,7 @@
     "audit:aws:staging": "./bin/aws-audit.sh --env staging",
     "audit:fix": "pnpm audit --fix",
     "build": "./bin/decrypt-cookies.sh && mantle build",
+    "build:ci": "./bin/decrypt-cookies.sh && mantle build --skip-container",
     "build:bgutil:layer": "./bin/build-bgutil-layer.sh",
     "cookies:encrypt": "sops encrypt --input-type binary --output-type binary --filename-override youtube-cookies.enc layers/yt-dlp/cookies/youtube-cookies.txt > layers/yt-dlp/cookies/youtube-cookies.enc",
     "check:secrets": "./bin/check-secrets.sh",

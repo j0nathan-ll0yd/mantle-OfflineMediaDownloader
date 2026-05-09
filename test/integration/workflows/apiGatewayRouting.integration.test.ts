@@ -40,7 +40,7 @@ describe('API Gateway Routing Integration Tests', () => {
 
   test('should verify LocalStack health includes API Gateway', async () => {
     // This test always runs to verify LocalStack is up
-    const response = await fetch('http://localhost:4566/_localstack/health')
+    const response = await fetch(`${process.env.AWS_ENDPOINT_URL ?? 'http://localhost:4566'}/_localstack/health`)
     expect(response.ok).toBe(true)
 
     const health = await response.json() as {services?: Record<string, string>}

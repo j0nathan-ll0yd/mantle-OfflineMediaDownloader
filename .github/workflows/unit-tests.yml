@@ -10,14 +10,14 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: unit-tests-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Parallel job 1: Validation checks (TypeSpec, API docs, config)
   validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: [self-hosted, linux, arm64, node]
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -101,8 +101,8 @@ jobs:
 
   # Parallel job 2: Type checking and linting
   lint-and-types:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: [self-hosted, linux, arm64, node]
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -144,7 +144,7 @@ jobs:
             layers/yt-dlp/cookies/youtube-cookies.enc > layers/yt-dlp/cookies/youtube-cookies.txt
 
       - name: Build project
-        run: pnpm run build
+        run: pnpm run build:ci
 
       - name: Check types
         run: pnpm run check:types
@@ -175,8 +175,8 @@ jobs:
 
   # Parallel job 3: Build and validate artifacts
   build-and-validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: [self-hosted, linux, arm64, node]
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -234,8 +234,8 @@ jobs:
   # Final job: Run tests after all checks pass
   test:
     needs: [validate, lint-and-types, build-and-validate]
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: [self-hosted, linux, arm64, node]
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:

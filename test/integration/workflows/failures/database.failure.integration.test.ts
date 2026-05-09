@@ -69,7 +69,7 @@ describe('Database Failure Scenario Tests', () => {
 
   describe('Entity Not Found Scenarios', () => {
     test('should handle file not found gracefully in S3ObjectCreated', async () => {
-      process.env.SNS_QUEUE_URL = 'http://localhost:4566/000000000000/test-queue'
+      process.env.SNS_QUEUE_URL = `${process.env.AWS_ENDPOINT_URL ?? 'http://localhost:4566'}/000000000000/test-queue`
       const {handler} = await import('#lambdas/s3/S3ObjectCreated/index')
 
       const event = createMockS3Event('nonexistent-file.mp4')

@@ -11,8 +11,8 @@ permissions: {}
 jobs:
   dependency-check:
     name: Validate Dependencies
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: [self-hosted, linux, arm64, node]
+    timeout-minutes: 25
     permissions:
       contents: read
       pull-requests: write

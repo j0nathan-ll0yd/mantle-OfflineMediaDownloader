@@ -10,12 +10,12 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: integration-tests-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   integration-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node-integration]
     timeout-minutes: 25
     permissions:
       contents: read
@@ -50,73 +50,12 @@ jobs:
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Set sidecar endpoints
+        run: |
+          echo "AWS_ENDPOINT_URL=http://${LOCALSTACK_HOST:-localhost}:4566" >> "$GITHUB_ENV"
+          echo "TEST_DATABASE_URL=postgres://${POSTGRES_USER:-test}:${POSTGRES_PASSWORD:-test}@${POSTGRES_HOST:-localhost}:5432/${POSTGRES_DB:-media_downloader_test}" >> "$GITHUB_ENV"
+
       # Note: Type checking and linting removed - unit-tests workflow handles these
-
-      - name: Start LocalStack and PostgreSQL
-        run: |
-          docker compose -f docker-compose.localstack.yml up -d --wait
-          docker compose -f docker-compose.test.yml up -d --wait
-          echo "Services are healthy and ready"
-
-      - name: Verify all LocalStack services
-        env:
-          AWS_ACCESS_KEY_ID: test
-          AWS_SECRET_ACCESS_KEY: test
-          AWS_DEFAULT_REGION: us-west-2
-        run: |
-          echo "Verifying all required LocalStack services..."
-          ENDPOINT="http://localhost:4566"
-
-          # Verify SQS
-          echo "Checking SQS..."
-          QUEUE_URL=$(aws --endpoint-url=$ENDPOINT sqs create-queue --queue-name ci-readiness-check --output text --query 'QueueUrl') || {
-            echo "SQS create-queue failed"
-            exit 1
-          }
-          aws --endpoint-url=$ENDPOINT sqs delete-queue --queue-url "$QUEUE_URL" || true
-          echo "✓ SQS operational"
-
-          # Verify EventBridge
-          echo "Checking EventBridge..."
-          aws --endpoint-url=$ENDPOINT events list-event-buses > /dev/null || {
-            echo "EventBridge list-event-buses failed"
-            exit 1
-          }
-          echo "✓ EventBridge operational"
-
-          # Verify S3
-          echo "Checking S3..."
-          aws --endpoint-url=$ENDPOINT s3 mb s3://ci-readiness-check 2>/dev/null || true
-          aws --endpoint-url=$ENDPOINT s3 rb s3://ci-readiness-check 2>/dev/null || true
-          echo "✓ S3 operational"
-
-          # Verify SNS platform application
-          echo "Checking SNS..."
-          CREATE_RESULT=$(aws --endpoint-url=$ENDPOINT sns create-platform-application \
-            --name ci-readiness-check \
-            --platform APNS \
-            --attributes PlatformCredential=test,PlatformPrincipal=test \
-            --output json 2>&1) || {
-            echo "Failed to create test platform app: $CREATE_RESULT"
-            exit 1
-          }
-
-          APP_ARN=$(echo "$CREATE_RESULT" | jq -r '.PlatformApplicationArn')
-          ENDPOINT_RESULT=$(aws --endpoint-url=$ENDPOINT sns create-platform-endpoint \
-            --platform-application-arn "$APP_ARN" \
-            --token "test-device-token-readiness" \
-            --output json 2>&1) || {
-            echo "Failed to create test endpoint: $ENDPOINT_RESULT"
-            exit 1
-          }
-
-          ENDPOINT_ARN=$(echo "$ENDPOINT_RESULT" | jq -r '.EndpointArn')
-          aws --endpoint-url=$ENDPOINT sns delete-endpoint --endpoint-arn "$ENDPOINT_ARN" || true
-          aws --endpoint-url=$ENDPOINT sns delete-platform-application --platform-application-arn "$APP_ARN" || true
-          echo "✓ SNS operational"
-
-          echo ""
-          echo "All LocalStack services verified successfully"
 
       - name: Create test results directory
         run: mkdir -p test-results
@@ -159,7 +98,6 @@ jobs:
         env:
           CI: true
           USE_LOCALSTACK: true
-          TEST_DATABASE_URL: postgres://test:test@localhost:5432/media_downloader_test
           LOG_LEVEL: WARN
 
       - name: Parse flaky tests from JUnit report
@@ -243,14 +181,14 @@ jobs:
           AWS_SECRET_ACCESS_KEY: test
           AWS_DEFAULT_REGION: us-west-2
         run: |
-          ENDPOINT="http://localhost:4566"
+          ENDPOINT="http://${LOCALSTACK_HOST:-localhost}:4566"
 
           echo "=== PostgreSQL Active Connections ==="
-          docker compose -f docker-compose.test.yml exec -T postgres psql -U test -d media_downloader_test -c "SELECT pid, usename, state, query_start, left(query, 80) as query FROM pg_stat_activity WHERE datname = 'media_downloader_test'" 2>/dev/null || echo "Could not query pg_stat_activity"
+          PGPASSWORD=${POSTGRES_PASSWORD:-test} psql -h ${POSTGRES_HOST:-localhost} -U ${POSTGRES_USER:-test} -d ${POSTGRES_DB:-media_downloader_test} -c "SELECT pid, usename, state, query_start, left(query, 80) as query FROM pg_stat_activity WHERE datname = '${POSTGRES_DB:-media_downloader_test}'" 2>/dev/null || echo "Could not query pg_stat_activity"
           echo ""
 
           echo "=== PostgreSQL Schemas ==="
-          docker compose -f docker-compose.test.yml exec -T postgres psql -U test -d media_downloader_test -c "\dn" 2>/dev/null || echo "Could not list schemas"
+          PGPASSWORD=${POSTGRES_PASSWORD:-test} psql -h ${POSTGRES_HOST:-localhost} -U ${POSTGRES_USER:-test} -d ${POSTGRES_DB:-media_downloader_test} -c "\dn" 2>/dev/null || echo "Could not list schemas"
           echo ""
 
           echo "=== SQS Queues ==="
@@ -266,18 +204,5 @@ jobs:
           echo ""
 
           echo "=== LocalStack Service Status ==="
-          curl -s http://localhost:4566/_localstack/health | jq 2>/dev/null || echo "Could not fetch LocalStack health"
+          curl -s http://${LOCALSTACK_HOST:-localhost}:4566/_localstack/health | jq 2>/dev/null || echo "Could not fetch LocalStack health"
           echo ""
-
-          echo "=== LocalStack Logs (last 150 lines) ==="
-          docker compose -f docker-compose.localstack.yml logs --tail=150
-          echo ""
-
-          echo "=== PostgreSQL Logs (last 50 lines) ==="
-          docker compose -f docker-compose.test.yml logs --tail=50
-
-      - name: Stop services
-        if: always()
-        run: |
-          docker compose -f docker-compose.localstack.yml down
-          docker compose -f docker-compose.test.yml down

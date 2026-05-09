@@ -4,7 +4,8 @@ on:
   pull_request:
     branches: [main]
 
-permissions: {}
+permissions:
+  contents: read
 
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
@@ -13,8 +14,8 @@ concurrency:
 jobs:
   # Quick validation (no build required)
   quick-checks:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: [self-hosted, linux, arm64, node]
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -58,8 +59,8 @@ jobs:
 
   # Final status check for branch protection
   pr-ready:
-    needs: [full-ci, integration]
-    runs-on: ubuntu-latest
+    needs: [quick-checks, full-ci, integration]
+    runs-on: [self-hosted, linux, arm64, base]
     timeout-minutes: 5
     if: always()
     permissions:
