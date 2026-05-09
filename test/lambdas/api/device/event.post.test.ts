@@ -9,23 +9,19 @@ import type * as EventMod from '#lambdas/api/device/event.post.js'
 
 vi.mock('@mantleframework/core', () => ({buildValidatedResponse: vi.fn((_ctx, code) => ({statusCode: code}))}))
 
-vi.mock('@mantleframework/observability',
-  () => ({
-    logInfo: vi.fn(),
-    metrics: {addMetric: vi.fn()},
-    MetricUnit: {Count: 'Count'},
-  }))
+vi.mock('@mantleframework/observability', () => ({logInfo: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
 
 vi.mock('@mantleframework/validation', async () => {
   const {z} = await import('zod')
   return {z, defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}
 })
 
-vi.mock('#entities/queries', () => ({
-  createDeviceEvents: vi.fn(() => [{id: 'evt-1'}]),
-  getUserDevicesByDeviceId: vi.fn(() => [{userId: 'user-1', deviceId: 'dev-123'}]),
-  updateDevice: vi.fn(),
-}))
+vi.mock('#entities/queries',
+  () => ({
+    createDeviceEvents: vi.fn(() => [{id: 'evt-1'}]),
+    getUserDevicesByDeviceId: vi.fn(() => [{userId: 'user-1', deviceId: 'dev-123'}]),
+    updateDevice: vi.fn()
+  }))
 
 const {handler} = (await import('#lambdas/api/device/event.post.js')) as unknown as MockedModule<typeof EventMod>
 import {logInfo, metrics} from '@mantleframework/observability'
@@ -40,14 +36,14 @@ describe('DeviceEvent Lambda', () => {
     event: {headers: deviceId ? {'x-device-uuid': deviceId} : {}},
     context: {awsRequestId: 'req-1'},
     userId,
-    body: {events: [{eventType: 'push_delivered' as const, timestamp: '2026-05-09T12:00:00Z', correlationId: 'notif-1'}]},
+    body: {events: [{eventType: 'push_delivered' as const, timestamp: '2026-05-09T12:00:00Z', correlationId: 'notif-1'}]}
   })
 
   it('should insert events and return 204', async () => {
     const result = await handler(makeCtx('dev-123'))
 
     expect(createDeviceEvents).toHaveBeenCalledWith([
-      expect.objectContaining({deviceId: 'dev-123', eventType: 'push_delivered', correlationId: 'notif-1'}),
+      expect.objectContaining({deviceId: 'dev-123', eventType: 'push_delivered', correlationId: 'notif-1'})
     ])
     expect(updateDevice).toHaveBeenCalledWith('dev-123', expect.objectContaining({lastSeenAt: expect.any(Date)}))
     expect(result.statusCode).toBe(204)

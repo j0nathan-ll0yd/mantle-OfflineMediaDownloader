@@ -3,16 +3,9 @@ import type {SQSRecord} from 'aws-lambda'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as EndpointMod from '#lambdas/sqs/EndpointCleanupHelpers/index.js'
 
-vi.mock('@mantleframework/core', () => ({
-  defineSqsHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
-}))
+vi.mock('@mantleframework/core', () => ({defineSqsHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
 
-vi.mock('@mantleframework/observability', () => ({
-  logError: vi.fn(),
-  logInfo: vi.fn(),
-  metrics: {addMetric: vi.fn()},
-  MetricUnit: {Count: 'Count'},
-}))
+vi.mock('@mantleframework/observability', () => ({logError: vi.fn(), logInfo: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
 
 vi.mock('@mantleframework/validation', async () => {
   const {z} = await import('zod')
@@ -37,7 +30,7 @@ function makeSqsRecord(body: string): SQSRecord {
     md5OfBody: '',
     eventSource: 'aws:sqs',
     eventSourceARN: '',
-    awsRegion: 'us-east-1',
+    awsRegion: 'us-east-1'
   }
 }
 
@@ -61,7 +54,7 @@ describe('EndpointCleanupHelpers', () => {
       endpointArn,
       systemVersion: '17.0',
       systemName: 'iOS',
-      lastSeenAt: null,
+      lastSeenAt: null
     })
     vi.mocked(cleanupDisabledEndpoint).mockResolvedValue({ok: true, value: {deviceId: 'device-123', endpointArn}} as never)
 
@@ -70,7 +63,7 @@ describe('EndpointCleanupHelpers', () => {
       EndpointArn: endpointArn,
       Resource: platformAppArn,
       Service: 'SNS',
-      Time: '2026-05-09T12:00:00.000Z',
+      Time: '2026-05-09T12:00:00.000Z'
     })
 
     await handler(makeSqsRecord(body))
@@ -84,7 +77,7 @@ describe('EndpointCleanupHelpers', () => {
     const body = makeSnsWrappedEvent({
       EventType: 'EndpointUpdated',
       EndpointArn: 'arn:aws:sns:us-east-1:123:endpoint/APNS/MyApp/uuid',
-      Resource: 'arn:aws:sns:us-east-1:123:app/APNS/MyApp',
+      Resource: 'arn:aws:sns:us-east-1:123:app/APNS/MyApp'
     })
 
     await handler(makeSqsRecord(body))
@@ -105,10 +98,7 @@ describe('EndpointCleanupHelpers', () => {
 
     await handler(makeSqsRecord(body))
 
-    expect(logError).toHaveBeenCalledWith(
-      'SNS message failed schema validation',
-      expect.objectContaining({messageId: 'test-message-id'})
-    )
+    expect(logError).toHaveBeenCalledWith('SNS message failed schema validation', expect.objectContaining({messageId: 'test-message-id'}))
     expect(getDeviceByEndpointArn).not.toHaveBeenCalled()
   })
 
@@ -118,7 +108,7 @@ describe('EndpointCleanupHelpers', () => {
     const body = makeSnsWrappedEvent({
       EventType: 'EndpointDisabled',
       EndpointArn: 'arn:aws:sns:us-east-1:123:endpoint/APNS/MyApp/unknown',
-      Resource: 'arn:aws:sns:us-east-1:123:app/APNS/MyApp',
+      Resource: 'arn:aws:sns:us-east-1:123:app/APNS/MyApp'
     })
 
     await handler(makeSqsRecord(body))

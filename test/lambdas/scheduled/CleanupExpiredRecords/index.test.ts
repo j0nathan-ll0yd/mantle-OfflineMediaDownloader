@@ -60,16 +60,14 @@ vi.mock('#db/schema',
     verification: {id: 'id', expiresAt: 'expiresAt'}
   }))
 
-vi.mock('#types/enums', () => ({
-  DownloadStatus: {Pending: 'Pending', InProgress: 'InProgress', Scheduled: 'Scheduled', Completed: 'Completed', Failed: 'Failed'},
-  FileStatus: {Queued: 'Queued', Downloading: 'Downloading', Downloaded: 'Downloaded', Failed: 'Failed'},
-  ResponseStatus: {Dispatched: 'Dispatched', Initiated: 'Initiated', Accepted: 'Accepted', Success: 'Success'},
-}))
+vi.mock('#types/enums',
+  () => ({
+    DownloadStatus: {Pending: 'Pending', InProgress: 'InProgress', Scheduled: 'Scheduled', Completed: 'Completed', Failed: 'Failed'},
+    FileStatus: {Queued: 'Queued', Downloading: 'Downloading', Downloaded: 'Downloaded', Failed: 'Failed'},
+    ResponseStatus: {Dispatched: 'Dispatched', Initiated: 'Initiated', Accepted: 'Accepted', Success: 'Success'}
+  }))
 
-vi.mock('#types/sharedPrimitives', () => ({
-  downloadStatusZodSchema: {optional: () => ({})},
-  fileStatusZodSchema: {optional: () => ({})}
-}))
+vi.mock('#types/sharedPrimitives', () => ({downloadStatusZodSchema: {optional: () => ({})}, fileStatusZodSchema: {optional: () => ({})}}))
 
 vi.mock('#entities/queries', () => ({deleteExpiredDeviceEvents: vi.fn(() => Promise.resolve(0))}))
 
