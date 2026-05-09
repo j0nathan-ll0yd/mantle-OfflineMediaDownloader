@@ -24,11 +24,7 @@ interface Edge {
 interface KnowledgeGraph {
   nodes: Node[]
   edges: Edge[]
-  metadata: {
-    created: string
-    version: string
-    description: string
-  }
+  metadata: {created: string; version: string; description: string}
 }
 
 const __filename = fileURLToPath(import.meta.url)
@@ -57,7 +53,9 @@ export class GraphQuery {
     const visited = new Set<string>()
 
     const dfs = (current: string, path: string[]) => {
-      if (path.length > maxHops) return
+      if (path.length > maxHops) {
+        return
+      }
       if (current === endId) {
         paths.push([...path])
         return
@@ -88,10 +86,14 @@ export class GraphQuery {
 
     while (queue.length > 0) {
       const {node, level} = queue.shift()!
-      if (level > depth || visited.has(node)) continue
+      if (level > depth || visited.has(node)) {
+        continue
+      }
 
       visited.add(node)
-      if (!impact.has(level)) impact.set(level, [])
+      if (!impact.has(level)) {
+        impact.set(level, [])
+      }
       impact.get(level)!.push(node)
 
       // Find all nodes that this node affects
@@ -114,10 +116,14 @@ export class GraphQuery {
 
     while (queue.length > 0) {
       const {node, level} = queue.shift()!
-      if (level > depth || visited.has(node)) continue
+      if (level > depth || visited.has(node)) {
+        continue
+      }
 
       visited.add(node)
-      if (!deps.has(level)) deps.set(level, [])
+      if (!deps.has(level)) {
+        deps.set(level, [])
+      }
       deps.get(level)!.push(node)
 
       // Find all nodes that this node depends on
@@ -134,16 +140,8 @@ export class GraphQuery {
    * Complex query: What happens if a file is deleted?
    * Note: fileId parameter would be used to find specific file relationships
    */
-  fileDeleteImpact(_fileId: string): {
-    affectedUsers: string[]
-    affectedLambdas: string[]
-    cascadeOperations: string[]
-  } {
-    const result = {
-      affectedUsers: [] as string[],
-      affectedLambdas: [] as string[],
-      cascadeOperations: [] as string[]
-    }
+  fileDeleteImpact(_fileId: string): {affectedUsers: string[]; affectedLambdas: string[]; cascadeOperations: string[]} {
+    const result = {affectedUsers: [] as string[], affectedLambdas: [] as string[], cascadeOperations: [] as string[]}
 
     // Find UserFiles entries for this file (used for determining affected users)
     this.graph.edges.filter((e) => e.target === 'entity:Files' && e.source.includes('UserFiles'))
@@ -292,7 +290,14 @@ export class GraphQuery {
 
     return {
       error: 'Question not understood',
-      suggestions: ['What happens if a file is deleted?', 'What is the upload flow?', 'Are there circular dependencies?', 'What are the system communities?', 'What is the impact of changing ListFiles?', 'What does WebhookFeedly depend on?']
+      suggestions: [
+        'What happens if a file is deleted?',
+        'What is the upload flow?',
+        'Are there circular dependencies?',
+        'What are the system communities?',
+        'What is the impact of changing ListFiles?',
+        'What does WebhookFeedly depend on?'
+      ]
     }
   }
 }
@@ -307,7 +312,13 @@ async function main() {
   console.log('GraphRAG Query Interface\n')
 
   // Example queries
-  const examples = ['What happens if a file is deleted?', 'What is the upload flow?', 'Are there circular dependencies?', 'What is the impact of changing ListFiles?', 'What does WebhookFeedly depend on?']
+  const examples = [
+    'What happens if a file is deleted?',
+    'What is the upload flow?',
+    'Are there circular dependencies?',
+    'What is the impact of changing ListFiles?',
+    'What does WebhookFeedly depend on?'
+  ]
 
   for (const example of examples) {
     console.log(`\nQ: ${example}`)

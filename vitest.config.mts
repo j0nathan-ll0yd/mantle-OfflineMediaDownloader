@@ -39,7 +39,6 @@ export default defineConfig({
         '#errors': resolve(__dirname, 'src/errors'),
         '#utils': resolve(__dirname, 'src/utils'),
         '#lib': resolve(__dirname, 'src/lib'),
-        '#util': resolve(__dirname, 'src/util'),
         '#config': resolve(__dirname, 'src/config'),
         '#types': resolve(__dirname, 'src/types'),
         '#test': resolve(__dirname, 'test'),

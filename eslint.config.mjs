@@ -3,7 +3,7 @@ import {createRequire} from 'node:module'
 
 // Load local ESLint rules plugin (CommonJS module)
 const require = createRequire(import.meta.url)
-const localRulesPlugin = require('./eslint-local-rules/index.cjs')
+const localRulesPlugin = require('./config/eslint-local-rules/index.cjs')
 
 export default createMantleEslintConfig({
   tsconfigRootDir: import.meta.dirname,
@@ -19,7 +19,8 @@ export default createMantleEslintConfig({
     '**/.idea',
     '**/.webpackCache',
     'src/types/terraform.d.ts',
-    '.dependency-cruiser.cjs',
+    'config/.dependency-cruiser.cjs',
+    'config/eslint-local-rules/**',
     '**/*.fixture.ts',
     'infra/cloudfront-functions/**/*'
   ],

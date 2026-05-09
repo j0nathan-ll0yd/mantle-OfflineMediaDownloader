@@ -1,19 +1,19 @@
 #!/usr/bin/env tsx
 /**
  * Test Scaffolder CLI
- * 
+ *
  * Automatically generates test boilerplate with proper mocking setup.
  * Uses AST analysis to detect imports and generate appropriate mocks.
- * 
+ *
  * Usage:
  *   pnpm scaffold:test <file-path>
- * 
+ *
  * Example:
  *   pnpm scaffold:test src/lambdas/StartFileUpload/src/index.ts
  */
 
 import {existsSync, writeFileSync} from 'fs'
-import {dirname, join, relative, basename} from 'path'
+import {basename, dirname, join, relative} from 'path'
 import {Project} from 'ts-morph'
 
 interface ImportInfo {
@@ -34,9 +34,9 @@ function analyzeSourceFile(filePath: string): ImportInfo[] {
 
   for (const importDecl of sourceFile.getImportDeclarations()) {
     const moduleSpecifier = importDecl.getModuleSpecifierValue()
-    
-    const namedImports = importDecl.getNamedImports().map(ni => ni.getName())
-    
+
+    const namedImports = importDecl.getNamedImports().map((ni) => ni.getName())
+
     imports.push({
       modulePath: moduleSpecifier,
       isAwsSdk: moduleSpecifier.startsWith('@aws-sdk/'),
@@ -62,18 +62,16 @@ vi.mock('${imp.modulePath}', () => ({
   deleteUser: vi.fn()
 }))`
   }
-  
+
   if (imp.isVendorWrapper) {
-    const mockExports = imp.namedImports.map(name => 
-      `  ${name}: jest.fn<() => Promise<unknown>>().mockResolvedValue({})`
-    ).join(',\n')
-    
+    const mockExports = imp.namedImports.map((name) => `  ${name}: jest.fn<() => Promise<unknown>>().mockResolvedValue({})`).join(',\n')
+
     return `// Mock vendor wrapper
 jest.unstable_mockModule('${imp.modulePath}', () => ({
 ${mockExports}
 }))`
   }
-  
+
   if (imp.isAwsSdk) {
     return `// WARNING: Direct AWS SDK import detected
 // This should use vendor wrappers instead
@@ -81,12 +79,10 @@ jest.unstable_mockModule('${imp.modulePath}', () => ({
   // Add mocks here
 }))`
   }
-  
+
   // Generic module mock
-  const mockExports = imp.namedImports.map(name => 
-    `  ${name}: jest.fn()`
-  ).join(',\n')
-  
+  const mockExports = imp.namedImports.map((name) => `  ${name}: jest.fn()`).join(',\n')
+
   return `jest.unstable_mockModule('${imp.modulePath}', () => ({
 ${mockExports}
 }))`
@@ -98,16 +94,13 @@ ${mockExports}
 function generateTestFile(sourceFilePath: string, imports: ImportInfo[]): string {
   const fileName = basename(sourceFilePath, '.ts')
   const relativePath = relative(process.cwd(), sourceFilePath)
-  
-  const mockSetups = imports
-    .filter(imp => !imp.modulePath.startsWith('#types/'))
-    .map(imp => generateMockSetup(imp))
-    .join('\n\n')
-  
-  const hasEntityImport = imports.some(imp => imp.isEntity)
+
+  const mockSetups = imports.filter((imp) => !imp.modulePath.startsWith('#types/')).map((imp) => generateMockSetup(imp)).join('\n\n')
+
+  const hasEntityImport = imports.some((imp) => imp.isEntity)
   const helperImports = hasEntityImport
     ? "import {createEntityMock} from '#test/helpers/entity-mock'\n"
-    : ""
+    : ''
 
   return `/**
  * Tests for ${relativePath}
@@ -159,7 +152,7 @@ describe('${fileName}', () => {
  */
 function main(): void {
   const args = process.argv.slice(2)
-  
+
   if (args.length === 0) {
     console.error('Usage: pnpm scaffold:test <file-path>')
     console.error('Example: pnpm scaffold:test src/lambdas/StartFileUpload/src/index.ts')
@@ -167,25 +160,25 @@ function main(): void {
   }
 
   const sourceFilePath = args[0]
-  
+
   if (!existsSync(sourceFilePath)) {
     console.error(`❌ File not found: ${sourceFilePath}`)
     process.exit(1)
   }
 
   console.log(`🔍 Analyzing ${sourceFilePath}...`)
-  
+
   const imports = analyzeSourceFile(sourceFilePath)
   console.log(`📦 Found ${imports.length} imports`)
-  
+
   const testContent = generateTestFile(sourceFilePath, imports)
-  
+
   // Determine output path
   const sourceDir = dirname(sourceFilePath)
   const testDir = join(dirname(sourceDir), 'test')
   const testFileName = basename(sourceFilePath, '.ts') + '.test.ts'
   const testFilePath = join(testDir, testFileName)
-  
+
   if (existsSync(testFilePath)) {
     console.error(`❌ Test file already exists: ${testFilePath}`)
     console.error('Remove the existing file or use a different name.')

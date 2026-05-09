@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: dependency-report
-          path: dependency-report.html
+          path: reports/dependency-report.html
 
       - name: Comment on PR
         if: failure() && github.event_name == 'pull_request'

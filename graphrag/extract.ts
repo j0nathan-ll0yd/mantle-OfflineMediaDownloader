@@ -36,15 +36,7 @@ interface Edge {
 interface KnowledgeGraph {
   nodes: Node[]
   edges: Edge[]
-  metadata: {
-    version: string
-    description: string
-    sources: {
-      lambdas: string
-      dependencies: string
-      metadata: string
-    }
-  }
+  metadata: {version: string; description: string; sources: {lambdas: string; dependencies: string; metadata: string}}
 }
 
 interface DependencyGraph {
@@ -156,10 +148,14 @@ async function discoverEntities(): Promise<string[]> {
 
   const entities: string[] = []
   for (const varStmt of sourceFile.getVariableStatements()) {
-    if (!varStmt.isExported()) continue
+    if (!varStmt.isExported()) {
+      continue
+    }
     for (const decl of varStmt.getDeclarations()) {
       const init = decl.getInitializer()
-      if (!init || !init.isKind(SyntaxKind.CallExpression)) continue
+      if (!init || !init.isKind(SyntaxKind.CallExpression)) {
+        continue
+      }
       const callTarget = init.getExpression()
       if (callTarget.isKind(SyntaxKind.Identifier) && callTarget.getText() === 'pgTable') {
         const varName = decl.getName()
@@ -199,12 +195,9 @@ async function discoverTypeSpecModels(): Promise<TypeSpecModelMetadata[]> {
     const modelStart = match.index + match[0].length
     const modelEnd = content.indexOf('}', modelStart)
     const modelBody = content.slice(modelStart, modelEnd)
-    const fields = modelBody
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith('*') && !line.startsWith('/') && line.includes(':'))
-      .map((line) => line.split(':')[0].replace('?', '').trim())
-      .filter((field) => field.length > 0)
+    const fields = modelBody.split('\n').map((line) => line.trim()).filter((line) =>
+      line && !line.startsWith('*') && !line.startsWith('/') && line.includes(':')
+    ).map((line) => line.split(':')[0].replace('?', '').trim()).filter((field) => field.length > 0)
 
     models.push({name, type: 'model', description, fields})
   }
@@ -219,12 +212,9 @@ async function discoverTypeSpecModels(): Promise<TypeSpecModelMetadata[]> {
     const enumStart = match.index + match[0].length
     const enumEnd = content.indexOf('}', enumStart)
     const enumBody = content.slice(enumStart, enumEnd)
-    const values = enumBody
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith('*') && !line.startsWith('/') && line.includes(':'))
-      .map((line) => line.split(':')[0].trim())
-      .filter((value) => value.length > 0)
+    const values = enumBody.split('\n').map((line) => line.trim()).filter((line) =>
+      line && !line.startsWith('*') && !line.startsWith('/') && line.includes(':')
+    ).map((line) => line.split(':')[0].trim()).filter((value) => value.length > 0)
 
     models.push({name, type: 'enum', description, fields: values})
   }
@@ -275,8 +265,12 @@ function parseTypeSpecInterface(content: string, interfaceMatch: RegExpMatchArra
   let braceCount = 1
   let interfaceEnd = interfaceStart + 1
   while (braceCount > 0 && interfaceEnd < content.length) {
-    if (content[interfaceEnd] === '{') braceCount++
-    if (content[interfaceEnd] === '}') braceCount--
+    if (content[interfaceEnd] === '{') {
+      braceCount++
+    }
+    if (content[interfaceEnd] === '}') {
+      braceCount--
+    }
     interfaceEnd++
   }
   const interfaceBody = content.slice(interfaceStart + 1, interfaceEnd - 1)
@@ -291,24 +285,36 @@ function parseTypeSpecInterface(content: string, interfaceMatch: RegExpMatchArra
     const operationName = methodMatch[1]
 
     // Skip decorator function names and common non-method words
-    if (skipWords.has(operationName.toLowerCase())) continue
+    if (skipWords.has(operationName.toLowerCase())) {
+      continue
+    }
 
     // Look backwards for HTTP method decorators in the preceding context
     const beforeMethod = interfaceBody.slice(Math.max(0, methodMatch.index - 300), methodMatch.index)
 
     // Must have an HTTP method decorator
     let method = ''
-    if (beforeMethod.includes('@get')) method = 'GET'
-    else if (beforeMethod.includes('@post')) method = 'POST'
-    else if (beforeMethod.includes('@delete')) method = 'DELETE'
-    else if (beforeMethod.includes('@put')) method = 'PUT'
-    else if (beforeMethod.includes('@patch')) method = 'PATCH'
+    if (beforeMethod.includes('@get')) {
+      method = 'GET'
+    } else if (beforeMethod.includes('@post')) {
+      method = 'POST'
+    } else if (beforeMethod.includes('@delete')) {
+      method = 'DELETE'
+    } else if (beforeMethod.includes('@put')) {
+      method = 'PUT'
+    } else if (beforeMethod.includes('@patch')) {
+      method = 'PATCH'
+    }
 
-    if (!method) continue
+    if (!method) {
+      continue
+    }
 
     // Check if this is a known operation
     const handler = OPERATION_TO_HANDLER[operationName]
-    if (!handler) continue
+    if (!handler) {
+      continue
+    }
 
     // Extract sub-route if present (looks for @route closest to the method)
     const subRouteMatch = beforeMethod.match(/@route\("([^"]+)"\)(?![\s\S]*@route)/)
@@ -424,10 +430,7 @@ function extractExternalServices(deps: string[], externalServices: ServiceMetada
   const services: Set<string> = new Set()
 
   // Map vendor directories to external service names
-  const vendorToService: Record<string, string> = {
-    BetterAuth: 'Sign In With Apple',
-    YouTube: 'YouTube'
-  }
+  const vendorToService: Record<string, string> = {BetterAuth: 'Sign In With Apple', YouTube: 'YouTube'}
 
   for (const dep of deps) {
     // Match src/lib/vendor/* patterns (non-AWS)
@@ -544,42 +547,22 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
   // 1. Add Lambda nodes
   for (const name of lambdaNames) {
     const lambdaMeta = metadata.lambdas[name] || {trigger: 'Unknown', purpose: 'Unknown'}
-    nodes.push({
-      id: `lambda:${name}`,
-      type: 'Lambda',
-      properties: {
-        name,
-        trigger: lambdaMeta.trigger,
-        purpose: lambdaMeta.purpose
-      }
-    })
+    nodes.push({id: `lambda:${name}`, type: 'Lambda', properties: {name, trigger: lambdaMeta.trigger, purpose: lambdaMeta.purpose}})
   }
 
   // 2. Add Entity nodes
   for (const name of entityNames) {
-    nodes.push({
-      id: `entity:${name}`,
-      type: 'Entity',
-      properties: {name}
-    })
+    nodes.push({id: `entity:${name}`, type: 'Entity', properties: {name}})
   }
 
   // 3. Add AWS Service nodes
   for (const service of metadata.awsServices) {
-    nodes.push({
-      id: `service:${service.name}`,
-      type: 'Service',
-      properties: {name: service.name, type: service.type}
-    })
+    nodes.push({id: `service:${service.name}`, type: 'Service', properties: {name: service.name, type: service.type}})
   }
 
   // 4. Add External Service nodes
   for (const service of metadata.externalServices) {
-    nodes.push({
-      id: `external:${service.name}`,
-      type: 'External',
-      properties: {name: service.name, type: service.type, description: service.description}
-    })
+    nodes.push({id: `external:${service.name}`, type: 'External', properties: {name: service.name, type: service.type, description: service.description}})
   }
 
   // 5. Add TypeSpec Model nodes
@@ -587,12 +570,7 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
     nodes.push({
       id: `apimodel:${model.name}`,
       type: 'ApiModel',
-      properties: {
-        name: model.name,
-        modelType: model.type,
-        description: model.description,
-        fields: model.fields
-      }
+      properties: {name: model.name, modelType: model.type, description: model.description, fields: model.fields}
     })
   }
 
@@ -601,39 +579,22 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
     nodes.push({
       id: `apiendpoint:${endpoint.name}`,
       type: 'ApiEndpoint',
-      properties: {
-        name: endpoint.name,
-        route: endpoint.route,
-        method: endpoint.method,
-        description: endpoint.description
-      }
+      properties: {name: endpoint.name, route: endpoint.route, method: endpoint.method, description: endpoint.description}
     })
 
     // Add endpoint → handler Lambda edge
     if (endpoint.handler && lambdaNames.includes(endpoint.handler)) {
-      edges.push({
-        source: `apiendpoint:${endpoint.name}`,
-        target: `lambda:${endpoint.handler}`,
-        relationship: 'implemented_by'
-      })
+      edges.push({source: `apiendpoint:${endpoint.name}`, target: `lambda:${endpoint.handler}`, relationship: 'implemented_by'})
     }
 
     // Add endpoint → request model edge
     if (endpoint.requestModel) {
-      edges.push({
-        source: `apiendpoint:${endpoint.name}`,
-        target: `apimodel:${endpoint.requestModel}`,
-        relationship: 'accepts'
-      })
+      edges.push({source: `apiendpoint:${endpoint.name}`, target: `apimodel:${endpoint.requestModel}`, relationship: 'accepts'})
     }
 
     // Add endpoint → response model edge
     if (endpoint.responseModel) {
-      edges.push({
-        source: `apiendpoint:${endpoint.name}`,
-        target: `apimodel:${endpoint.responseModel}`,
-        relationship: 'returns'
-      })
+      edges.push({source: `apiendpoint:${endpoint.name}`, target: `apimodel:${endpoint.responseModel}`, relationship: 'returns'})
     }
   }
 
@@ -649,11 +610,7 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
   for (const [lambdaName, models] of Object.entries(lambdaToModelMap)) {
     for (const model of models) {
       if (typeSpecModels.some((m) => m.name === model)) {
-        edges.push({
-          source: `lambda:${lambdaName}`,
-          target: `apimodel:${model}`,
-          relationship: 'validates_with'
-        })
+        edges.push({source: `lambda:${lambdaName}`, target: `apimodel:${model}`, relationship: 'validates_with'})
       }
     }
   }
@@ -666,31 +623,19 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
     // AWS Services
     const awsServices = extractAwsServices(deps, metadata.awsServices)
     for (const serviceName of awsServices) {
-      edges.push({
-        source: `lambda:${lambdaName}`,
-        target: `service:${serviceName}`,
-        relationship: 'uses'
-      })
+      edges.push({source: `lambda:${lambdaName}`, target: `service:${serviceName}`, relationship: 'uses'})
     }
 
     // External Services
     const extServices = extractExternalServices(deps, metadata.externalServices)
     for (const serviceName of extServices) {
-      edges.push({
-        source: `lambda:${lambdaName}`,
-        target: `external:${serviceName}`,
-        relationship: 'uses'
-      })
+      edges.push({source: `lambda:${lambdaName}`, target: `external:${serviceName}`, relationship: 'uses'})
     }
 
     // Entities
     const entities = extractEntities(deps, entityNames)
     for (const entityName of entities) {
-      edges.push({
-        source: `lambda:${lambdaName}`,
-        target: `entity:${entityName}`,
-        relationship: 'accesses'
-      })
+      edges.push({source: `lambda:${lambdaName}`, target: `entity:${entityName}`, relationship: 'accesses'})
     }
 
     // Add trigger service edge based on metadata
@@ -700,7 +645,7 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
       const triggerToService: Record<string, string> = {
         'API Gateway': 'API Gateway',
         'S3 Event': 'S3',
-        'SQS': 'SQS',
+        SQS: 'SQS',
         'CloudWatch Events': 'CloudWatch',
         CloudFront: 'CloudFront',
         Manual: '' // Manual triggers don't have a service
@@ -710,11 +655,7 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
       if (serviceName) {
         const triggerService = metadata.awsServices.find((s) => s.name === serviceName)
         if (triggerService) {
-          edges.push({
-            source: `service:${triggerService.name}`,
-            target: `lambda:${lambdaName}`,
-            relationship: 'triggers'
-          })
+          edges.push({source: `service:${triggerService.name}`, target: `lambda:${lambdaName}`, relationship: 'triggers'})
         }
       }
     }
@@ -722,27 +663,20 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
 
   // 6. Add Lambda → Lambda invocation edges (from metadata)
   for (const invocation of metadata.lambdaInvocations) {
-    edges.push({
-      source: `lambda:${invocation.from}`,
-      target: `lambda:${invocation.to}`,
-      relationship: 'invokes',
-      properties: {via: invocation.via}
-    })
+    edges.push({source: `lambda:${invocation.from}`, target: `lambda:${invocation.to}`, relationship: 'invokes', properties: {via: invocation.via}})
   }
 
   // 7. Add Entity → Entity relationship edges (from metadata)
   for (const rel of metadata.entityRelationships) {
-    edges.push({
-      source: `entity:${rel.from}`,
-      target: `entity:${rel.to}`,
-      relationship: rel.type
-    })
+    edges.push({source: `entity:${rel.from}`, target: `entity:${rel.to}`, relationship: rel.type})
   }
 
   // 8. Add Service → Service edges (from metadata)
   for (const edge of metadata.serviceToServiceEdges) {
     const props: Record<string, unknown> = {}
-    if (edge.event) props.event = edge.event
+    if (edge.event) {
+      props.event = edge.event
+    }
 
     edges.push({
       source: `service:${edge.from}`,
@@ -758,13 +692,7 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
     metadata: {
       version: '3.0.0',
       description: 'Media Downloader knowledge graph with Lambda chains, entities, and API contracts (auto-generated)',
-      sources: {
-        lambdas: 'src/lambdas/',
-        entities: 'src/entities/',
-        typespec: 'tsp/',
-        dependencies: 'build/graph.json',
-        metadata: 'graphrag/metadata.json'
-      }
+      sources: {lambdas: 'src/lambdas/', entities: 'src/entities/', typespec: 'tsp/', dependencies: 'build/graph.json', metadata: 'graphrag/metadata.json'}
     }
   }
 }
@@ -808,14 +736,13 @@ function analyzeGraph(graph: KnowledgeGraph) {
     connections[edge.target] = (connections[edge.target] || 0) + 1
   }
 
-  stats.mostConnected = Object.entries(connections)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 10)
-    .map(([node, count]) => ({node, connections: count}))
+  stats.mostConnected = Object.entries(connections).sort(([, a], [, b]) => b - a).slice(0, 10).map(([node, count]) => ({node, connections: count}))
 
   // Find Lambda chains
   const findChains = (start: string, visited: Set<string> = new Set()): string[][] => {
-    if (visited.has(start)) return []
+    if (visited.has(start)) {
+      return []
+    }
     visited.add(start)
 
     const chains: string[][] = []
@@ -897,4 +824,4 @@ if (import.meta.url === `file://${__filename}`) {
   main()
 }
 
-export {KnowledgeGraph, Node, Edge}
+export { Edge, KnowledgeGraph, Node }

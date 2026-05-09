@@ -1,0 +1,31 @@
+# Docker Compose for Integration Testing
+# Provides PostgreSQL for Drizzle/Aurora DSQL integration tests
+# Usage: docker compose -f docker-compose.test.yml up -d --wait
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: media-downloader-test-db
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: media_downloader_test
+      POSTGRES_INITDB_ARGS: "--nosync"
+    ports:
+      - "5432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data:size=512m
+    command: >
+      postgres
+      -c fsync=off
+      -c synchronous_commit=off
+      -c full_page_writes=off
+      -c wal_level=minimal
+      -c max_wal_senders=0
+      -c shared_buffers=256MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d media_downloader_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 3s

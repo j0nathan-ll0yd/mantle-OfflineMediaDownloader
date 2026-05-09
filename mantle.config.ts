@@ -1,4 +1,4 @@
-import { defineConfig } from '@mantleframework/core'
+import {defineConfig} from '@mantleframework/core'
 
 export default defineConfig({
   name: 'media-downloader',
@@ -17,7 +17,8 @@ export default defineConfig({
     {
       name: 'resource_prefix',
       type: 'string',
-      description: 'DEPRECATED: Legacy prefix for S3 bucket names only. New resources use module.core.name_prefix. Do not replicate in new instances. See ADR 0001.',
+      description:
+        'DEPRECATED: Legacy prefix for S3 bucket names only. New resources use module.core.name_prefix. Do not replicate in new instances. See ADR 0001.',
       validation: {oneOf: ['stag', 'prod']},
       validationMessage: "Resource prefix must be 'stag' or 'prod'."
     },
@@ -31,7 +32,10 @@ export default defineConfig({
       type: 'list(string)',
       description: 'Origins allowed to fetch media files via CORS (empty list disables CORS)',
       default: '[]',
-      validation: {condition: 'alltrue([for o in var.cors_allowed_origins : can(regex("^https?://", o))])', errorMessage: 'Each origin must start with http:// or https://.'}
+      validation: {
+        condition: 'alltrue([for o in var.cors_allowed_origins : can(regex("^https?://", o))])',
+        errorMessage: 'Each origin must start with http:// or https://.'
+      }
     }
   ],
   eventbridge: {
@@ -41,25 +45,13 @@ export default defineConfig({
       {
         detailType: 'DownloadRequested',
         queue: 'DownloadQueue',
-        fieldMapping: {
-          fileId: '$.detail.fileId',
-          sourceUrl: '$.detail.sourceUrl',
-          correlationId: '$.detail.correlationId',
-          userId: '$.detail.userId'
-        },
+        fieldMapping: {fileId: '$.detail.fileId', sourceUrl: '$.detail.sourceUrl', correlationId: '$.detail.correlationId', userId: '$.detail.userId'},
         staticFields: {attempt: 1}
       }
     ]
   },
-  observability: {
-    adot: true,
-    metricsNamespace: 'MediaDownloader',
-    disableMetrics: true
-  },
-  secrets: {
-    provider: 'sops',
-    filePattern: 'secrets.{env}.enc.yaml'
-  },
+  observability: {adot: true, metricsNamespace: 'MediaDownloader', disableMetrics: true},
+  secrets: {provider: 'sops', filePattern: 'secrets/secrets.{env}.enc.yaml'},
   sns: {
     topics: [
       {name: 'push-notifications'}
@@ -97,30 +89,5 @@ export default defineConfig({
       {source: '#types/notification-schemas', prefix: 'Notifications.'}
     ]
   },
-  ci: {
-    mantleRepo: 'j0nathan-ll0yd/mantle',
-    mantleRef: 'main',
-    mantleAuthSecret: 'MANTLE_DEPLOY_KEY',
-    deploy: false,
-  },
-  layers: [
-    {
-      name: 'yt-dlp',
-      path: 'layers/yt-dlp',
-      compatibleArchitectures: ['x86_64'],
-      description: 'yt-dlp binary and YouTube cookies'
-    },
-    {
-      name: 'bgutil',
-      path: 'layers/bgutil/build',
-      compatibleArchitectures: ['x86_64'],
-      description: 'bgutil PO-token provider for yt-dlp'
-    },
-    {
-      name: 'ffmpeg',
-      path: 'layers/ffmpeg',
-      compatibleArchitectures: ['x86_64'],
-      description: 'ffmpeg binary for video/audio stream merging'
-    }
-  ]
+  ci: {mantleRepo: 'j0nathan-ll0yd/mantle', mantleRef: 'main', mantleAuthSecret: 'MANTLE_DEPLOY_KEY', deploy: false}
 })

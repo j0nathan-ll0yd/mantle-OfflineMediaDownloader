@@ -9,11 +9,6 @@ locals {
   # EventBridge event bus name
   event_bus_name = module.eventbridge.bus_name
 
-  # Custom Lambda layer ARNs
-  layer_yt_dlp_arn = aws_lambda_layer_version.yt_dlp.arn
-  layer_bgutil_arn = aws_lambda_layer_version.bgutil.arn
-  layer_ffmpeg_arn = aws_lambda_layer_version.ffmpeg.arn
-
   # Common environment variables for all Lambdas
   common_lambda_env = {
     OPENTELEMETRY_EXTENSION_LOG_LEVEL  = "warn"

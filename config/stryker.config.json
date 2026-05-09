@@ -1,0 +1,60 @@
+{
+  "$schema": "../node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "pnpm",
+  "plugins": [
+    "@stryker-mutator/vitest-runner",
+    "@stryker-mutator/typescript-checker"
+  ],
+  "testRunner": "vitest",
+  "checkers": ["typescript"],
+  "tsconfigFile": "tsconfig.json",
+  "typescriptChecker": {
+    "prioritizePerformanceOverAccuracy": true
+  },
+  "coverageAnalysis": "perTest",
+  "concurrency": 4,
+  "maxTestRunnerReuse": 50,
+  "tempDirName": "stryker-tmp",
+  "ignoreStatic": true,
+  "incremental": true,
+  "incrementalFile": "reports/stryker-incremental.json",
+  "thresholds": {
+    "high": 70,
+    "low": 50,
+    "break": 45
+  },
+  "mutate": [
+    "src/lambdas/**/*.ts",
+    "src/entities/**/*.ts",
+    "src/domain/**/*.ts",
+    "src/services/**/*.ts",
+    "src/integrations/**/*.ts",
+    "src/utils/**/*.ts",
+    "src/errors/**/*.ts",
+    "src/db/**/*.ts",
+    "!src/**/*.test.ts",
+    "!src/**/*.fixture.ts",
+    "!src/**/*.d.ts",
+    "!src/db/client.ts",
+    "!src/db/schema.ts"
+  ],
+  "mutator": {
+    "excludedMutations": [
+      "StringLiteral",
+      "ObjectLiteral"
+    ]
+  },
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/mutation.html"
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  },
+  "timeoutMS": 10000,
+  "timeoutFactor": 2.5,
+  "dryRunTimeoutMinutes": 10,
+  "vitest": {
+    "related": true
+  }
+}

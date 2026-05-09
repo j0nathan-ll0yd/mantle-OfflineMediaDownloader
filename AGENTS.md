@@ -23,7 +23,10 @@ AWS Serverless media downloader service built with OpenTofu and TypeScript. Down
 ### Project Structure
 ```
 .
+├── config/                # Tool configuration (ESLint rules, dependency-cruiser, repomix, etc.)
+├── docker/                # Dockerfiles and docker-compose files
 ├── infra/                 # AWS Infrastructure definitions (OpenTofu)
+├── secrets/               # SOPS-encrypted environment secrets
 ├── src/
 │   ├── db/
 │   │   ├── defineQuery.ts            # createQueryFactory(getDrizzleClient) — project-local query factory
@@ -256,7 +259,7 @@ Before running migrations against a live stage, use these validation commands:
 
 ```bash
 mantle db migrate --dry-run       # validates pending migrations in a preview schema; reports per-statement DSQL classifications (OK/INDEX/RECREATION/STRIP). No lock acquired, no mutations.
-mantle db clone --stage staging   # clones remote Aurora DSQL to local Docker PostgreSQL (port 5433) via docker-compose.clone.yml for safe local migration testing
+mantle db clone --stage staging   # clones remote Aurora DSQL to local Docker PostgreSQL (port 5433) via docker/docker-compose.clone.yml for safe local migration testing
 ```
 
 ### Infrastructure Verification
@@ -379,7 +382,6 @@ Track major changes to AI agent configuration.
 
 ### 2026-01-19 - Quick Start & Multi-Tool Support
 - Added Quick Start section with TL;DR and session checklist
-- Created `.cursorrules` for Cursor IDE compatibility
 - Created `.github/copilot-instructions.md` for GitHub Copilot
 - Added this changelog section
 - Created GitHub issue templates for convention proposals and quarterly reviews
@@ -392,8 +394,7 @@ When making significant changes to AGENTS.md:
 1. Add entry to this changelog with date and summary
 2. Reference the PR number when merged
 3. Update `.gemini/instructions.md` if critical rules changed
-4. Update `.cursorrules` if patterns changed
-5. Update `.github/copilot-instructions.md` if patterns changed
+4. Update `.github/copilot-instructions.md` if patterns changed
 6. Run `pnpm run check:conventions` to verify consistency
 
 ### Version Compatibility
@@ -403,7 +404,6 @@ When making significant changes to AGENTS.md:
 | `CLAUDE.md` | AGENTS.md (passthrough) | Always current |
 | `.claude/agents/` | AGENTS.md (specialist subagents) | 2026-01-20 |
 | `.gemini/instructions.md` | AGENTS.md (condensed) | 2026-01-19 |
-| `.cursorrules` | AGENTS.md (condensed) | 2026-01-19 |
 | `.github/copilot-instructions.md` | AGENTS.md (condensed) | 2026-01-19 |
 
 ---

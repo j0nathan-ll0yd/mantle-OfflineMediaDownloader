@@ -181,4 +181,4 @@ if (import.meta.url === `file://${__filename}`) {
   main()
 }
 
-export {validateMetadata, ValidationResult}
+export { validateMetadata, ValidationResult }

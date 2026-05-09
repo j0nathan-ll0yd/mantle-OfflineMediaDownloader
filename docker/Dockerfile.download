@@ -1,0 +1,60 @@
+# Mantle Container Lambda: StartFileUpload
+# Includes: Node.js 24, yt-dlp, bgutil, deno, ffmpeg
+# Target architecture: x86_64 (matching binary dependencies)
+
+# ===========================================================
+# Build bgutil Python plugin (pip install in Lambda Python image)
+# ===========================================================
+FROM public.ecr.aws/lambda/python:3.12-x86_64 AS bgutil-builder
+COPY layers/bgutil/requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt -t /opt/python --no-cache-dir --quiet \
+  && pip install yt-dlp-ejs==0.8.0 -t /opt/python --no-cache-dir --quiet \
+  && chmod -R 755 /opt/python
+
+# ===========================================================
+# Binary dependencies (cached independently of app code)
+# ===========================================================
+FROM public.ecr.aws/lambda/nodejs:24-x86_64 AS base
+
+# Install build utilities missing from minimal Lambda image
+RUN microdnf install -y unzip tar xz && microdnf clean all
+
+# --- yt-dlp ---
+ARG YTDLP_VERSION=2026.03.17
+ADD --chmod=755 \
+  https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp_linux \
+  /opt/bin/yt-dlp
+
+# --- bgutil (Rust PO-token provider for yt-dlp) ---
+ARG BGUTIL_VERSION=v0.8.1
+ADD --chmod=755 \
+  https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/download/${BGUTIL_VERSION}/bgutil-pot-linux-x86_64 \
+  /opt/bin/bgutil
+
+# --- Deno (JS runtime for yt-dlp YouTube challenge solving) ---
+ARG DENO_VERSION=2.7.7
+ADD https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip /tmp/deno.zip
+RUN cd /tmp && unzip deno.zip && chmod +x deno && mv deno /opt/bin/deno && rm deno.zip
+
+# --- ffmpeg + ffprobe (static build for stream muxing and analysis) ---
+ADD https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz /tmp/ffmpeg.tar.xz
+RUN cd /tmp && tar xf ffmpeg.tar.xz --wildcards '*/ffmpeg' '*/ffprobe' --strip-components=1 \
+  && chmod +x ffmpeg ffprobe && mv ffmpeg ffprobe /opt/bin/ && rm ffmpeg.tar.xz
+
+# --- yt-dlp cookies (SOPS-encrypted in repo, decrypted before build) ---
+COPY layers/yt-dlp/cookies/youtube-cookies.txt /opt/cookies/youtube-cookies.txt
+
+# --- bgutil Python plugin for yt-dlp (from builder stage) ---
+COPY --from=bgutil-builder /opt/python/ /opt/python/
+
+# ===========================================================
+# Application code (changes frequently)
+# ===========================================================
+COPY build/lambdas/StartFileUpload/index.mjs ${LAMBDA_TASK_ROOT}/index.mjs
+
+# Ensure binaries are on PATH and yt-dlp can discover yt-dlp-ejs solver scripts
+ENV PATH="/opt/bin:${PATH}"
+ENV PYTHONPATH="/opt/python"
+
+# Lambda handler
+CMD ["index.handler"]

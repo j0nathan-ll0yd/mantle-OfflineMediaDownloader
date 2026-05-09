@@ -17,25 +17,63 @@ const MAX_CHUNK_CHARS = 2000
  * Get semantic hints based on file path to improve conceptual query matching
  */
 function getPathHints(filePath: string): string {
-  if (filePath.includes('lambdas/UserDelete/')) return 'User deletion with cascade delete pattern using Promise.allSettled'
-  if (filePath.includes('lambdas/SendPushNotification/')) return 'Push notification delivery to iOS devices via APNS'
-  if (filePath.includes('lambdas/StartFileUpload/')) return 'Video download with retry logic and error handling'
-  if (filePath.includes('lambdas/ApiGatewayAuthorizer/')) return 'Authentication and authorization flow'
-  if (filePath.includes('lambdas/RegisterDevice/')) return 'Device registration and push notification setup'
-  if (filePath.includes('lambdas/')) return 'AWS Lambda handler'
-  if (filePath.includes('entities/queries/')) return 'Database query operations using Drizzle ORM'
-  if (filePath.includes('lib/vendor/AWS/')) return 'AWS SDK wrapper for service integration'
-  if (filePath.includes('lib/vendor/')) return 'External service integration wrapper'
-  if (filePath.includes('lib/domain/auth/')) return 'Authentication and session management'
-  if (filePath.includes('lib/domain/video/')) return 'Video download and error classification'
-  if (filePath.includes('lib/domain/device/')) return 'Device management and push notifications'
-  if (filePath.includes('lib/domain/')) return 'Business logic and domain service'
-  if (filePath.includes('lib/lambda/middleware/')) return 'Request processing middleware'
-  if (filePath.includes('lib/lambda/responses')) return 'API response formatting and error handling'
-  if (filePath.includes('lib/system/errors')) return 'Error classes and error handling patterns'
-  if (filePath.includes('lib/system/retry')) return 'Retry logic with exponential backoff'
-  if (filePath.includes('lib/system/')) return 'System utilities'
-  if (filePath.includes('types/')) return 'Type definitions'
+  if (filePath.includes('lambdas/UserDelete/')) {
+    return 'User deletion with cascade delete pattern using Promise.allSettled'
+  }
+  if (filePath.includes('lambdas/SendPushNotification/')) {
+    return 'Push notification delivery to iOS devices via APNS'
+  }
+  if (filePath.includes('lambdas/StartFileUpload/')) {
+    return 'Video download with retry logic and error handling'
+  }
+  if (filePath.includes('lambdas/ApiGatewayAuthorizer/')) {
+    return 'Authentication and authorization flow'
+  }
+  if (filePath.includes('lambdas/RegisterDevice/')) {
+    return 'Device registration and push notification setup'
+  }
+  if (filePath.includes('lambdas/')) {
+    return 'AWS Lambda handler'
+  }
+  if (filePath.includes('entities/queries/')) {
+    return 'Database query operations using Drizzle ORM'
+  }
+  if (filePath.includes('lib/vendor/AWS/')) {
+    return 'AWS SDK wrapper for service integration'
+  }
+  if (filePath.includes('lib/vendor/')) {
+    return 'External service integration wrapper'
+  }
+  if (filePath.includes('lib/domain/auth/')) {
+    return 'Authentication and session management'
+  }
+  if (filePath.includes('lib/domain/video/')) {
+    return 'Video download and error classification'
+  }
+  if (filePath.includes('lib/domain/device/')) {
+    return 'Device management and push notifications'
+  }
+  if (filePath.includes('lib/domain/')) {
+    return 'Business logic and domain service'
+  }
+  if (filePath.includes('lib/lambda/middleware/')) {
+    return 'Request processing middleware'
+  }
+  if (filePath.includes('lib/lambda/responses')) {
+    return 'API response formatting and error handling'
+  }
+  if (filePath.includes('lib/system/errors')) {
+    return 'Error classes and error handling patterns'
+  }
+  if (filePath.includes('lib/system/retry')) {
+    return 'Retry logic with exponential backoff'
+  }
+  if (filePath.includes('lib/system/')) {
+    return 'System utilities'
+  }
+  if (filePath.includes('types/')) {
+    return 'Type definitions'
+  }
   return 'Source code'
 }
 
@@ -57,7 +95,7 @@ interface CodeChunk {
   endLine: number
   type: string
   name: string
-  [key: string]: unknown  // Index signature for LanceDB compatibility
+  [key: string]: unknown // Index signature for LanceDB compatibility
 }
 
 interface KnowledgeGraphNode {
@@ -76,10 +114,7 @@ export async function indexCodebase() {
   const db = await lancedb.connect(DB_DIR)
 
   // Find all TypeScript files
-  const files = await glob('src/**/*.ts', {
-    ignore: ['**/*.test.ts', '**/node_modules/**'],
-    cwd: projectRoot
-  })
+  const files = await glob('src/**/*.ts', {ignore: ['**/*.test.ts', '**/node_modules/**'], cwd: projectRoot})
 
   console.log(`Found ${files.length} files to index...`)
 
@@ -89,7 +124,7 @@ export async function indexCodebase() {
   for (const file of files) {
     const filePath = path.join(projectRoot, file)
     const sourceFile = project.addSourceFileAtPath(filePath)
-    
+
     console.log(`Processing ${file}...`)
 
     // Extract classes
@@ -185,15 +220,7 @@ Purpose: ${pathHints}${docSection}
 
   const vector = await generateEmbedding(contextHeader + truncatedText)
 
-  return {
-    vector,
-    text: truncatedText,
-    filePath,
-    startLine,
-    endLine,
-    type,
-    name
-  }
+  return {vector, text: truncatedText, filePath, startLine, endLine, type, name}
 }
 
 /**
@@ -217,7 +244,8 @@ async function indexTypeSpecFiles(projectRoot: string): Promise<CodeChunk[]> {
         const modelName = match[2]
         lineNum = content.slice(0, match.index).split('\n').length
 
-        const contextHeader = `File: ${relativePath}\nType: TypeSpec model\nName: ${modelName}\n\nAPI Contract: This TypeSpec model defines the schema for ${modelName}. Use with generated Zod schemas in src/types/api-schema/.\n\n`
+        const contextHeader =
+          `File: ${relativePath}\nType: TypeSpec model\nName: ${modelName}\n\nAPI Contract: This TypeSpec model defines the schema for ${modelName}. Use with generated Zod schemas in src/types/api-schema/.\n\n`
         const vector = await generateEmbedding(contextHeader + modelText)
 
         chunks.push({
@@ -253,13 +281,15 @@ async function indexTypeSpecFiles(projectRoot: string): Promise<CodeChunk[]> {
       }
 
       // Extract interface (operation) definitions
-      const interfaceRegex = /\/\*\*([^*]|\*[^/])*\*\/\s*\n@route\("[^"]+"\)\s*\n@tag\("[^"]+"\)\s*\ninterface\s+(\w+)\s*\{[\s\S]*?(?=\n\/\*\*|\ninterface|$)/g
+      const interfaceRegex =
+        /\/\*\*([^*]|\*[^/])*\*\/\s*\n@route\("[^"]+"\)\s*\n@tag\("[^"]+"\)\s*\ninterface\s+(\w+)\s*\{[\s\S]*?(?=\n\/\*\*|\ninterface|$)/g
       while ((match = interfaceRegex.exec(content)) !== null) {
         const ifaceText = match[0]
         const ifaceName = match[2]
         lineNum = content.slice(0, match.index).split('\n').length
 
-        const contextHeader = `File: ${relativePath}\nType: TypeSpec interface (API operations)\nName: ${ifaceName}\n\nAPI Endpoint: This interface defines REST operations. Each operation maps to a Lambda handler.\n\n`
+        const contextHeader =
+          `File: ${relativePath}\nType: TypeSpec interface (API operations)\nName: ${ifaceName}\n\nAPI Endpoint: This interface defines REST operations. Each operation maps to a Lambda handler.\n\n`
         const vector = await generateEmbedding(contextHeader + ifaceText)
 
         chunks.push({
@@ -334,18 +364,12 @@ async function indexKnowledgeGraph(projectRoot: string): Promise<CodeChunk[]> {
         return `${e.relationship}: ${other}`
       })
 
-      const text = `API Endpoint: ${props.method} ${props.route}\nName: ${props.name}\nDescription: ${props.description || 'N/A'}\nConnections: ${connections.join(', ')}`
+      const text = `API Endpoint: ${props.method} ${props.route}\nName: ${props.name}\nDescription: ${props.description || 'N/A'}\nConnections: ${
+        connections.join(', ')
+      }`
       const vector = await generateEmbedding(`How to add an API endpoint: ${text}`)
 
-      chunks.push({
-        vector,
-        text,
-        filePath: 'graphrag/knowledge-graph.json',
-        startLine: 0,
-        endLine: 0,
-        type: 'api-endpoint',
-        name: props.name
-      })
+      chunks.push({vector, text, filePath: 'graphrag/knowledge-graph.json', startLine: 0, endLine: 0, type: 'api-endpoint', name: props.name})
     }
 
     console.log(`  Indexed ${chunks.length} knowledge graph summaries`)

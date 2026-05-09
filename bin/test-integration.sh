@@ -8,8 +8,8 @@ set -euo pipefail # Exit on error, undefined vars, pipe failures
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-COMPOSE_FILE="${PROJECT_ROOT}/docker-compose.localstack.yml"
-POSTGRES_COMPOSE_FILE="${PROJECT_ROOT}/docker-compose.test.yml"
+COMPOSE_FILE="${PROJECT_ROOT}/docker/docker-compose.localstack.yml"
+POSTGRES_COMPOSE_FILE="${PROJECT_ROOT}/docker/docker-compose.test.yml"
 LOCALSTACK_HEALTH_URL="http://localhost:4566/_localstack/health"
 MAX_HEALTH_RETRIES=30
 HEALTH_RETRY_DELAY=1
@@ -153,7 +153,7 @@ main() {
       echo ""
       echo "Troubleshooting:"
       echo "  1. Check PostgreSQL logs: docker logs media-downloader-test-db"
-      echo "  2. Restart PostgreSQL: docker compose -f docker-compose.test.yml down && docker compose -f docker-compose.test.yml up -d"
+      echo "  2. Restart PostgreSQL: docker compose -f docker/docker-compose.test.yml down && docker compose -f docker/docker-compose.test.yml up -d"
       exit 1
     fi
 
@@ -187,7 +187,7 @@ main() {
     # Verify PostgreSQL is running
     if ! docker ps | grep -q "media-downloader-test-db"; then
       echo -e "${RED}Error: PostgreSQL is not running${NC}"
-      echo "Start PostgreSQL with: docker compose -f docker-compose.test.yml up -d"
+      echo "Start PostgreSQL with: docker compose -f docker/docker-compose.test.yml up -d"
       exit 1
     fi
 
@@ -243,7 +243,7 @@ main() {
   else
     echo -e "${BLUE}➜${NC} Services are still running"
     echo "To stop LocalStack: pnpm run localstack:stop"
-    echo "To stop PostgreSQL: docker compose -f docker-compose.test.yml down"
+    echo "To stop PostgreSQL: docker compose -f docker/docker-compose.test.yml down"
     echo "To view LocalStack logs: pnpm run localstack:logs"
     echo ""
   fi

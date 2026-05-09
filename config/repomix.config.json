@@ -1,0 +1,49 @@
+{
+  "output": {
+    "filePath": "repomix-output.xml",
+    "format": "xml",
+    "compress": true,
+    "removeEmptyLines": true,
+    "style": "xml"
+  },
+  "include": [
+    "**/*"
+  ],
+  "ignore": {
+    "customPatterns": [
+      "coverage/**",
+      "dist/**",
+      "build/**",
+      ".git/**",
+      "node_modules/**",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "**/*.png",
+      "**/*.jpg",
+      "**/*.jpeg",
+      "**/*.gif",
+      "**/*.svg",
+      "**/*.ico",
+      "**/*.mp4",
+      "**/*.mp3",
+      "**/*.wav",
+      "**/*.pdf",
+      "**/*.zip",
+      "**/*.gz",
+      "**/*.tar",
+      "**/*.7z",
+      "**/*.exe",
+      "**/*.bin",
+      "**/*.sqlite",
+      "**/*.db",
+      "docs/api/index.html",
+      "docs/archive/**",
+      "**/test/fixtures/**",
+      "**/package-lock.json",
+      "**/yarn.lock",
+      "**/pnpm-lock.yaml"
+    ],
+    "useGitignore": true,
+    "useDefaultPatterns": true
+  }
+}
