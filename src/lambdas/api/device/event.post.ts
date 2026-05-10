@@ -14,7 +14,7 @@ function extractCorrelationId(event: ClientEvent): string | undefined {
 
 const api = defineApiHandler({auth: 'authorizer-optional', schema: clientEventBatchRequestSchema, operationName: 'DeviceEvent'})
 export const handler = api(async ({event, context, userId, body}) => {
-  const deviceId = event.headers['x-device-uuid']
+  const deviceId = Object.entries(event.headers).find(([k]) => k.toLowerCase() === 'x-device-uuid')?.[1]
   if (!deviceId) {
     return buildValidatedResponse(context, 400)
   }
