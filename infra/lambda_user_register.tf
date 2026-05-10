@@ -4,7 +4,7 @@
 # --- UserRegister ---
 
 module "lambda_user_register" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "UserRegister"
   name_prefix        = module.core.name_prefix

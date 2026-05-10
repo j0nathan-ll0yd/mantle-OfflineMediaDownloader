@@ -39,6 +39,7 @@ export interface DeviceRow {
   systemVersion: string
   systemName: string
   endpointArn: string
+  lastSeenAt: Date | null
 }
 
 export interface UserRow {
@@ -164,6 +165,7 @@ export function createMockDevice(overrides: Partial<DeviceRow> = {}): DeviceRow 
     systemVersion: '17.2.1',
     systemName: 'iOS',
     endpointArn: `arn:aws:sns:us-west-2:123456789012:endpoint/APNS_SANDBOX/MediaDownloader/${deviceId}`,
+    lastSeenAt: null,
     ...overrides
   }
 }

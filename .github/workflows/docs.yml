@@ -21,6 +21,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install Vale
+        run: |
+          wget -q https://github.com/errata-ai/vale/releases/download/v3.14.1/vale_3.14.1_Linux_arm64.tar.gz
+          tar -xzf vale_3.14.1_Linux_arm64.tar.gz vale
+          sudo mv vale /usr/local/bin/
       - name: Verify Vale version
         run: vale --version
 

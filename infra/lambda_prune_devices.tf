@@ -4,7 +4,7 @@
 # --- PruneDevices ---
 
 module "lambda_prune_devices" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name       = "PruneDevices"
   name_prefix         = module.core.name_prefix

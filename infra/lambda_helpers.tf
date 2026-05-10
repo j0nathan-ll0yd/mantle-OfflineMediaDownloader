@@ -4,7 +4,7 @@
 # --- Helpers ---
 
 module "lambda_helpers" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "Helpers"
   name_prefix        = module.core.name_prefix

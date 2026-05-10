@@ -4,7 +4,7 @@
 # --- PushHelpers ---
 
 module "lambda_push_helpers" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "PushHelpers"
   name_prefix        = module.core.name_prefix

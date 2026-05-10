@@ -82,7 +82,8 @@ describe('PruneDevices Lambda', () => {
     token: 'apns-token',
     systemVersion: '17.0',
     systemName: 'iOS',
-    endpointArn: 'arn:aws:sns:endpoint/dev-1'
+    endpointArn: 'arn:aws:sns:endpoint/dev-1',
+    lastSeenAt: null
   }
 
   beforeEach(() => {

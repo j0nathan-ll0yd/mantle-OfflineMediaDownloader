@@ -17,6 +17,7 @@ import type {Apns2Error} from '#errors/custom-errors'
 import {deleteDevice} from '#services/device/deviceService'
 import type {Device} from '#types/domainModels'
 import type {ApplePushNotificationResponse, PruneDevicesResult} from '#types/lambda'
+import {secondsAgo, TIME} from '#utils/time'
 
 defineLambda({
   secrets: {
@@ -88,14 +89,30 @@ export const handler = scheduled(async (): Promise<PruneDevicesResult> => {
   const devices = await getDevices()
   result.devicesChecked = devices.length
 
+  const staleThreshold = secondsAgo(30 * TIME.DAY_SEC)
+
   for (const device of devices) {
     const deviceId = device.deviceId
     logInfo('Verifying device', {deviceId})
+
+    let shouldPrune = false
+    let pruneReason = ''
+
     if (await isDeviceDisabled(device.token)) {
+      shouldPrune = true
+      pruneReason = 'APNS 410'
+    } else if (device.lastSeenAt && device.lastSeenAt < staleThreshold) {
+      shouldPrune = true
+      pruneReason = 'lastSeenAt stale'
+      logInfo('Device stale by lastSeenAt', {deviceId, lastSeenAt: device.lastSeenAt.toISOString()})
+    }
+
+    if (shouldPrune) {
       try {
         await deleteUserDevicesByDeviceId(deviceId)
         await deleteDevice(device)
         result.devicesPruned++
+        logInfo('Pruned device', {deviceId, reason: pruneReason})
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         const errorMessage = `Failed to properly remove device ${deviceId}: ${message}`

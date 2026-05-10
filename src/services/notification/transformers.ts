@@ -4,6 +4,7 @@
  * Transforms domain objects into AWS-specific message formats for SQS and SNS/APNS.
  * This is an adapter layer that bridges domain models to infrastructure message formats.
  */
+import {randomUUID} from 'node:crypto'
 import type {File} from '#types/domainModels'
 import type {DownloadReadyNotification, FailureNotification} from '#types/notificationTypes'
 import {
@@ -62,7 +63,7 @@ export function createMetadataNotification(
     thumbnailUrl: videoInfo.thumbnail || undefined
   })
   return {
-    messageBody: JSON.stringify({file, notificationType: 'MetadataNotification'}),
+    messageBody: JSON.stringify({file, notificationType: 'MetadataNotification', notificationId: randomUUID()}),
     messageAttributes: {userId: stringAttribute(userId), notificationType: stringAttribute('MetadataNotification')}
   }
 }
@@ -81,7 +82,7 @@ export function createDownloadStartedNotification(
 ): {messageBody: string; messageAttributes: Record<string, MessageAttributeValue>} {
   const file = downloadStartedPayloadSchema.parse({fileId, title: videoInfo.title || '', thumbnailUrl: videoInfo.thumbnail})
   return {
-    messageBody: JSON.stringify({file, notificationType: 'DownloadStartedNotification'}),
+    messageBody: JSON.stringify({file, notificationType: 'DownloadStartedNotification', notificationId: randomUUID()}),
     messageAttributes: {userId: stringAttribute(userId), notificationType: stringAttribute('DownloadStartedNotification')}
   }
 }
@@ -100,7 +101,7 @@ export function createDownloadProgressNotification(
 ): {messageBody: string; messageAttributes: Record<string, MessageAttributeValue>} {
   const file = downloadProgressPayloadSchema.parse({fileId, progressPercent: percent})
   return {
-    messageBody: JSON.stringify({file, notificationType: 'DownloadProgressNotification'}),
+    messageBody: JSON.stringify({file, notificationType: 'DownloadProgressNotification', notificationId: randomUUID()}),
     messageAttributes: {userId: stringAttribute(userId), notificationType: stringAttribute('DownloadProgressNotification')}
   }
 }
@@ -117,7 +118,7 @@ export function createDownloadReadyNotification(
 ): {messageBody: string; messageAttributes: Record<string, MessageAttributeValue>} {
   const file = downloadReadyPayloadSchema.parse({fileId: dbFile.fileId, key: dbFile.key, size: dbFile.size, url: dbFile.url})
   return {
-    messageBody: JSON.stringify({file, notificationType: 'DownloadReadyNotification'}),
+    messageBody: JSON.stringify({file, notificationType: 'DownloadReadyNotification', notificationId: randomUUID()}),
     messageAttributes: {userId: stringAttribute(userId), notificationType: stringAttribute('DownloadReadyNotification')}
   }
 }
@@ -142,7 +143,7 @@ export function createFailureNotification(
 ): {messageBody: string; messageAttributes: Record<string, MessageAttributeValue>} {
   const file = failurePayloadSchema.parse({fileId, title, errorCategory, errorMessage, retryExhausted})
   return {
-    messageBody: JSON.stringify({file, notificationType: 'FailureNotification'}),
+    messageBody: JSON.stringify({file, notificationType: 'FailureNotification', notificationId: randomUUID()}),
     messageAttributes: {userId: stringAttribute(userId), notificationType: stringAttribute('FailureNotification')}
   }
 }
@@ -158,7 +159,12 @@ export function transformToAPNSNotification(messageBody: string, targetArn: stri
   const payload = JSON.parse(messageBody)
   return {
     Message: JSON.stringify({
-      APNS_SANDBOX: JSON.stringify({aps: {'content-available': 1}, notificationType: payload.notificationType, file: payload.file}),
+      APNS_SANDBOX: JSON.stringify({
+        aps: {'content-available': 1},
+        notificationType: payload.notificationType,
+        notificationId: payload.notificationId,
+        file: payload.file
+      }),
       default: 'Default message'
     }),
     MessageAttributes: {
@@ -203,8 +209,9 @@ export function transformToAPNSAlertNotification(messageBody: string, targetArn:
   return {
     Message: JSON.stringify({
       APNS_SANDBOX: JSON.stringify({
-        aps: {alert: {title, subtitle, body}, sound: 'default'},
+        aps: {alert: {title, subtitle, body}, sound: 'default', 'mutable-content': 1},
         notificationType: payload.notificationType,
+        notificationId: payload.notificationId,
         file: payload.file
       }),
       default: 'Default message'

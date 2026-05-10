@@ -33,7 +33,7 @@ resource "aws_ecr_lifecycle_policy" "start_file_upload" {
 }
 
 module "lambda_start_file_upload" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name                  = "StartFileUpload"
   name_prefix                    = module.core.name_prefix

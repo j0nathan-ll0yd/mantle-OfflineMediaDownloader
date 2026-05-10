@@ -96,6 +96,17 @@ export const deleteDevice = defineQuery({tables: [{table: devices, operations: [
   })
 
 /**
+ * Gets a device by SNS endpoint ARN.
+ * @param endpointArn - The SNS platform endpoint ARN
+ * @returns The device row or null if not found
+ */
+export const getDeviceByEndpointArn = defineQuery({tables: [{table: devices, operations: [DatabaseOperation.Select]}]},
+  async function getDeviceByEndpointArn(db, endpointArn: string): Promise<DeviceRow | null> {
+    const result = await db.select().from(devices).where(eq(devices.endpointArn, endpointArn)).limit(1)
+    return result[0] ?? null
+  })
+
+/**
  * Gets all devices (for scheduled jobs like PruneDevices).
  * @returns Array of all device rows
  */

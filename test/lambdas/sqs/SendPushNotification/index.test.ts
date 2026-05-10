@@ -83,7 +83,8 @@ describe('SendPushNotification Lambda', () => {
       token: 'tok',
       systemVersion: '17',
       systemName: 'iOS',
-      endpointArn: 'arn:aws:sns:endpoint/dev-1'
+      endpointArn: 'arn:aws:sns:endpoint/dev-1',
+      lastSeenAt: null
     })
     vi.mocked(publish).mockResolvedValue({MessageId: 'msg-pub-1', $metadata: {}})
   })
@@ -137,14 +138,16 @@ describe('SendPushNotification Lambda', () => {
       token: 'tok1',
       systemVersion: '17',
       systemName: 'iOS',
-      endpointArn: 'arn:aws:sns:endpoint/dev-1'
+      endpointArn: 'arn:aws:sns:endpoint/dev-1',
+      lastSeenAt: null
     }).mockResolvedValueOnce({
       deviceId: 'dev-2',
       name: 'iPad',
       token: 'tok2',
       systemVersion: '17',
       systemName: 'iPadOS',
-      endpointArn: 'arn:aws:sns:endpoint/dev-2'
+      endpointArn: 'arn:aws:sns:endpoint/dev-2',
+      lastSeenAt: null
     })
     vi.mocked(publish).mockResolvedValueOnce({MessageId: 'msg-1', $metadata: {}}).mockRejectedValueOnce(new Error('SNS failure'))
 
@@ -170,7 +173,15 @@ describe('SendPushNotification Lambda', () => {
   })
 
   it('should skip device with no endpoint ARN', async () => {
-    vi.mocked(getDevice).mockResolvedValue({deviceId: 'dev-1', name: 'iPhone', token: 'tok', systemVersion: '17', systemName: 'iOS', endpointArn: ''})
+    vi.mocked(getDevice).mockResolvedValue({
+      deviceId: 'dev-1',
+      name: 'iPhone',
+      token: 'tok',
+      systemVersion: '17',
+      systemName: 'iOS',
+      endpointArn: '',
+      lastSeenAt: null
+    })
 
     await expect(handler(makeRecord())).rejects.toThrow('All 1 device notifications failed')
 
@@ -188,8 +199,17 @@ describe('SendPushNotification Lambda', () => {
       token: 'tok1',
       systemVersion: '17',
       systemName: 'iOS',
-      endpointArn: 'arn:endpoint/dev-1'
-    }).mockResolvedValueOnce({deviceId: 'dev-2', name: 'iPad', token: 'tok2', systemVersion: '17', systemName: 'iPadOS', endpointArn: 'arn:endpoint/dev-2'})
+      endpointArn: 'arn:endpoint/dev-1',
+      lastSeenAt: null
+    }).mockResolvedValueOnce({
+      deviceId: 'dev-2',
+      name: 'iPad',
+      token: 'tok2',
+      systemVersion: '17',
+      systemName: 'iPadOS',
+      endpointArn: 'arn:endpoint/dev-2',
+      lastSeenAt: null
+    })
     vi.mocked(publish).mockResolvedValueOnce({MessageId: 'msg-1', $metadata: {}}).mockRejectedValueOnce(new Error('fail'))
 
     await expect(handler(makeRecord())).resolves.toBeUndefined()
@@ -228,8 +248,17 @@ describe('SendPushNotification Lambda', () => {
       token: 'tok1',
       systemVersion: '17',
       systemName: 'iOS',
-      endpointArn: 'arn:endpoint/dev-1'
-    }).mockResolvedValueOnce({deviceId: 'dev-2', name: 'iPad', token: 'tok2', systemVersion: '17', systemName: 'iPadOS', endpointArn: 'arn:endpoint/dev-2'})
+      endpointArn: 'arn:endpoint/dev-1',
+      lastSeenAt: null
+    }).mockResolvedValueOnce({
+      deviceId: 'dev-2',
+      name: 'iPad',
+      token: 'tok2',
+      systemVersion: '17',
+      systemName: 'iPadOS',
+      endpointArn: 'arn:endpoint/dev-2',
+      lastSeenAt: null
+    })
     // First device succeeds, second has disabled endpoint
     vi.mocked(publish).mockResolvedValueOnce({MessageId: 'msg-1', $metadata: {}}).mockRejectedValueOnce(new Error('EndpointDisabled'))
     vi.mocked(cleanupDisabledEndpoints).mockRejectedValue(new Error('cleanup failed'))

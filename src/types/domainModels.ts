@@ -106,4 +106,6 @@ export interface Device {
   systemName: string
   /** SNS endpoint ARN for this device's push notifications */
   endpointArn: string
+  /** Last time the device reported an event to the server */
+  lastSeenAt?: Date | null
 }

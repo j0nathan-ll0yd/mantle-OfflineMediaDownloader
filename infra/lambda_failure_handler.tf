@@ -4,7 +4,7 @@
 # --- FailureHandler ---
 
 module "lambda_failure_handler" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "FailureHandler"
   name_prefix        = module.core.name_prefix

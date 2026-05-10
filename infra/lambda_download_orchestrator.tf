@@ -4,7 +4,7 @@
 # --- DownloadOrchestrator ---
 
 module "lambda_download_orchestrator" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "DownloadOrchestrator"
   name_prefix        = module.core.name_prefix

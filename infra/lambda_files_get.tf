@@ -4,7 +4,7 @@
 # --- FilesGet ---
 
 module "lambda_files_get" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "FilesGet"
   name_prefix        = module.core.name_prefix

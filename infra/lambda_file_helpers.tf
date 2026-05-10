@@ -4,7 +4,7 @@
 # --- FileHelpers ---
 
 module "lambda_file_helpers" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "FileHelpers"
   name_prefix        = module.core.name_prefix

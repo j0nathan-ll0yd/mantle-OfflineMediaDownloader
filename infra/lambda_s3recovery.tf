@@ -4,7 +4,7 @@
 # --- S3Recovery ---
 
 module "lambda_s3recovery" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "S3Recovery"
   name_prefix        = module.core.name_prefix

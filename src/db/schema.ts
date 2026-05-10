@@ -14,7 +14,7 @@
  * - Single-table design becomes normalized relational tables
  * - TTL attribute becomes scheduled cleanup Lambda
  */
-import {bigint, boolean, index, integer, pgTable, primaryKey, text, timestamp, uuid} from 'drizzle-orm/pg-core'
+import {bigint, boolean, index, integer, pgTable, primaryKey, text, timestamp, unique, uuid} from 'drizzle-orm/pg-core'
 
 /**
  * Users table - Core user account management (Better Auth).
@@ -112,8 +112,32 @@ export const devices = pgTable('devices', {
   token: text('token').notNull(),
   systemVersion: text('system_version').notNull(),
   systemName: text('system_name').notNull(),
-  endpointArn: text('endpoint_arn').notNull()
+  endpointArn: text('endpoint_arn').notNull(),
+  lastSeenAt: timestamp('last_seen_at', {withTimezone: true})
 })
+
+/**
+ * DeviceEvents table - Client-side event log from iOS devices.
+ *
+ * Stores typed events reported by the iOS app for push delivery confirmation,
+ * download pipeline telemetry, and device health monitoring.
+ * Properties stored as JSON-serialized text (Aurora DSQL has no JSONB).
+ *
+ * Cleanup: Handled by CleanupExpiredRecords Lambda (90-day retention).
+ */
+export const deviceEvents = pgTable('device_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  deviceId: text('device_id').notNull(),
+  eventType: text('event_type').notNull(),
+  timestamp: timestamp('timestamp', {withTimezone: true}).notNull(),
+  properties: text('properties'),
+  correlationId: uuid('correlation_id'),
+  receivedAt: timestamp('received_at', {withTimezone: true}).notNull().defaultNow()
+}, (table) => [
+  index('device_events_device_idx').on(table.deviceId),
+  index('device_events_received_at_idx').on(table.receivedAt),
+  unique('device_events_device_correlation_unique').on(table.deviceId, table.correlationId)
+])
 
 /**
  * Sessions table - Better Auth user session management.

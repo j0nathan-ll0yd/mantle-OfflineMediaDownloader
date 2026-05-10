@@ -58,6 +58,10 @@
       "trigger": "CloudWatch Events",
       "purpose": "Scheduled cleanup of inactive devices"
     },
+    "sqs/EndpointCleanupHelpers": {
+      "trigger": "SQS",
+      "purpose": "Process SNS EndpointDisabled events and clean up stale APNS endpoints"
+    },
     "sqs/SendPushNotification": {
       "trigger": "SQS",
       "purpose": "Send push notification to user devices via APNS"

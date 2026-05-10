@@ -5,7 +5,7 @@
 # Runs schema migrations and applies per-Lambda permissions on every deploy.
 
 module "lambda_migrate_dsql" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "MigrateDSQL"
   name_prefix        = module.core.name_prefix

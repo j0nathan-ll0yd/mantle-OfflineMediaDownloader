@@ -4,7 +4,7 @@
 # --- UserSubscribe ---
 
 module "lambda_user_subscribe" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "UserSubscribe"
   name_prefix        = module.core.name_prefix

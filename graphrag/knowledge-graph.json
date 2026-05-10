@@ -136,6 +136,15 @@
       }
     },
     {
+      "id": "lambda:sqs/EndpointCleanupHelpers",
+      "type": "Lambda",
+      "properties": {
+        "name": "sqs/EndpointCleanupHelpers",
+        "trigger": "SQS",
+        "purpose": "Process SNS EndpointDisabled events and clean up stale APNS endpoints"
+      }
+    },
+    {
       "id": "lambda:sqs/SendPushNotification",
       "type": "Lambda",
       "properties": {
@@ -197,6 +206,13 @@
       "type": "Entity",
       "properties": {
         "name": "Devices"
+      }
+    },
+    {
+      "id": "entity:DeviceEvents",
+      "type": "Entity",
+      "properties": {
+        "name": "DeviceEvents"
       }
     },
     {
@@ -432,6 +448,11 @@
     {
       "source": "service:CloudWatch",
       "target": "lambda:scheduled/PruneDevices",
+      "relationship": "triggers"
+    },
+    {
+      "source": "service:SQS",
+      "target": "lambda:sqs/EndpointCleanupHelpers",
       "relationship": "triggers"
     },
     {

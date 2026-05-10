@@ -4,7 +4,7 @@
 # --- UserDelete ---
 
 module "lambda_user_delete" {
-  source = "../../mantle/modules/lambda"
+  source = "../../../Repositories/mantle/modules/lambda"
 
   function_name      = "UserDelete"
   name_prefix        = module.core.name_prefix

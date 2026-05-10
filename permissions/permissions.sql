@@ -1,10 +1,12 @@
 -- Per-Lambda PostgreSQL roles with fine-grained table permissions
 -- Auto-generated from @RequiresTable decorators
--- Generated at: 2026-05-05T23:17:04.203Z
+-- Generated at: 2026-05-09T06:53:54.860Z
 
 -- CREATE ROLES
 
 CREATE ROLE lambda_api_gateway_authorizer WITH LOGIN;
+CREATE ROLE lambda_cleanup_expired_records WITH LOGIN;
+CREATE ROLE lambda_device_event WITH LOGIN;
 CREATE ROLE lambda_device_register WITH LOGIN;
 CREATE ROLE lambda_download_orchestrator WITH LOGIN;
 CREATE ROLE lambda_endpoint_cleanup_helpers WITH LOGIN;
@@ -30,6 +32,14 @@ CREATE ROLE lambda_user_subscribe WITH LOGIN;
 
 -- ApiGatewayAuthorizer
 GRANT SELECT, UPDATE ON sessions TO lambda_api_gateway_authorizer;
+
+-- CleanupExpiredRecords
+GRANT DELETE, SELECT ON device_events TO lambda_cleanup_expired_records;
+
+-- DeviceEvent
+GRANT INSERT, SELECT ON device_events TO lambda_device_event;
+GRANT SELECT, UPDATE ON devices TO lambda_device_event;
+GRANT SELECT ON user_devices TO lambda_device_event;
 
 -- DeviceRegister
 GRANT DELETE, INSERT, SELECT, UPDATE ON devices TO lambda_device_register;
@@ -130,6 +140,8 @@ GRANT DELETE, SELECT ON user_devices TO lambda_user_subscribe;
 -- AWS IAM GRANT
 
 AWS IAM GRANT lambda_api_gateway_authorizer TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-ApiGatewayAuthorizer';
+AWS IAM GRANT lambda_cleanup_expired_records TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-CleanupExpiredRecords';
+AWS IAM GRANT lambda_device_event TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-DeviceEvent';
 AWS IAM GRANT lambda_device_register TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-DeviceRegister';
 AWS IAM GRANT lambda_download_orchestrator TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-DownloadOrchestrator';
 AWS IAM GRANT lambda_endpoint_cleanup_helpers TO 'arn:aws:iam::${AWS_ACCOUNT_ID}:role/${RESOURCE_PREFIX}-EndpointCleanupHelpers';

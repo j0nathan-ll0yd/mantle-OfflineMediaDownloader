@@ -54,6 +54,7 @@ export {
   type DeviceRow,
   getAllDevices,
   getDevice,
+  getDeviceByEndpointArn,
   getDevicesBatch,
   updateDevice,
   type UpdateDeviceInput,
@@ -117,6 +118,9 @@ export {
   type UserDeviceRow,
   type UserFileRow
 } from './relationshipQueries'
+
+// DeviceEvent queries
+export { type CreateDeviceEventInput, createDeviceEvents, deleteExpiredDeviceEvents, type DeviceEventRow } from './deviceEventQueries'
 
 // Prepared queries (performance-critical paths)
 export { getFileByKeyPrepared, getSessionByTokenPrepared, getUserFilesPrepared } from './preparedQueries'
