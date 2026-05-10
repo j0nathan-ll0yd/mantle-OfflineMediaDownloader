@@ -96,5 +96,8 @@ deployment-logs/
 # Mantle CLI temp directories
 .mantle-openapi-tmp-*
 
+# Terraform variable overrides (contains secrets)
+infra/terraform.tfvars
+
 # Config coverage reports (generated)
 config/coverage/
