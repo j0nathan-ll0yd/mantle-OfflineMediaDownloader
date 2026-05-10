@@ -2,8 +2,8 @@ import {dirname, join} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {defineLambda, withObservability} from '@mantleframework/core'
 import {logInfo} from '@mantleframework/observability'
-import {applyPermissions, runMigrations} from '@mantleframework/database'
-import type {MigrateResult, PermissionsResult} from '@mantleframework/database'
+import {applyPermissions, runMigrations, validatePermissions} from '@mantleframework/database'
+import type {MigrateResult, PermissionsResult, ValidatePermissionsResult} from '@mantleframework/database'
 import {DsqlClusterArn} from '@mantleframework/core'
 import {getRequiredEnv} from '@mantleframework/env'
 
@@ -14,6 +14,7 @@ defineLambda({timeout: 300})
 interface MigrateDSQLResult {
   migrations: MigrateResult
   permissions: PermissionsResult
+  validation: ValidatePermissionsResult
 }
 
 export const handler = withObservability({operationName: 'MigrateDSQL'}, async () => {
@@ -31,5 +32,8 @@ export const handler = withObservability({operationName: 'MigrateDSQL'}, async (
   // 2. Permissions (DCL) -- idempotent, re-applied every deploy
   const permissionResult = await applyPermissions({permissionsFolder: join(__dirname, 'permissions'), database, logger})
 
-  return {migrations: migrationResult, permissions: permissionResult} satisfies MigrateDSQLResult
+  // 3. Validate grants -- detect tables that DSQL silently skipped, re-apply
+  const validationResult = await validatePermissions({permissionsFolder: join(__dirname, 'permissions'), database, logger})
+
+  return {migrations: migrationResult, permissions: permissionResult, validation: validationResult} satisfies MigrateDSQLResult
 })
