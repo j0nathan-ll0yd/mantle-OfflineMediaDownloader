@@ -5,7 +5,7 @@
 # Runs schema migrations and applies per-Lambda permissions on every deploy.
 
 module "lambda_migrate_dsql" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
   function_name      = "MigrateDSQL"
   name_prefix        = module.core.name_prefix
@@ -19,9 +19,9 @@ module "lambda_migrate_dsql" {
   timeout            = 300
 
   environment_variables = {
-    DSQL_ENDPOINT     = module.database.cluster_endpoint
-    DSQL_REGION       = module.core.region
-    DSQL_ROLE_NAME    = "admin"
+    DSQL_ENDPOINT         = module.database.cluster_endpoint
+    DSQL_REGION           = module.core.region
+    DSQL_ROLE_NAME        = "admin"
     METRICS_NAMESPACE = "MediaDownloader"
     AWS_ACCOUNT_ID    = module.core.account_id
     RESOURCE_PREFIX   = module.core.name_prefix
@@ -47,10 +47,12 @@ data "aws_lambda_invocation" "run_migration" {
 # changes aren't picked up by the data source above. This resource triggers
 # during apply when its hash inputs change.
 resource "terraform_data" "rerun_migration" {
-  triggers_replace = sha256(join(",", [
-    filesha256("${path.module}/../build/lambdas/MigrateDSQL/index.mjs"),
-    filesha256("${path.module}/../permissions/permissions.sql")
-  ]))
+  triggers_replace = sha256(join(",", concat(
+    [filesha256("${path.module}/../build/lambdas/MigrateDSQL/index.mjs")],
+    [filesha256("${path.module}/../permissions/permissions.sql")],
+    [for f in sort(fileset("${path.module}/../build/lambdas/MigrateDSQL/migrations", "**/*")) :
+      filesha256("${path.module}/../build/lambdas/MigrateDSQL/migrations/${f}")]
+  )))
 
   provisioner "local-exec" {
     command = <<-EOT

@@ -203,6 +203,13 @@ variable "dsql_deletion_protection" {
   default     = true
 }
 
+variable "api_bearer_token" {
+  description = "Bearer token for MCP DevTools authentication"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "cors_allowed_origins" {
   description = "Origins allowed to fetch media files via CORS (empty list disables CORS)"
   type        = list(string)

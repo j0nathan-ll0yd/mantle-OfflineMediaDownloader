@@ -4,7 +4,7 @@
 # --- FeedlyWebhook ---
 
 module "lambda_feedly_webhook" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
   function_name      = "FeedlyWebhook"
   name_prefix        = module.core.name_prefix
@@ -22,21 +22,21 @@ module "lambda_feedly_webhook" {
   api_gateway_enabled = true
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME           = local.lambda_dsql_roles["FeedlyWebhook"].role_name
-    DSQL_ENDPOINT            = module.database.cluster_endpoint
-    DSQL_REGION              = module.core.region
-    SNS_QUEUE_URL            = module.queue_SendPushNotification.queue_url
-    PATH                     = var.path
-    YTDLP_SLEEP_REQUESTS     = var.ytdlp_sleep_requests
-    YTDLP_SLEEP_INTERVAL     = var.ytdlp_sleep_interval
-    YTDLP_MAX_SLEEP_INTERVAL = var.ytdlp_max_sleep_interval
-    YTDLP_BINARY_PATH        = var.ytdlp_binary_path
-    IDEMPOTENCY_TABLE_NAME   = module.dynamodb_idempotency.table_name
-    EVENT_BUS_NAME           = local.event_bus_name
-    EVENT_SOURCE             = "media-downloader"
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["FeedlyWebhook"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
+      SNS_QUEUE_URL = module.queue_SendPushNotification.queue_url
+      PATH = var.path
+      YTDLP_SLEEP_REQUESTS = var.ytdlp_sleep_requests
+      YTDLP_SLEEP_INTERVAL = var.ytdlp_sleep_interval
+      YTDLP_MAX_SLEEP_INTERVAL = var.ytdlp_max_sleep_interval
+      YTDLP_BINARY_PATH = var.ytdlp_binary_path
+      IDEMPOTENCY_TABLE_NAME = module.dynamodb_idempotency.table_name
+      EVENT_BUS_NAME = local.event_bus_name
+      EVENT_SOURCE = "media-downloader"
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SQSSend_Sendpushnotification" = jsonencode({
@@ -50,8 +50,8 @@ module "lambda_feedly_webhook" {
     "DynamoDBAccess_Idempotency" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
-        Effect = "Allow"
-        Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Query", "dynamodb:Scan"]
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem","dynamodb:PutItem","dynamodb:UpdateItem","dynamodb:DeleteItem","dynamodb:Query","dynamodb:Scan"]
         Resource = [
           "${module.dynamodb_idempotency.table_arn}",
           "${module.dynamodb_idempotency.table_arn}/*"

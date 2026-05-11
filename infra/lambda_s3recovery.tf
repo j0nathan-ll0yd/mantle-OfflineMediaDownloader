@@ -4,7 +4,7 @@
 # --- S3Recovery ---
 
 module "lambda_s3recovery" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
   function_name      = "S3Recovery"
   name_prefix        = module.core.name_prefix
@@ -22,21 +22,21 @@ module "lambda_s3recovery" {
   api_gateway_enabled = false
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME           = local.lambda_dsql_roles["S3Recovery"].role_name
-    DSQL_ENDPOINT            = module.database.cluster_endpoint
-    DSQL_REGION              = module.core.region
-    CLOUDFRONT_DOMAIN        = module.storage_files.cloudfront_domain_name
-    SNS_QUEUE_URL            = module.queue_SendPushNotification.queue_url
-    PATH                     = var.path
-    YTDLP_SLEEP_REQUESTS     = var.ytdlp_sleep_requests
-    YTDLP_SLEEP_INTERVAL     = var.ytdlp_sleep_interval
-    YTDLP_MAX_SLEEP_INTERVAL = var.ytdlp_max_sleep_interval
-    YTDLP_BINARY_PATH        = var.ytdlp_binary_path
-    EVENT_BUS_NAME           = local.event_bus_name
-    EVENT_SOURCE             = "media-downloader"
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["S3Recovery"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
+      CLOUDFRONT_DOMAIN = module.storage_files.cloudfront_domain_name
+      SNS_QUEUE_URL = module.queue_SendPushNotification.queue_url
+      PATH = var.path
+      YTDLP_SLEEP_REQUESTS = var.ytdlp_sleep_requests
+      YTDLP_SLEEP_INTERVAL = var.ytdlp_sleep_interval
+      YTDLP_MAX_SLEEP_INTERVAL = var.ytdlp_max_sleep_interval
+      YTDLP_BINARY_PATH = var.ytdlp_binary_path
+      EVENT_BUS_NAME = local.event_bus_name
+      EVENT_SOURCE = "media-downloader"
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SQSSend_Sendpushnotification" = jsonencode({

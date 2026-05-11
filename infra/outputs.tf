@@ -37,6 +37,11 @@ output "endpoint_cleanup_helpers_function_arn" {
   value       = module.lambda_endpoint_cleanup_helpers.function_arn
 }
 
+output "endpoint_cleanup_helpers_function_arn" {
+  description = "ARN of the EndpointCleanupHelpers Lambda function"
+  value       = module.lambda_endpoint_cleanup_helpers.function_arn
+}
+
 output "failure_handler_function_arn" {
   description = "ARN of the FailureHandler Lambda function"
   value       = module.lambda_failure_handler.function_arn
@@ -190,6 +195,16 @@ output "queue_SendPushNotification_url" {
 output "queue_SendPushNotification_arn" {
   description = "SQS queue ARN for SendPushNotification"
   value       = module.queue_SendPushNotification.queue_arn
+}
+
+output "queue_EndpointEvents_url" {
+  description = "SQS queue URL for EndpointEvents"
+  value       = module.queue_EndpointEvents.queue_url
+}
+
+output "queue_EndpointEvents_arn" {
+  description = "SQS queue ARN for EndpointEvents"
+  value       = module.queue_EndpointEvents.queue_arn
 }
 
 output "dynamodb_idempotency_table_name" {
