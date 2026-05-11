@@ -27,23 +27,23 @@ module "lambda_dev_tools" {
   api_gateway_enabled = false
 
   environment_variables = merge(local.common_lambda_env, {
-      API_BEARER_TOKEN = var.api_bearer_token
-      DSQL_ROLE_NAME = local.lambda_dsql_roles["DevTools"].role_name
-      DSQL_ENDPOINT = module.database.cluster_endpoint
-      DSQL_REGION = module.core.region
-      DATA_BUCKET = module.storage_files.bucket_id
-      EVENT_BUS_NAME = local.event_bus_name
-      EVENT_SOURCE = "media-downloader"
+    API_BEARER_TOKEN = var.api_bearer_token
+    DSQL_ROLE_NAME   = local.lambda_dsql_roles["DevTools"].role_name
+    DSQL_ENDPOINT    = module.database.cluster_endpoint
+    DSQL_REGION      = module.core.region
+    DATA_BUCKET      = module.storage_files.bucket_id
+    EVENT_BUS_NAME   = local.event_bus_name
+    EVENT_SOURCE     = "media-downloader"
   })
 
-    additional_policy_arns = [module.database.connect_policy_arn]
+  additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "S3Access" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = ["s3:GetObject","s3:HeadObject","s3:ListBucket"]
+        Action   = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket"]
         Resource = "${module.storage_files.bucket_arn}/*"
       }]
     })
@@ -66,8 +66,8 @@ module "lambda_dev_tools" {
     "EventBridgeRead" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
-        Effect   = "Allow"
-        Action   = ["events:ListRules","events:ListTargetsByRule"]
+        Effect = "Allow"
+        Action = ["events:ListRules", "events:ListTargetsByRule"]
         Resource = [
           module.eventbridge.bus_arn,
           "${module.eventbridge.bus_arn}/*"
