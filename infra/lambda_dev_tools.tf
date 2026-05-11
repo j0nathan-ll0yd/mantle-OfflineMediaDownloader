@@ -47,14 +47,6 @@ module "lambda_dev_tools" {
         Resource = "${module.storage_files.bucket_arn}/*"
       }]
     })
-    "SQSSend_Files" = jsonencode({
-      Version = "2012-10-17"
-      Statement = [{
-        Effect   = "Allow"
-        Action   = "sqs:SendMessage"
-        Resource = module.queue_files.queue_arn
-      }]
-    })
     "EventBridgePutEvents" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
