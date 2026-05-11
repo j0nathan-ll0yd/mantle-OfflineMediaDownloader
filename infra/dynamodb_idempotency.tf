@@ -3,12 +3,12 @@
 
 # DynamoDB table: idempotency
 module "dynamodb_idempotency" {
-  source              = "../../mantle/modules/dynamodb"
-  table_name          = "idempotency"
-  name_prefix         = module.core.name_prefix
-  tags                = module.core.common_tags
-  hash_key            = "id"
-  attributes          = [{ name = "id", type = "S" }]
+  source      = "../../mantle/modules/dynamodb"
+  table_name  = "idempotency"
+  name_prefix = module.core.name_prefix
+  tags        = module.core.common_tags
+  hash_key    = "id"
+  attributes  = [{name = "id", type = "S"}]
   table_name_override = "${module.core.name_prefix}-Idempotency"
-  ttl_attribute       = "expiration"
+  ttl_attribute = "expiration"
 }

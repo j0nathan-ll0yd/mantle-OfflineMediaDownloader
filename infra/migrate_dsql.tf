@@ -19,9 +19,9 @@ module "lambda_migrate_dsql" {
   timeout            = 300
 
   environment_variables = {
-    DSQL_ENDPOINT     = module.database.cluster_endpoint
-    DSQL_REGION       = module.core.region
-    DSQL_ROLE_NAME    = "admin"
+    DSQL_ENDPOINT         = module.database.cluster_endpoint
+    DSQL_REGION           = module.core.region
+    DSQL_ROLE_NAME        = "admin"
     METRICS_NAMESPACE = "MediaDownloader"
     AWS_ACCOUNT_ID    = module.core.account_id
     RESOURCE_PREFIX   = module.core.name_prefix
@@ -51,7 +51,7 @@ resource "terraform_data" "rerun_migration" {
     [filesha256("${path.module}/../build/lambdas/MigrateDSQL/index.mjs")],
     [filesha256("${path.module}/../permissions/permissions.sql")],
     [for f in sort(fileset("${path.module}/../build/lambdas/MigrateDSQL/migrations", "**/*")) :
-    filesha256("${path.module}/../build/lambdas/MigrateDSQL/migrations/${f}")]
+      filesha256("${path.module}/../build/lambdas/MigrateDSQL/migrations/${f}")]
   )))
 
   provisioner "local-exec" {
