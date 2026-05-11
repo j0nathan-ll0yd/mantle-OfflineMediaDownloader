@@ -14,7 +14,7 @@ import {SqsQueueUrl} from '@mantleframework/core'
 import {getRequiredEnv} from '@mantleframework/env'
 import {NotFoundError} from '@mantleframework/errors'
 import {addAnnotation, addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
-defineLambda({bind: {SNS_QUEUE_URL: 'SendPushNotification'}})
+defineLambda({deadLetterQueue: true, bind: {SNS_QUEUE_URL: 'SendPushNotification'}})
 import {getFilesByKey, getUserFilesByFileId} from '#entities/queries'
 import {createDownloadReadyNotification} from '#services/notification/transformers'
 import type {File} from '#types/domainModels'
