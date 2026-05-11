@@ -193,22 +193,87 @@ describe('WebhookFeedly Lambda', () => {
     expect(metrics.addMetric).toHaveBeenCalledWith('WebhookProcessed', 'Count', 1)
   })
 
-  it('should handle associateFileToUser failure gracefully', async () => {
+  it('should propagate associateFileToUser failure as error', async () => {
     vi.mocked(associateFileToUser).mockRejectedValue(new Error('DB error'))
     vi.mocked(getFile).mockResolvedValue(null as never)
     vi.mocked(createFile).mockResolvedValue(undefined as never)
     vi.mocked(createFileDownload).mockResolvedValue(undefined as never)
     vi.mocked(emitEvent).mockResolvedValue(undefined as never)
 
-    const result = await handler({
+    await expect(
+      handler({
+        context: {awsRequestId: 'req-1'},
+        userId: 'user-1',
+        body: {articleURL: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'},
+        metadata: {correlationId: 'corr-1', traceId: 'trace-1'}
+      })
+    ).rejects.toThrow('DB error')
+
+    // File should be created before association is attempted
+    expect(createFile).toHaveBeenCalled()
+    expect(createFileDownload).toHaveBeenCalled()
+    // Event should NOT be emitted since association failed
+    expect(emitEvent).not.toHaveBeenCalled()
+  })
+
+  it('should call associateFileToUser AFTER addFile for new files', async () => {
+    const callOrder: string[] = []
+    vi.mocked(getFile).mockResolvedValue(null as never)
+    vi.mocked(createFile).mockImplementation(async () => {
+      callOrder.push('createFile')
+      return undefined as never
+    })
+    vi.mocked(createFileDownload).mockImplementation(async () => {
+      callOrder.push('createFileDownload')
+      return undefined as never
+    })
+    vi.mocked(associateFileToUser).mockImplementation(async () => {
+      callOrder.push('associateFileToUser')
+      return undefined as never
+    })
+    vi.mocked(emitEvent).mockResolvedValue(undefined as never)
+
+    await handler({
       context: {awsRequestId: 'req-1'},
       userId: 'user-1',
       body: {articleURL: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'},
       metadata: {correlationId: 'corr-1', traceId: 'trace-1'}
     })
 
-    // Should still process successfully despite association failure
-    expect(result.statusCode).toBe(202)
+    // Association MUST happen after file creation to avoid orphaned user_files rows
+    expect(callOrder.indexOf('createFile')).toBeLessThan(callOrder.indexOf('associateFileToUser'))
+    expect(callOrder.indexOf('createFileDownload')).toBeLessThan(callOrder.indexOf('associateFileToUser'))
+  })
+
+  it('should associate file to user even for already-downloaded files', async () => {
+    vi.mocked(associateFileToUser).mockResolvedValue(undefined as never)
+    vi.mocked(getFile).mockResolvedValue(
+      {
+        fileId: 'dQw4w9WgXcQ',
+        size: 1000,
+        authorName: 'A',
+        authorUser: 'a',
+        publishDate: '2024-01-01',
+        description: 'D',
+        key: 'dQw4w9WgXcQ.mp4',
+        contentType: 'video/mp4',
+        title: 'Test',
+        status: 'Downloaded',
+        url: 'https://cdn/file.mp4'
+      } as never
+    )
+    vi.mocked(sendMessage).mockResolvedValue({MessageId: 'msg-1'} as never)
+
+    await handler({
+      context: {awsRequestId: 'req-1'},
+      userId: 'user-1',
+      body: {articleURL: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'},
+      metadata: {correlationId: 'corr-1', traceId: 'trace-1'}
+    })
+
+    // Association must always be called, even for existing downloaded files
+    // (handles the case where a second user requests an already-downloaded file)
+    expect(associateFileToUser).toHaveBeenCalledWith('dQw4w9WgXcQ', 'user-1')
   })
 
   it('should extract videoID from article URL', async () => {
