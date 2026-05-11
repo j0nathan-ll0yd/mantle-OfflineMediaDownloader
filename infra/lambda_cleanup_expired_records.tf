@@ -4,7 +4,7 @@
 # --- CleanupExpiredRecords ---
 
 module "lambda_cleanup_expired_records" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
   function_name       = "CleanupExpiredRecords"
   name_prefix         = module.core.name_prefix

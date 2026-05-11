@@ -4,7 +4,7 @@
 # --- UserRefresh ---
 
 module "lambda_user_refresh" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
   function_name      = "UserRefresh"
   name_prefix        = module.core.name_prefix

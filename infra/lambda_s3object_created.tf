@@ -4,20 +4,21 @@
 # --- S3ObjectCreated ---
 
 module "lambda_s3object_created" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
-  function_name      = "S3ObjectCreated"
-  name_prefix        = module.core.name_prefix
-  source_dir         = "${path.module}/../build/lambdas/S3ObjectCreated"
-  assume_role_policy = module.core.lambda_assume_role_policy
-  xray_policy_arn    = module.core.lambda_xray_policy_arn
-  region             = module.core.region
-  account_id         = module.core.account_id
-  environment        = var.environment
-  log_retention_days = var.log_retention_days
-  log_level          = var.log_level
-  tags               = module.core.common_tags
-  layers             = [local.adot_layer_arn]
+  function_name          = "S3ObjectCreated"
+  name_prefix            = module.core.name_prefix
+  source_dir             = "${path.module}/../build/lambdas/S3ObjectCreated"
+  assume_role_policy     = module.core.lambda_assume_role_policy
+  xray_policy_arn        = module.core.lambda_xray_policy_arn
+  region                 = module.core.region
+  account_id             = module.core.account_id
+  environment            = var.environment
+  log_retention_days     = var.log_retention_days
+  log_level              = var.log_level
+  tags                   = module.core.common_tags
+  dead_letter_target_arn = module.lambda_s3object_created_dlq.queue_arn
+  layers                 = [local.adot_layer_arn]
 
   api_gateway_enabled = false
 

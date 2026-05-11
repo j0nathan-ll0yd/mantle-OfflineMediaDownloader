@@ -4,7 +4,7 @@
 # --- ApiGatewayAuthorizer ---
 
 module "lambda_api_gateway_authorizer" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
   function_name      = "ApiGatewayAuthorizer"
   name_prefix        = module.core.name_prefix

@@ -12,7 +12,7 @@
  */
 import {buildValidatedResponse, defineLambda, UserStatus} from '@mantleframework/core'
 
-defineLambda({staticAssets: ['videos/default-file.mp4']})
+defineLambda({staticAssets: ['videos/default-file.mp4'], bind: {SNS_QUEUE_URL: 'SendPushNotification'}})
 import {metrics, MetricUnit} from '@mantleframework/observability'
 import {defineApiHandler, z} from '@mantleframework/validation'
 import {getDefaultFile} from '#config/constants'

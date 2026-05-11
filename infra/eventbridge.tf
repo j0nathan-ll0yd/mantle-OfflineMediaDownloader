@@ -2,7 +2,7 @@
 # To customize, remove the first line and this file will be skipped on re-generation.
 
 module "eventbridge" {
-  source           = "../../../Repositories/mantle/modules/eventbridge"
+  source           = "../../mantle/modules/eventbridge"
   bus_name         = "MediaDownloader"
   name_prefix      = module.core.name_prefix
   tags             = module.core.common_tags

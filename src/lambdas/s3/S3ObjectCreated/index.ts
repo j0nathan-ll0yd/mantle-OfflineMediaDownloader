@@ -9,11 +9,12 @@
  * Output: void (processes all records, logs errors)
  */
 import {sendMessage} from '@mantleframework/aws'
-import {defineS3Handler} from '@mantleframework/core'
+import {defineLambda, defineS3Handler} from '@mantleframework/core'
 import {SqsQueueUrl} from '@mantleframework/core'
 import {getRequiredEnv} from '@mantleframework/env'
 import {NotFoundError} from '@mantleframework/errors'
 import {addAnnotation, addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
+defineLambda({deadLetterQueue: true, bind: {SNS_QUEUE_URL: 'SendPushNotification'}})
 import {getFilesByKey, getUserFilesByFileId} from '#entities/queries'
 import {createDownloadReadyNotification} from '#services/notification/transformers'
 import type {File} from '#types/domainModels'

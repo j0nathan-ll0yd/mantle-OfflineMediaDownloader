@@ -4,7 +4,7 @@
 # --- UserLogin ---
 
 module "lambda_user_login" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
   function_name      = "UserLogin"
   name_prefix        = module.core.name_prefix

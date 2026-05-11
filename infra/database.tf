@@ -2,7 +2,7 @@
 # To customize, remove the first line and this file will be skipped on re-generation.
 
 module "database" {
-  source = "../../../Repositories/mantle/modules/database/aurora-dsql"
+  source = "../../mantle/modules/database/aurora-dsql"
 
   name_prefix         = module.core.name_prefix
   tags                = module.core.common_tags

@@ -4,7 +4,7 @@
 # --- DeviceRegister ---
 
 module "lambda_device_register" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
   function_name      = "DeviceRegister"
   name_prefix        = module.core.name_prefix

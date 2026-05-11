@@ -33,7 +33,8 @@ defineLambda({
     YTDLP_SLEEP_INTERVAL: '2',
     YTDLP_MAX_SLEEP_INTERVAL: '5',
     AWS_SDK_UA_APP_ID: 'StartFileUpload'
-  }
+  },
+  bind: {SNS_QUEUE_URL: 'SendPushNotification'}
 })
 
 const sqs = defineSqsHandler({operationName: 'StartFileUpload', parseBody: true, timeout: 900, memorySize: 2048, queue: 'DownloadQueue'})

@@ -8,7 +8,7 @@ import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as S3Mod from '#lambdas/s3/S3ObjectCreated/index.js'
 
 vi.mock('@mantleframework/core',
-  () => ({defineS3Handler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler), SqsQueueUrl: (s: string) => s}))
+  () => ({defineLambda: vi.fn(), defineS3Handler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler), SqsQueueUrl: (s: string) => s}))
 
 vi.mock('@mantleframework/aws', () => ({sendMessage: vi.fn()}))
 

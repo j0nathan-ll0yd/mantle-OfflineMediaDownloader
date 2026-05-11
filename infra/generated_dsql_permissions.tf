@@ -3,7 +3,7 @@
 
 # Auto-generated from @RequiresTable decorators
 # Do not edit manually - run: mantle generate permissions
-# Generated at: 2026-05-09T06:53:54.860Z
+# Generated at: 2026-05-11T16:49:45.800Z
 
 locals {
   lambda_dsql_roles = {
@@ -27,24 +27,12 @@ locals {
       role_name      = "lambda_device_register"
       requires_admin = false
     }
-    "DownloadOrchestrator" = {
-      role_name      = "lambda_download_orchestrator"
-      requires_admin = false
-    }
     "EndpointCleanupHelpers" = {
       role_name      = "lambda_endpoint_cleanup_helpers"
       requires_admin = false
     }
-    "FailureHandler" = {
-      role_name      = "lambda_failure_handler"
-      requires_admin = false
-    }
     "FeedlyWebhook" = {
       role_name      = "lambda_feedly_webhook"
-      requires_admin = false
-    }
-    "FileHelpers" = {
-      role_name      = "lambda_file_helpers"
       requires_admin = false
     }
     "FilesByIdDelete" = {
@@ -55,10 +43,6 @@ locals {
       role_name      = "lambda_files_get"
       requires_admin = false
     }
-    "Helpers" = {
-      role_name      = "lambda_helpers"
-      requires_admin = false
-    }
     "MigrateDSQL" = {
       role_name      = "lambda_migrate_d_s_q_l"
       requires_admin = false
@@ -67,16 +51,8 @@ locals {
       role_name      = "lambda_prune_devices"
       requires_admin = false
     }
-    "PushHelpers" = {
-      role_name      = "lambda_push_helpers"
-      requires_admin = false
-    }
     "S3ObjectCreated" = {
       role_name      = "lambda_s3_object_created"
-      requires_admin = false
-    }
-    "S3Recovery" = {
-      role_name      = "lambda_s3_recovery"
       requires_admin = false
     }
     "SendPushNotification" = {

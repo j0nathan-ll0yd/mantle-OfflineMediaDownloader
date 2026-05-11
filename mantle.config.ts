@@ -27,6 +27,8 @@ export default defineConfig({
     {name: 'api_quota_limit', type: 'number', description: 'API Gateway daily quota limit', default: '10000'},
     {name: 'dsql_deletion_protection', type: 'bool', description: 'Enable deletion protection for DSQL cluster', default: 'true'},
 
+    {name: 'api_bearer_token', type: 'string', description: 'Bearer token for MCP DevTools authentication', sensitive: true, default: '""'},
+
     {
       name: 'cors_allowed_origins',
       type: 'list(string)',
@@ -62,7 +64,9 @@ export default defineConfig({
         platform: 'APNS_SANDBOX',
         credentialSecret: 'apns.staging.privateKey',
         principalSecret: 'apns.staging.certificate',
-        resourceName: 'apns'
+        resourceName: 'apns',
+        successFeedbackSampleRate: 100,
+        enableEndpointEvents: true
       }
     ]
   },
@@ -73,14 +77,17 @@ export default defineConfig({
     {name: 'files', bucketName: 'mantle-offlinemediadownloader-videos', cloudfront: true, intelligentTiering: true, assets: ['videos/default-file.mp4']}
   ],
   queues: [
-    {name: 'DownloadQueue', visibilityTimeoutSeconds: 900},
-    {name: 'SendPushNotification', envAlias: 'SNS_QUEUE_URL'}
+    {name: 'DownloadQueue', visibilityTimeoutSeconds: 900, enableDlqAlarm: false},
+    {name: 'SendPushNotification', enableDlqAlarm: false, visibilityTimeoutSeconds: 180},
+    {name: 'EndpointEvents', enableDlqAlarm: false, visibilityTimeoutSeconds: 180}
   ],
   cloudfront: {
     apiDistribution: {
       geoRestriction: {type: 'whitelist', locations: ['US']},
       forwardedHeaders: ['X-API-Key', 'Authorization', 'User-Agent'],
-      cacheTtl: {default: 0, min: 0, max: 0}
+      cacheTtl: {default: 0, min: 0, max: 0},
+      functionType: 'cloudfront-function',
+      functionSourcePath: 'cloudfront-functions/api-key-promotion.js'
     }
   },
   authorizer: {cacheTtl: 0},

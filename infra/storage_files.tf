@@ -3,7 +3,7 @@
 
 # S3 bucket + CloudFront distribution for files
 module "storage_files" {
-  source               = "../../../Repositories/mantle/modules/storage"
+  source               = "../../mantle/modules/storage"
   bucket_name          = "files"
   name_prefix          = module.core.name_prefix
   project_name         = var.project_name

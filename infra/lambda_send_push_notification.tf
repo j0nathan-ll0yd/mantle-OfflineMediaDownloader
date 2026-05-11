@@ -4,7 +4,7 @@
 # --- SendPushNotification ---
 
 module "lambda_send_push_notification" {
-  source = "../../../Repositories/mantle/modules/lambda"
+  source = "../../mantle/modules/lambda"
 
   function_name      = "SendPushNotification"
   name_prefix        = module.core.name_prefix
