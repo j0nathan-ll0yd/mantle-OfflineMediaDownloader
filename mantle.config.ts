@@ -78,7 +78,7 @@ export default defineConfig({
   ],
   queues: [
     {name: 'DownloadQueue', visibilityTimeoutSeconds: 900, enableDlqAlarm: false},
-    {name: 'SendPushNotification', enableDlqAlarm: false},
+    {name: 'SendPushNotification', enableDlqAlarm: false, visibilityTimeoutSeconds: 180},
     {name: 'EndpointEvents', enableDlqAlarm: false, visibilityTimeoutSeconds: 180}
   ],
   cloudfront: {
