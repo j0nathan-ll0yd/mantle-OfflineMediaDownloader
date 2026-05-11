@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "mantle": {
+      "command": "node",
+      "args": ["../mantle/packages/cli/dist/mcp/mcp-entry.mjs"]
+    },
+    "devtools": {
+      "type": "http",
+      "url": "https://fs5icedcqpemzm2th4zdrk33ra0fvula.lambda-url.us-west-2.on.aws/",
+      "headers": {
+        "Authorization": "Bearer ${DEVTOOLS_OMD_TOKEN}"
+      }
+    }
+  }
+}
