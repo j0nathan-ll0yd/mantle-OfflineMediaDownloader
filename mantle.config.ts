@@ -74,7 +74,7 @@ export default defineConfig({
     {name: 'idempotency', tableName: 'Idempotency', hashKey: 'id', attributes: [{name: 'id', type: 'S'}], ttlAttribute: 'expiration'}
   ],
   storage: [
-    {name: 'files', bucketName: 'mantle-offlinemediadownloader-videos', cloudfront: true, intelligentTiering: true, assets: ['videos/default-file.mp4']}
+    {name: 'files', bucketName: 'mantle-offlinemediadownloader-videos', cloudfront: true, intelligentTiering: true, assets: ['videos/default-file.mp4'], envAlias: 'DATA_BUCKET'}
   ],
   queues: [
     {name: 'DownloadQueue', visibilityTimeoutSeconds: 900, enableDlqAlarm: false},

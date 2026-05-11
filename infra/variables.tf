@@ -66,12 +66,6 @@ variable "reserved_client_ip" {
   default     = ""
 }
 
-variable "data_bucket" {
-  description = "data bucket"
-  type        = string
-  default     = ""
-}
-
 variable "github_personal_token" {
   description = "github personal token"
   type        = string
