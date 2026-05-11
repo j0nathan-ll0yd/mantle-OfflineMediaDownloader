@@ -6,7 +6,7 @@ import {getRequiredEnv} from '@mantleframework/env'
 import {defineMcpHandler, frameworkTools, McpAuthMode} from '@mantleframework/mcp'
 import type {McpDatabaseConnection} from '@mantleframework/mcp'
 
-defineLambda({timeout: 30, memorySize: 512, env: ['DATA_BUCKET', 'EVENT_BUS_NAME']})
+defineLambda({timeout: 30, memorySize: 512, env: ['DATA_BUCKET', 'EVENT_BUS_NAME'], bind: {DATA_BUCKET: 'files'}})
 
 async function getDevToolsConnection(): Promise<McpDatabaseConnection> {
   const db = await getDrizzleClient({

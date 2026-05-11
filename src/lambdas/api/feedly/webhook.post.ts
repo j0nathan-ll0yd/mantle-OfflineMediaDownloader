@@ -8,10 +8,11 @@
  * Input: FeedlyWebhookRequest with articleURL
  * Output: APIGatewayProxyResult with file metadata
  */
-import {buildValidatedResponse, emitEvent} from '@mantleframework/core'
+import {buildValidatedResponse, defineLambda, emitEvent} from '@mantleframework/core'
 import {addAnnotation, addMetadata, endSpan, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
 import {createIdempotencyStore, IdempotencyConfig, makeIdempotent} from '@mantleframework/resilience'
 import {defineApiHandler, z} from '@mantleframework/validation'
+defineLambda({bind: {SNS_QUEUE_URL: 'SendPushNotification'}})
 import {associateFileToUser} from '#domain/user/userFileService'
 import {addFile, getFile, sendFileNotification} from '#services/file/fileInitService'
 import {getVideoID} from '#services/youtube/youtube'

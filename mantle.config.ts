@@ -74,18 +74,11 @@ export default defineConfig({
     {name: 'idempotency', tableName: 'Idempotency', hashKey: 'id', attributes: [{name: 'id', type: 'S'}], ttlAttribute: 'expiration'}
   ],
   storage: [
-    {
-      name: 'files',
-      bucketName: 'mantle-offlinemediadownloader-videos',
-      cloudfront: true,
-      intelligentTiering: true,
-      assets: ['videos/default-file.mp4'],
-      envAlias: 'DATA_BUCKET'
-    }
+    {name: 'files', bucketName: 'mantle-offlinemediadownloader-videos', cloudfront: true, intelligentTiering: true, assets: ['videos/default-file.mp4']}
   ],
   queues: [
     {name: 'DownloadQueue', visibilityTimeoutSeconds: 900, enableDlqAlarm: false},
-    {name: 'SendPushNotification', envAlias: 'SNS_QUEUE_URL', enableDlqAlarm: false},
+    {name: 'SendPushNotification', enableDlqAlarm: false},
     {name: 'EndpointEvents', enableDlqAlarm: false, visibilityTimeoutSeconds: 180}
   ],
   cloudfront: {

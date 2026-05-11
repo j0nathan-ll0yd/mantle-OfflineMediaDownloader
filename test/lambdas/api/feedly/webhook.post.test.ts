@@ -10,7 +10,12 @@ import type * as WebhookMod from '#lambdas/api/feedly/webhook.post.js'
 vi.mock('@mantleframework/aws', () => ({sendMessage: vi.fn()}))
 
 vi.mock('@mantleframework/core',
-  () => ({buildValidatedResponse: vi.fn((_ctx, code, data) => ({statusCode: code, ...data})), emitEvent: vi.fn(), SqsQueueUrl: (s: string) => s}))
+  () => ({
+    defineLambda: vi.fn(),
+    buildValidatedResponse: vi.fn((_ctx, code, data) => ({statusCode: code, ...data})),
+    emitEvent: vi.fn(),
+    SqsQueueUrl: (s: string) => s
+  }))
 
 vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn(() => 'https://sqs.us-west-2.amazonaws.com/123/queue')}))
 
