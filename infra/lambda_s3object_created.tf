@@ -17,7 +17,7 @@ module "lambda_s3object_created" {
   log_retention_days     = var.log_retention_days
   log_level              = var.log_level
   tags                   = module.core.common_tags
-  dead_letter_target_arn = module.lambda_s3object_created_dlq.queue_arn
+  dead_letter_target_arn = module.queue_lambda_s3object_created_dlq.queue_arn
   layers                 = [local.adot_layer_arn]
 
   api_gateway_enabled = false
