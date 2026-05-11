@@ -66,6 +66,38 @@ variable "reserved_client_ip" {
   default     = ""
 }
 
+variable "apns_team" {
+  description = "apns team"
+  type        = string
+  default     = ""
+}
+
+variable "apns_key_id" {
+  description = "apns key id"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "apns_signing_key" {
+  description = "apns signing key"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "apns_default_topic" {
+  description = "apns default topic"
+  type        = string
+  default     = ""
+}
+
+variable "apns_host" {
+  description = "apns host"
+  type        = string
+  default     = ""
+}
+
 variable "github_personal_token" {
   description = "github personal token"
   type        = string
@@ -99,38 +131,6 @@ variable "ytdlp_max_sleep_interval" {
 
 variable "ytdlp_binary_path" {
   description = "ytdlp binary path"
-  type        = string
-  default     = ""
-}
-
-variable "apns_team" {
-  description = "apns team"
-  type        = string
-  default     = ""
-}
-
-variable "apns_key_id" {
-  description = "apns key id"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "apns_signing_key" {
-  description = "apns signing key"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "apns_default_topic" {
-  description = "apns default topic"
-  type        = string
-  default     = ""
-}
-
-variable "apns_host" {
-  description = "apns host"
   type        = string
   default     = ""
 }

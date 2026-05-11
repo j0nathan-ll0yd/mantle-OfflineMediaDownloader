@@ -4,7 +4,7 @@
 
 # CloudFront Function for API distribution
 resource "aws_cloudfront_function" "api_function" {
-  name    = "${module.core.name_prefix}-ApiFunction"
+  name    = "${module.core.name_prefix}-ApiKeyPromotion"
   runtime = "cloudfront-js-2.0"
   comment = "${module.core.name_prefix}-API"
   publish = true

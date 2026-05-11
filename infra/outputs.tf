@@ -27,29 +27,9 @@ output "dev_tools_function_arn" {
   value       = module.lambda_dev_tools.function_arn
 }
 
-output "download_orchestrator_function_arn" {
-  description = "ARN of the DownloadOrchestrator Lambda function"
-  value       = module.lambda_download_orchestrator.function_arn
-}
-
 output "endpoint_cleanup_helpers_function_arn" {
   description = "ARN of the EndpointCleanupHelpers Lambda function"
   value       = module.lambda_endpoint_cleanup_helpers.function_arn
-}
-
-output "failure_handler_function_arn" {
-  description = "ARN of the FailureHandler Lambda function"
-  value       = module.lambda_failure_handler.function_arn
-}
-
-output "file_helpers_function_arn" {
-  description = "ARN of the FileHelpers Lambda function"
-  value       = module.lambda_file_helpers.function_arn
-}
-
-output "helpers_function_arn" {
-  description = "ARN of the Helpers Lambda function"
-  value       = module.lambda_helpers.function_arn
 }
 
 output "migrate_dsql_function_arn" {
@@ -62,19 +42,9 @@ output "prune_devices_function_arn" {
   value       = module.lambda_prune_devices.function_arn
 }
 
-output "push_helpers_function_arn" {
-  description = "ARN of the PushHelpers Lambda function"
-  value       = module.lambda_push_helpers.function_arn
-}
-
 output "s3object_created_function_arn" {
   description = "ARN of the S3ObjectCreated Lambda function"
   value       = module.lambda_s3object_created.function_arn
-}
-
-output "s3recovery_function_arn" {
-  description = "ARN of the S3Recovery Lambda function"
-  value       = module.lambda_s3recovery.function_arn
 }
 
 output "send_push_notification_function_arn" {
