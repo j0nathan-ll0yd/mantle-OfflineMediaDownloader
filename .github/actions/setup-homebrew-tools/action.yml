@@ -1,28 +1,9 @@
 name: 'Setup Homebrew Tools'
-description: 'Install Homebrew and hcl2json with caching'
+description: 'Verify hcl2json is available (pre-installed in runner-node image)'
 
 runs:
   using: 'composite'
   steps:
-    - name: Set up Homebrew
-      uses: Homebrew/actions/setup-homebrew@b2a302b9a642580cae998e6ba2076ffd28e61317  # master
-
-    - name: Cache Homebrew packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/Library/Caches/Homebrew
-          /home/linuxbrew/.linuxbrew/Cellar
-        key: homebrew-hcl2json-${{ runner.os }}
-
-    - name: Install hcl2json
+    - name: Verify hcl2json
       shell: bash
-      run: |
-        brew install hcl2json
-        # Force link in case it's already installed but not linked
-        brew link hcl2json --overwrite --force || true
-        # Ensure Homebrew bin is in PATH for subsequent steps
-        BREW_PREFIX="$(brew --prefix)"
-        echo "${BREW_PREFIX}/bin" >> "$GITHUB_PATH"
-        # Verify hcl2json is accessible
-        "${BREW_PREFIX}/bin/hcl2json" --version || echo "hcl2json installed at ${BREW_PREFIX}/bin/hcl2json"
+      run: hcl2json --version || { echo "hcl2json not found on PATH"; exit 1; }
