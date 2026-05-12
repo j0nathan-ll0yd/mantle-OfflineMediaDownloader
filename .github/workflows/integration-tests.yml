@@ -38,7 +38,7 @@ jobs:
         # lockfiles in multi-repo CI (ERR_PNPM_BROKEN_LOCKFILE). See action-setup#225.
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320  # v5.0.0
       - name: Setup Node.js
-        uses: actions/setup-node@v6  # TODO: pin to SHA
+        uses: actions/setup-node@v6.4.0  # TODO: pin to SHA
         with:
           node-version: '22'
           cache: 'pnpm'
