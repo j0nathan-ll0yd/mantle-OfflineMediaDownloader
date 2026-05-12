@@ -6,20 +6,22 @@
 module "lambda_cleanup_expired_records" {
   source = "../../mantle/modules/lambda"
 
-  function_name       = "CleanupExpiredRecords"
-  name_prefix         = module.core.name_prefix
-  source_dir          = "${path.module}/../build/lambdas/CleanupExpiredRecords"
-  assume_role_policy  = module.core.lambda_assume_role_policy
-  xray_policy_arn     = module.core.lambda_xray_policy_arn
-  region              = module.core.region
-  account_id          = module.core.account_id
-  environment         = var.environment
-  log_retention_days  = var.log_retention_days
-  log_level           = var.log_level
-  tags                = module.core.common_tags
-  timeout             = 60
-  schedule_expression = "cron(0 3 * * ? *)"
-  layers              = [local.adot_layer_arn]
+  function_name            = "CleanupExpiredRecords"
+  name_prefix              = module.core.name_prefix
+  source_dir               = "${path.module}/../build/lambdas/CleanupExpiredRecords"
+  assume_role_policy       = module.core.lambda_assume_role_policy
+  xray_policy_arn          = module.core.lambda_xray_policy_arn
+  region                   = module.core.region
+  account_id               = module.core.account_id
+  environment              = var.environment
+  log_retention_days       = var.log_retention_days
+  log_level                = var.log_level
+  tags                     = module.core.common_tags
+  timeout                  = 60
+  schedule_expression      = "cron(0 3 * * ? *)"
+  dead_letter_target_arn   = module.eventbridge.dlq_arn
+  enable_dead_letter_queue = true
+  layers                   = [local.adot_layer_arn]
 
   api_gateway_enabled = false
 
