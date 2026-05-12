@@ -24,7 +24,6 @@ concurrency:
 
 env:
   AWS_REGION: us-west-2
-  TOFU_VERSION: '1.8.0'
 
 jobs:
   # ==========================================================================
@@ -131,12 +130,6 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: build-artifacts
-
-      - name: Setup OpenTofu
-        if: steps.check-creds.outputs.configured == 'true'
-        uses: opentofu/setup-opentofu@fc711fa910b93cba0f3fbecaafc9f42fd0c411cb  # v2
-        with:
-          tofu_version: ${{ env.TOFU_VERSION }}
 
       - name: Configure AWS credentials (Production)
         if: steps.check-creds.outputs.configured == 'true'

@@ -19,7 +19,6 @@ permissions: {}
 
 env:
   AWS_REGION: us-west-2
-  TOFU_VERSION: '1.8.0'
 
 jobs:
   rollback:
@@ -64,11 +63,6 @@ jobs:
 
       - name: Build
         run: pnpm run build
-
-      - name: Setup OpenTofu
-        uses: opentofu/setup-opentofu@fc711fa910b93cba0f3fbecaafc9f42fd0c411cb  # v2
-        with:
-          tofu_version: ${{ env.TOFU_VERSION }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37  # v6

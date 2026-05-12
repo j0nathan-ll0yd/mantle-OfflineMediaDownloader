@@ -1,28 +1,9 @@
 name: 'Setup SOPS'
-description: 'Install Mozilla SOPS for secret decryption'
-
-inputs:
-  version:
-    description: 'SOPS version to install'
-    required: false
-    default: '3.9.4'
+description: 'Verify SOPS is available (pre-installed in runner-node image)'
 
 runs:
   using: 'composite'
   steps:
-    - name: Install SOPS
+    - name: Verify SOPS
       shell: bash
-      run: |
-        SOPS_VERSION="${{ inputs.version }}"
-        ARCH=$(uname -m)
-        case "$ARCH" in
-          aarch64|arm64) SOPS_ARCH="arm64" ;;
-          *) SOPS_ARCH="amd64" ;;
-        esac
-        INSTALL_DIR="${HOME}/.local/bin"
-        mkdir -p "$INSTALL_DIR"
-        curl -sSLo "${INSTALL_DIR}/sops" \
-          "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.${SOPS_ARCH}"
-        chmod +x "${INSTALL_DIR}/sops"
-        echo "$INSTALL_DIR" >> "$GITHUB_PATH"
-        "${INSTALL_DIR}/sops" --version
+      run: sops --version || { echo "SOPS not found on PATH"; exit 1; }
