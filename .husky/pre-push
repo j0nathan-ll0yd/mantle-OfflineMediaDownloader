@@ -1,31 +1,26 @@
 #!/bin/sh
 # pre-push hook: Block direct master pushes and run CI checks
-# This enforces the worktree workflow and ensures code quality
-#
-# To bypass (emergency only): git push --no-verify
 
-# Get the current branch name
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Block direct pushes to master
-if [ "$CURRENT_BRANCH" = "master" ] || [ "$CURRENT_BRANCH" = "main" ]; then
+if [ "${CURRENT_BRANCH}" = "master" ] || [ "${CURRENT_BRANCH}" = "main" ]; then
   echo ""
-  echo "ERROR: Direct push to '$CURRENT_BRANCH' is blocked."
+  echo "ERROR: Direct push to '${CURRENT_BRANCH}' is blocked."
   echo ""
-  echo "This project requires the worktree workflow:"
-  echo "  1. Create a worktree with a feature branch"
-  echo "  2. Make changes in the worktree"
-  echo "  3. Push the feature branch"
-  echo "  4. Create a PR and merge via squash-and-merge"
-  echo ""
+  echo "This project requires the worktree workflow."
   echo "See: docs/wiki/Conventions/Git-Workflow.md"
   echo ""
   echo "To bypass (emergency only): git push --no-verify"
   exit 1
 fi
 
-echo "Running pre-push checks (precheck)..."
+if [ "${MANTLE_SKIP_PREPUSH:-0}" = "1" ] || [ "${MANTLE_SKIP_HOOKS:-0}" = "1" ]; then
+  echo "MANTLE_SKIP_PREPUSH=1 or MANTLE_SKIP_HOOKS=1: Skipping pre-push checks."
+  exit 0
+fi
+
+echo "Running pre-push checks (mantle ci --mode pre-push)..."
 echo "Use 'git push --no-verify' to bypass in emergencies."
 echo ""
 
-pnpm run precheck
+npx mantle ci --mode pre-push

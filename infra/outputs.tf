@@ -27,6 +27,11 @@ output "dev_tools_function_arn" {
   value       = module.lambda_dev_tools.function_arn
 }
 
+output "dev_tools_function_url" {
+  description = "Function URL of the DevTools Lambda"
+  value       = module.lambda_dev_tools.function_url
+}
+
 output "endpoint_cleanup_helpers_function_arn" {
   description = "ARN of the EndpointCleanupHelpers Lambda function"
   value       = module.lambda_endpoint_cleanup_helpers.function_arn
