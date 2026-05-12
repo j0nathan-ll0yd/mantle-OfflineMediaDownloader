@@ -21,12 +21,12 @@ jobs:
 
     steps:
       - name: Checkout main repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
         with:
           path: main
 
       - name: Checkout wiki repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
         with:
           repository: ${{ github.repository }}.wiki
           path: wiki

@@ -54,7 +54,7 @@ jobs:
             echo "sha=${{ github.event.before }}" >> $GITHUB_OUTPUT
           fi
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ steps.target.outputs.sha }}
 
