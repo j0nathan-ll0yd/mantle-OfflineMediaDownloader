@@ -9,7 +9,7 @@
  * Output: APIGatewayProxyResult with file metadata
  */
 import {buildValidatedResponse, defineLambda, emitEvent} from '@mantleframework/core'
-import {addAnnotation, addMetadata, endSpan, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
+import {addAnnotation, addMetadata, endSpan, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
 import {createIdempotencyStore, IdempotencyConfig, makeIdempotent} from '@mantleframework/resilience'
 import {defineApiHandler, z} from '@mantleframework/validation'
 defineLambda({bind: {SNS_QUEUE_URL: 'SendPushNotification'}})
@@ -24,6 +24,11 @@ import type {WebhookProcessingInput, WebhookProcessingResult} from '#types/lambd
 /**
  * Core webhook processing logic - wrapped with idempotency.
  * Idempotency ensures duplicate webhook calls return the same response.
+ *
+ * IMPORTANT: The file record MUST exist before associating it to the user.
+ * The user_files junction table association must happen AFTER addFile() for new files,
+ * otherwise the association silently fails (Promise.allSettled swallows the error)
+ * and the file becomes invisible to GET /files which uses an INNER JOIN through user_files.
  */
 async function processWebhookRequest(input: WebhookProcessingInput): Promise<WebhookProcessingResult> {
   const {fileId, userId, articleURL, correlationId} = input
@@ -33,29 +38,33 @@ async function processWebhookRequest(input: WebhookProcessingInput): Promise<Web
   addMetadata(span, 'userId', userId)
 
   try {
-    const [assocResult, fileResult] = await Promise.allSettled([associateFileToUser(fileId, userId), getFile(fileId)])
-    const file = fileResult.status === 'fulfilled' ? fileResult.value : undefined
-    if (assocResult.status === 'rejected') {
-      logError('Failed to associate file to user', {fileId, userId, error: String(assocResult.reason)})
+    // Step 1: Check if file already exists
+    const file = await getFile(fileId)
+
+    // Step 2: Create file record if it doesn't exist yet
+    if (!file) {
+      await addFile(fileId, articleURL, correlationId)
+      addMetadata(span, 'newFile', true)
     }
 
+    // Step 3: Associate file to user AFTER file is guaranteed to exist
+    await associateFileToUser(fileId, userId)
+
+    // Step 4: If file is already downloaded, notify user immediately
     if (file && file.status === FileStatus.Downloaded) {
       await sendFileNotification(file, userId)
       addMetadata(span, 'action', 'dispatched')
       endSpan(span)
       return {statusCode: 200, status: ResponseStatus.Dispatched}
-    } else {
-      if (!file) {
-        await addFile(fileId, articleURL, correlationId)
-        addMetadata(span, 'newFile', true)
-      }
-      const eventDetail: DownloadRequestedDetail = {fileId, userId, sourceUrl: articleURL, correlationId, requestedAt: new Date().toISOString()}
-      await emitEvent({detailType: 'DownloadRequested', detail: eventDetail})
-      logInfo('Published DownloadRequested event', {fileId, correlationId})
-      addMetadata(span, 'action', 'accepted')
-      endSpan(span)
-      return {statusCode: 202, status: ResponseStatus.Accepted}
     }
+
+    // Step 5: File is new or still processing — emit download event
+    const eventDetail: DownloadRequestedDetail = {fileId, userId, sourceUrl: articleURL, correlationId, requestedAt: new Date().toISOString()}
+    await emitEvent({detailType: 'DownloadRequested', detail: eventDetail})
+    logInfo('Published DownloadRequested event', {fileId, correlationId})
+    addMetadata(span, 'action', 'accepted')
+    endSpan(span)
+    return {statusCode: 202, status: ResponseStatus.Accepted}
   } catch (error) {
     endSpan(span, error as Error)
     throw error
