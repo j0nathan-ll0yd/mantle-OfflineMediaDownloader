@@ -16,6 +16,9 @@ api_quota_limit          = 10000
 # Protect production data
 dsql_deletion_protection = true
 
+# Disable custom CloudWatch metrics to stay within AWS Free Tier
+disable_metrics = true
+
 # Production concurrency
 reserved_concurrency_start_file_upload = 10
 
