@@ -22,6 +22,13 @@
       "when": 1746835200000,
       "tag": "0004_device_events",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1747165200000,
+      "tag": "0005_backfill_user_files",
+      "breakpoints": true
     }
   ]
 }
