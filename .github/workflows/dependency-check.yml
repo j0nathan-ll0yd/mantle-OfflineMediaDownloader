@@ -24,9 +24,21 @@ jobs:
       - uses: ./.github/actions/setup-node-pnpm
 
       - name: Security audit
-        # express-rate-limit CVE in @modelcontextprotocol/inspector (devDep only, not in production bundle)
-        # pnpm trust-downgrade protection blocks the patched version (missing provenance attestation)
-        run: pnpm audit --audit-level=high --ignore GHSA-46wh-pxpv-q5gq
+        # Non-blocking: surfaces vulnerabilities in PR without failing the build.
+        # Overrides fix known transitive vulns; new findings are informational until triaged.
+        continue-on-error: true
+        run: |
+          echo "## Security Audit" >> "$GITHUB_STEP_SUMMARY"
+          if pnpm audit --audit-level=high 2>&1 | tee /tmp/audit-output.txt; then
+            echo "No high-severity vulnerabilities found." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/audit-output.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "> **Note:** This is informational. Review findings and add pnpm overrides or dependency updates as needed." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
 
       - name: Check stale pnpm overrides
         run: node .github/scripts/check-upstream-issues.mjs

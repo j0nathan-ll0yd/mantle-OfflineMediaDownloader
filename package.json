@@ -196,10 +196,6 @@
       "protobufjs",
       "sharp"
     ],
-    "auditConfig": {
-      "ignoreCves": [
-        "GHSA-46wh-pxpv-q5gq"
-      ]
-    }
+    "auditConfig": {}
   }
 }
