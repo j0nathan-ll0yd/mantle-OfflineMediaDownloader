@@ -8,6 +8,7 @@
  * Factory helpers (makeAuthorizedParams, etc.) provide defaults for required fields so tests
  * only specify the fields they care about.
  */
+import {createBoundEmitEvent} from '@mantleframework/core'
 import type {
   ApiHandlerParams,
   AuthorizedApiParams,
@@ -62,6 +63,8 @@ export type MockedModule<TModule extends Record<string, unknown>> = {
 
 const defaultMetadata: WrapperMetadata = {traceId: 'test-trace', correlationId: 'test-correlation'}
 
+const defaultBoundEmitters = createBoundEmitEvent(defaultMetadata)
+
 const defaultContext = {
   awsRequestId: 'test-req-id',
   callbackWaitsForEmptyEventLoop: true,
@@ -85,6 +88,7 @@ export function makeAuthorizedParams<TBody = undefined, TQuery = undefined, TPat
     event: {} as APIGatewayProxyEvent,
     context: defaultContext,
     metadata: defaultMetadata,
+    ...defaultBoundEmitters,
     authorizer: {},
     userStatus: 'Authenticated',
     body: undefined as AuthorizedApiParams<TBody, TQuery, TPath>['body'],
@@ -102,6 +106,7 @@ export function makeOptionalAuthParams<TBody = undefined, TQuery = undefined, TP
     event: {} as APIGatewayProxyEvent,
     context: defaultContext,
     metadata: defaultMetadata,
+    ...defaultBoundEmitters,
     authorizer: {},
     userId: undefined,
     userStatus: 'Anonymous',
@@ -114,12 +119,12 @@ export function makeOptionalAuthParams<TBody = undefined, TQuery = undefined, TP
 
 /** Create ValidatedApiParams (auth: 'none' with body schema) with defaults. */
 export function makeValidatedParams<TBody>(overrides: Partial<ValidatedApiParams<TBody>> & {body: TBody}): ValidatedApiParams<TBody> {
-  return {event: {} as APIGatewayProxyEvent, context: defaultContext, metadata: defaultMetadata, ...overrides}
+  return {event: {} as APIGatewayProxyEvent, context: defaultContext, metadata: defaultMetadata, ...defaultBoundEmitters, ...overrides}
 }
 
 /** Create ApiHandlerParams (auth: 'none', no schema) with defaults. */
 export function makeApiParams(overrides: Partial<ApiHandlerParams> = {}): ApiHandlerParams {
-  return {event: {} as APIGatewayProxyEvent, context: defaultContext, metadata: defaultMetadata, ...overrides}
+  return {event: {} as APIGatewayProxyEvent, context: defaultContext, metadata: defaultMetadata, ...defaultBoundEmitters, ...overrides}
 }
 
 /** Create SessionApiParams (auth: 'session') with defaults. */
@@ -130,6 +135,7 @@ export function makeSessionParams<TBody = undefined, TQuery = undefined, TPath =
     event: {} as APIGatewayProxyEvent,
     context: defaultContext,
     metadata: defaultMetadata,
+    ...defaultBoundEmitters,
     session: {
       user: {id: overrides.userId, email: 'test@test.com', emailVerified: true},
       session: {id: 'sess-1', token: 'tok-1', expiresAt: new Date(Date.now() + 86400000)}

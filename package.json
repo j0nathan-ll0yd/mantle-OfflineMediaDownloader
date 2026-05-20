@@ -181,7 +181,6 @@
       "drizzle-zod>zod": "^4.3.4",
       "esbuild": ">=0.27.4",
       "undici-types": "7.16.0",
-      "kysely": ">=0.28.17",
       "ws": ">=8.20.1",
       "protobufjs": ">=7.5.8"
     },
