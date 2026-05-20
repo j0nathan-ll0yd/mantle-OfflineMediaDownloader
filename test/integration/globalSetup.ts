@@ -60,19 +60,27 @@ function adaptMigrationForSchema(migrationSql: string, schema: string): string {
 
   // Add schema prefix to table references (for worker isolation)
   for (const table of tables) {
-    // Match table name in CREATE TABLE, ALTER TABLE, CREATE INDEX, UPDATE, ON clauses
-    // Use word boundaries to avoid partial matches
+    // Match table name in CREATE TABLE, ALTER TABLE, CREATE INDEX, UPDATE, ON, DELETE,
+    // INSERT, FROM, JOIN clauses. Use word boundaries to avoid partial matches.
     const createTablePattern = new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`, 'g')
     const alterTablePattern = new RegExp(`ALTER TABLE ${table} `, 'g')
     const updateTablePattern = new RegExp(`UPDATE ${table} `, 'g')
     const onParenPattern = new RegExp(`ON ${table}\\(`, 'g')
     const onSpacePattern = new RegExp(`ON ${table} `, 'g')
+    const deletePattern = new RegExp(`DELETE FROM ${table}\\b`, 'g')
+    const insertPattern = new RegExp(`INSERT INTO ${table}\\b`, 'g')
+    const fromPattern = new RegExp(`FROM ${table}\\b`, 'g')
+    const joinPattern = new RegExp(`JOIN ${table}\\b`, 'g')
 
     adapted = adapted.replace(createTablePattern, `CREATE TABLE IF NOT EXISTS ${schema}.${table}`)
     adapted = adapted.replace(alterTablePattern, `ALTER TABLE ${schema}.${table} `)
     adapted = adapted.replace(updateTablePattern, `UPDATE ${schema}.${table} `)
     adapted = adapted.replace(onParenPattern, `ON ${schema}.${table}(`)
     adapted = adapted.replace(onSpacePattern, `ON ${schema}.${table} `)
+    adapted = adapted.replace(deletePattern, `DELETE FROM ${schema}.${table}`)
+    adapted = adapted.replace(insertPattern, `INSERT INTO ${schema}.${table}`)
+    adapted = adapted.replace(fromPattern, `FROM ${schema}.${table}`)
+    adapted = adapted.replace(joinPattern, `JOIN ${schema}.${table}`)
   }
 
   // Convert Aurora DSQL specific syntax for regular PostgreSQL:
