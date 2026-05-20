@@ -22,22 +22,22 @@ module "lambda_device_register" {
   api_gateway_enabled = true
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME              = local.lambda_dsql_roles["DeviceRegister"].role_name
-    DSQL_ENDPOINT               = module.database.cluster_endpoint
-    DSQL_REGION                 = module.core.region
-    PLATFORM_APPLICATION_ARN    = aws_sns_platform_application.apns.arn
-    PUSH_NOTIFICATION_TOPIC_ARN = aws_sns_topic.push_notifications.arn
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["DeviceRegister"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
+      PLATFORM_APPLICATION_ARN = aws_sns_platform_application.apns.arn
+      PUSH_NOTIFICATION_TOPIC_ARN = aws_sns_topic.push_notifications.arn
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SNSAccess" = jsonencode({
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = ["sns:CreatePlatformEndpoint", "sns:DeleteEndpoint", "sns:ListSubscriptionsByTopic", "sns:Subscribe", "sns:Unsubscribe"]
-        Resource = ["${aws_sns_platform_application.apns.arn}", "${aws_sns_topic.push_notifications.arn}"]
+        Action   = ["sns:CreatePlatformEndpoint","sns:DeleteEndpoint","sns:ListSubscriptionsByTopic","sns:Subscribe","sns:Unsubscribe"]
+        Resource = ["${aws_sns_platform_application.apns.arn}","${aws_sns_topic.push_notifications.arn}"]
       }]
     })
   }
@@ -53,7 +53,8 @@ resource "aws_api_gateway_method" "device_register" {
   rest_api_id   = module.api.rest_api_id
   resource_id   = aws_api_gateway_resource.device_register.id
   http_method   = "POST"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = module.api.authorizer_id
 }
 
 resource "aws_api_gateway_integration" "device_register" {

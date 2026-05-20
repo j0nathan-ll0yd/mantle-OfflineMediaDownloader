@@ -22,17 +22,17 @@ module "lambda_user_login" {
   api_gateway_enabled = true
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME              = local.lambda_dsql_roles["UserLogin"].role_name
-    DSQL_ENDPOINT               = module.database.cluster_endpoint
-    DSQL_REGION                 = module.core.region
-    AUTH_SECRET                 = data.sops_file.secrets.data["platform.key"]
-    APPLE_CLIENT_ID             = data.sops_file.secrets.data["signInWithApple.config"]
-    APPLE_CLIENT_SECRET         = data.sops_file.secrets.data["signInWithApple.authKey"]
-    APPLE_APP_BUNDLE_IDENTIFIER = "lifegames.OfflineMediaDownloader"
-    AUTH_BASE_URL               = "https://${module.api.rest_api_id}.execute-api.${module.core.region}.amazonaws.com/prod"
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["UserLogin"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
+      AUTH_SECRET = data.sops_file.secrets.data["platform.key"]
+      APPLE_CLIENT_ID = data.sops_file.secrets.data["signInWithApple.config"]
+      APPLE_CLIENT_SECRET = data.sops_file.secrets.data["signInWithApple.authKey"]
+      APPLE_APP_BUNDLE_IDENTIFIER = "lifegames.OfflineMediaDownloader"
+      AUTH_BASE_URL = "https://${module.api.rest_api_id}.execute-api.${module.core.region}.amazonaws.com/prod"
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 }
 
 resource "aws_api_gateway_resource" "user_login" {

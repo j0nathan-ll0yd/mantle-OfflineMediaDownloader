@@ -22,17 +22,17 @@ module "lambda_files_get" {
   api_gateway_enabled = true
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME                         = local.lambda_dsql_roles["FilesGet"].role_name
-    DSQL_ENDPOINT                          = module.database.cluster_endpoint
-    DSQL_REGION                            = module.core.region
-    SNS_QUEUE_URL                          = module.queue_SendPushNotification.queue_url
-    ASSET_VIDEOS_DEFAULT_FILE_KEY          = aws_s3_object.asset_videos_default_file.key
-    ASSET_VIDEOS_DEFAULT_FILE_URL          = "https://${module.storage_files.cloudfront_domain_name != "" ? module.storage_files.cloudfront_domain_name : module.storage_files.bucket_regional_domain_name}/videos/default-file.mp4"
-    ASSET_VIDEOS_DEFAULT_FILE_SIZE         = 436743
-    ASSET_VIDEOS_DEFAULT_FILE_CONTENT_TYPE = "video/mp4"
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["FilesGet"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
+      SNS_QUEUE_URL = module.queue_SendPushNotification.queue_url
+      ASSET_VIDEOS_DEFAULT_FILE_KEY = aws_s3_object.asset_videos_default_file.key
+      ASSET_VIDEOS_DEFAULT_FILE_URL = "https://${module.storage_files.cloudfront_domain_name != "" ? module.storage_files.cloudfront_domain_name : module.storage_files.bucket_regional_domain_name}/videos/default-file.mp4"
+      ASSET_VIDEOS_DEFAULT_FILE_SIZE = 436743
+      ASSET_VIDEOS_DEFAULT_FILE_CONTENT_TYPE = "video/mp4"
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SQSSend_Sendpushnotification" = jsonencode({
@@ -50,7 +50,8 @@ resource "aws_api_gateway_method" "files_get" {
   rest_api_id   = module.api.rest_api_id
   resource_id   = aws_api_gateway_resource.path_files.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = module.api.authorizer_id
 }
 
 resource "aws_api_gateway_integration" "files_get" {

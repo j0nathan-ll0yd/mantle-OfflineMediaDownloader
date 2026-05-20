@@ -6,31 +6,31 @@
 module "lambda_s3object_created" {
   source = "../../mantle/modules/lambda"
 
-  function_name            = "S3ObjectCreated"
-  name_prefix              = module.core.name_prefix
-  source_dir               = "${path.module}/../build/lambdas/S3ObjectCreated"
-  assume_role_policy       = module.core.lambda_assume_role_policy
-  xray_policy_arn          = module.core.lambda_xray_policy_arn
-  region                   = module.core.region
-  account_id               = module.core.account_id
-  environment              = var.environment
-  log_retention_days       = var.log_retention_days
-  log_level                = var.log_level
-  tags                     = module.core.common_tags
-  dead_letter_target_arn   = module.queue_lambda_s3object_created_dlq.queue_arn
+  function_name      = "S3ObjectCreated"
+  name_prefix        = module.core.name_prefix
+  source_dir         = "${path.module}/../build/lambdas/S3ObjectCreated"
+  assume_role_policy = module.core.lambda_assume_role_policy
+  xray_policy_arn    = module.core.lambda_xray_policy_arn
+  region             = module.core.region
+  account_id         = module.core.account_id
+  environment        = var.environment
+  log_retention_days = var.log_retention_days
+  log_level          = var.log_level
+  tags               = module.core.common_tags
+  dead_letter_target_arn    = module.queue_lambda_s3object_created_dlq.queue_arn
   enable_dead_letter_queue = true
-  layers                   = [local.adot_layer_arn]
+  layers             = [local.adot_layer_arn]
 
   api_gateway_enabled = false
 
   environment_variables = merge(local.common_lambda_env, {
-    DSQL_ROLE_NAME = local.lambda_dsql_roles["S3ObjectCreated"].role_name
-    DSQL_ENDPOINT  = module.database.cluster_endpoint
-    DSQL_REGION    = module.core.region
-    SNS_QUEUE_URL  = module.queue_SendPushNotification.queue_url
+      DSQL_ROLE_NAME = local.lambda_dsql_roles["S3ObjectCreated"].role_name
+      DSQL_ENDPOINT = module.database.cluster_endpoint
+      DSQL_REGION = module.core.region
+      SNS_QUEUE_URL = module.queue_SendPushNotification.queue_url
   })
 
-  additional_policy_arns = [module.database.connect_policy_arn]
+    additional_policy_arns = [module.database.connect_policy_arn]
 
   inline_policies = {
     "SQSSend_Sendpushnotification" = jsonencode({
