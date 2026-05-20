@@ -81,7 +81,10 @@ describe('ApiGatewayAuthorizer Dedicated Integration Tests', () => {
     expect(result.policyDocument.Statement[0]!.Effect).toBe('Allow')
   })
 
-  test('should return unknown principal for expired session', async () => {
+  test('should reject expired session with Unauthorized', async () => {
+    // Expired tokens are invalid tokens — even on multi-auth paths, the
+    // authorizer rejects them rather than silently falling back to anonymous.
+    // This avoids masking client-side stale-token bugs.
     setupApiGatewayMocks()
     const userId = crypto.randomUUID()
     const sessionId = crypto.randomUUID()
@@ -91,13 +94,9 @@ describe('ApiGatewayAuthorizer Dedicated Integration Tests', () => {
     await insertUser({userId, email: 'expired@example.com', firstName: 'Expired'})
     await insertSession({id: sessionId, userId, token, expiresAt: new Date(Date.now() - 3600000)}) // Expired 1 hour ago
 
-    // Use a multi-auth path to avoid 401 on missing userId
     const event = createMockAPIGatewayRequestAuthorizerEvent({token, path: '/auth/login'})
 
-    const result = await handler(event, mockContext)
-
-    expect(result.principalId).toBe('anonymous')
-    expect(result.policyDocument.Statement[0]!.Effect).toBe('Allow')
+    await expect(handler(event, mockContext)).rejects.toThrow('Unauthorized')
   })
 
   test('should return anonymous principal for missing Authorization header on multi-auth path', async () => {
