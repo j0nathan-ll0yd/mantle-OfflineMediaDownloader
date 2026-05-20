@@ -180,7 +180,9 @@
       "qs": ">=6.14.1",
       "drizzle-zod>zod": "^4.3.4",
       "esbuild": ">=0.27.4",
-      "undici-types": "7.16.0"
+      "undici-types": "7.16.0",
+      "ws": ">=8.20.1",
+      "protobufjs": ">=7.5.8"
     },
     "onlyBuiltDependencies": [
       "@modelcontextprotocol/ext-apps",
@@ -193,10 +195,6 @@
       "protobufjs",
       "sharp"
     ],
-    "auditConfig": {
-      "ignoreCves": [
-        "GHSA-46wh-pxpv-q5gq"
-      ]
-    }
+    "auditConfig": {}
   }
 }
