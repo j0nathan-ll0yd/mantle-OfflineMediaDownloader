@@ -35,17 +35,15 @@ resource "time_sleep" "wait_for_dsql" {
   create_duration = "60s"
 }
 
-# Initial deploy: data source runs migrations on first cluster creation
-data "aws_lambda_invocation" "run_migration" {
-  function_name = module.lambda_migrate_dsql.function_name
-  input         = jsonencode({ source = "terraform-deploy" })
-  depends_on    = [time_sleep.wait_for_dsql]
-}
-
-# Subsequent deploys: re-invoke when Lambda code or permissions change.
-# Data sources are evaluated during planning (before apply), so code/permission
-# changes aren't picked up by the data source above. This resource triggers
-# during apply when its hash inputs change.
+# --- MigrateDSQL trigger ---
+# Re-invokes MigrateDSQL on every deploy where the Lambda bundle, permissions,
+# or migration files have changed. The trigger hash covers all three sources,
+# ensuring new migrations or code changes always propagate.
+#
+# This resource runs at APPLY time (not plan time), so Lambda code updates
+# always happen before the invocation. If the Lambda returns FunctionError,
+# the script exits 1 and Terraform reports the failure (does not mark Apply
+# complete on a broken migration).
 resource "terraform_data" "rerun_migration" {
   triggers_replace = sha256(join(",", concat(
     [filesha256("${path.module}/../build/lambdas/MigrateDSQL/index.mjs")],
@@ -56,14 +54,21 @@ resource "terraform_data" "rerun_migration" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      aws lambda invoke --function-name ${module.lambda_migrate_dsql.function_name} --payload '{"source":"terraform-deploy-rerun"}' --cli-binary-format raw-in-base64-out /tmp/mantle-migrate-rerun.json >&2
+      set -e
+      RESPONSE=$(aws lambda invoke --function-name ${module.lambda_migrate_dsql.function_name} --payload '{"source":"terraform-deploy-rerun"}' --cli-binary-format raw-in-base64-out /tmp/mantle-migrate-rerun.json 2>&1)
+      echo "$RESPONSE" >&2
       cat /tmp/mantle-migrate-rerun.json >&2
+      echo "" >&2
+      if echo "$RESPONSE" | grep -q '"FunctionError"'; then
+        echo "ERROR: Lambda invocation returned FunctionError. Migration failed." >&2
+        exit 1
+      fi
+      if grep -q '"errorType"' /tmp/mantle-migrate-rerun.json; then
+        echo "ERROR: Lambda response contains runtime error. Migration failed." >&2
+        exit 1
+      fi
     EOT
   }
 
-  depends_on = [module.lambda_migrate_dsql]
-}
-
-output "migration_result" {
-  value = jsondecode(data.aws_lambda_invocation.run_migration.result)
+  depends_on = [time_sleep.wait_for_dsql]
 }
