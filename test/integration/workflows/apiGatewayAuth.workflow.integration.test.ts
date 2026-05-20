@@ -149,15 +149,15 @@ describe('ApiGatewayAuthorizer Workflow Integration Tests', () => {
       expect(result.principalId).toBe('anonymous')
     })
 
-    test('should Allow multi-auth path with invalid token (fallback to anonymous)', async () => {
+    test('should reject multi-auth path with invalid token (401 Unauthorized)', async () => {
+      // Multi-auth paths accept missing tokens (anonymous) but explicitly REJECT
+      // invalid ones. Silently falling back to anonymous on a bad token would
+      // mask client-side stale-token bugs by returning default content.
       const invalidToken = crypto.randomUUID()
 
       const event = createAuthorizerEvent({path: '/files', resource: '/files', headers: {Authorization: `Bearer ${invalidToken}`, 'User-Agent': 'iOS/17.0'}})
 
-      const result = await handler(event, context)
-
-      expect(result.policyDocument.Statement[0]!.Effect).toBe('Allow')
-      expect(result.principalId).toBe('anonymous')
+      await expect(handler(event, context)).rejects.toThrow('Unauthorized')
     })
 
     test('should throw Unauthorized on non-multi-auth path without Authorization header', async () => {

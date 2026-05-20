@@ -198,14 +198,12 @@ describe('ApiGatewayAuthorizer Lambda', () => {
       expect(result.principalId).toBe('anonymous')
     })
 
-    it('should allow invalid token on multi-auth path (anonymous fallback)', async () => {
+    it('should deny invalid token on multi-auth path', async () => {
       const event = makeEvent({path: '/files'})
       event.headers = {Authorization: 'Bearer invalid-token'}
       vi.mocked(validateSessionToken).mockRejectedValue(new Error('Invalid session'))
 
-      const result = await handler(event)
-
-      expect(result.principalId).toBe('anonymous')
+      await expect(handler(event)).rejects.toThrow('Unauthorized')
     })
   })
 

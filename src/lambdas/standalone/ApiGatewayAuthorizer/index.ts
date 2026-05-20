@@ -88,10 +88,10 @@ export const handler = authorizer(async ({event, headers, queryStringParameters,
     if (maybeUserId) {
       principalId = maybeUserId
       userStatus = UserStatus.Authenticated
-    } else if (!multiAuthPaths.includes(pathPart)) {
-      denyAuthorization(span, 'session_invalid')
     } else {
-      logInfo('Multi-authentication path; userId not required')
+      // User sent an auth header but the session is invalid — deny auth regardless of path.
+      // Multi-authentication paths allow no auth header, not an invalid one.
+      denyAuthorization(span, 'session_invalid')
     }
   } else if (!multiAuthPaths.includes(pathPart)) {
     denyAuthorization(span, 'auth_header_missing')

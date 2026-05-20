@@ -40,7 +40,8 @@ resource "aws_api_gateway_method" "device_event" {
   rest_api_id   = module.api.rest_api_id
   resource_id   = aws_api_gateway_resource.device_event.id
   http_method   = "POST"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = module.api.authorizer_id
 }
 
 resource "aws_api_gateway_integration" "device_event" {

@@ -50,7 +50,8 @@ resource "aws_api_gateway_method" "files_get" {
   rest_api_id   = module.api.rest_api_id
   resource_id   = aws_api_gateway_resource.path_files.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = module.api.authorizer_id
 }
 
 resource "aws_api_gateway_integration" "files_get" {
