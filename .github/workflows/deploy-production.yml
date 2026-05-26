@@ -133,7 +133,7 @@ jobs:
 
       - name: Configure AWS credentials (Production)
         if: steps.check-creds.outputs.configured == 'true'
-        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37  # v6
+        uses: aws-actions/configure-aws-credentials@acca2b1b2070338fb9fd1ca27ecee81d687e58e5  # v6
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_PRODUCTION }}
           aws-region: ${{ env.AWS_REGION }}
