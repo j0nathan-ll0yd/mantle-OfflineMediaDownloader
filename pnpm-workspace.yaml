@@ -29,9 +29,18 @@ trustPolicy: no-downgrade
 # Packages excluded from trust policy checks (known false positives)
 # semver@6.x: Legacy line without provenance, used by @babel/core
 # tailwind-merge@2.x: Published without trusted publisher, used by @modelcontextprotocol/inspector
+# ast-v8-to-istanbul@1.0.2+: Switched from trusted-publisher to npm OIDC provenance attestation
+#   (stronger security model, not weaker — ERR_PNPM_TRUST_DOWNGRADE is a false positive)
 trustPolicyExclude:
   - 'semver@6.3.1'
   - 'tailwind-merge@2.6.1'
+  - 'ast-v8-to-istanbul'
+  - 'tinyclip'
+
+# Packages excluded from minimum release age (same-day security/compat patches)
+# ast-v8-to-istanbul: both 1.0.2 and 1.0.3 published 2026-05-31; needed by @vitest/coverage-v8
+minimumReleaseAgeExclude:
+  - 'ast-v8-to-istanbul'
 
 # Block exotic protocols in transitive dependencies
 # Direct deps can use git/tarball, subdeps cannot (common attack vector)
