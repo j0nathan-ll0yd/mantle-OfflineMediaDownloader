@@ -5,6 +5,11 @@
       "version": "v4",
       "sha": "34e114876b0b11c390a56381ad16ebd13914f8d5"
     },
+    "actions/checkout@v6": {
+      "repo": "actions/checkout",
+      "version": "v6",
+      "sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd"
+    },
     "actions/github-script@v9.0.0": {
       "repo": "actions/github-script",
       "version": "v9.0.0",
@@ -15,15 +20,25 @@
       "version": "v4",
       "sha": "49933ea5288caeca8642d1e84afbd3f7d6820020"
     },
-    "github/gh-aw-actions/setup@v0.71.5": {
+    "actions/setup-node@v6": {
+      "repo": "actions/setup-node",
+      "version": "v6",
+      "sha": "48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e"
+    },
+    "github/gh-aw-actions/setup@v0.76.1": {
       "repo": "github/gh-aw-actions/setup",
-      "version": "v0.71.5",
-      "sha": "b8068426813005612b960b5ab0b8bd2c27142323"
+      "version": "v0.76.1",
+      "sha": "46d564922b082d0db93244972e8005ea6904ee5f"
     },
     "pnpm/action-setup@v4": {
       "repo": "pnpm/action-setup",
       "version": "v4",
       "sha": "b906affcce14559ad1aafd4ab0e942779e9f58b1"
+    },
+    "pnpm/action-setup@v6": {
+      "repo": "pnpm/action-setup",
+      "version": "v6",
+      "sha": "0e279bb959325dab635dd2c09392533439d90093"
     }
   }
 }

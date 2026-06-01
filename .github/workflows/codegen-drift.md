@@ -8,6 +8,7 @@ on:
     paths:
       - 'src/types/api-schema/**'
       - 'src/lambdas/api/**/index.ts'
+  workflow_dispatch:
 
 engine:
   id: opencode
@@ -17,18 +18,18 @@ permissions:
   contents: read
 
 pre-agent-steps:
-  - uses: actions/checkout@v4
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v6
+  - uses: actions/checkout@v6
     with:
       repository: j0nathan-ll0yd/mantle
       path: ../mantle
       token: ${{ secrets.GH_CROSS_REPO_PAT }}
-  - uses: actions/setup-node@v4
+  - uses: actions/setup-node@v6
     with:
       node-version: '24'
-  - uses: pnpm/action-setup@v4
+  - uses: pnpm/action-setup@v6
   - run: pnpm install --frozen-lockfile
-  - run: npx mantle generate openapi --output /tmp/openapi-check.yaml
+  - run: npx mantle generate openapi --output /tmp/gh-aw/agent/openapi-check.yaml
 
 safe-outputs:
   create-issue:
@@ -49,11 +50,11 @@ You are a drift detection agent for the Offline Media Downloader backend.
 
 A push to main just changed backend schema or API handler files. Check whether the committed OpenAPI spec is still in sync with the code.
 
-The pre-agent-steps already generated the expected OpenAPI spec at `/tmp/openapi-check.yaml` by running `npx mantle generate openapi`. Your job is to compare it against the committed spec.
+The pre-agent-steps already generated the expected OpenAPI spec at `/tmp/gh-aw/agent/openapi-check.yaml` by running `npx mantle generate openapi`. Your job is to compare it against the committed spec.
 
 ## Steps
 
-1. Run `diff /tmp/openapi-check.yaml docs/api/openapi.yaml` to check for drift
+1. Run `diff /tmp/gh-aw/agent/openapi-check.yaml docs/api/openapi.yaml` to check for drift
 2. If the files are identical (diff exits 0), call `noop` with message "No OpenAPI drift detected"
 3. If there are differences (diff exits 1):
    a. Analyze the diff output to identify which endpoints or schemas changed
