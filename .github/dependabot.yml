@@ -1,88 +1,77 @@
-version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "America/Los_Angeles"
-
-    # Security updates only - not version bumps
-    open-pull-requests-limit: 10
-
-    # Group AWS SDK updates together (per project convention)
-    groups:
-      aws-sdk:
-        patterns:
-          - "@aws-sdk/*"
-        update-types:
-          - "minor"
-          - "patch"
-
-      opentelemetry:
-        patterns:
-          - "@opentelemetry/*"
-        update-types:
-          - "patch"
-
-      typescript-eslint:
-        patterns:
-          - "@typescript-eslint/*"
-        update-types:
-          - "minor"
-          - "patch"
-
-      dev-dependencies:
-        dependency-type: "development"
-        update-types:
-          - "patch"
-
-    ignore:
-      # Catalog-managed: upgrade in mantle/pnpm-workspace.yaml first (C52)
-      - dependency-name: "@aws-sdk/*"
-      - dependency-name: "drizzle-orm"
-      - dependency-name: "drizzle-kit"
-      - dependency-name: "zod"
-      - dependency-name: "better-auth"
-      - dependency-name: "@better-auth/*"
-      - dependency-name: "@opentelemetry/*"
-      - dependency-name: "typescript"
-      - dependency-name: "vitest"
-      - dependency-name: "@vitest/*"
-      - dependency-name: "vite"
-      - dependency-name: "unbuild"
-      - dependency-name: "dprint"
-      - dependency-name: "eslint"
-      - dependency-name: "@typescript-eslint/*"
-      # Major version bumps handled manually
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-
-    labels:
-      - "dependencies"
-      - "security"
-
-    commit-message:
-      prefix: "chore(deps)"
-      include: "scope"
-
-    reviewers:
-      - "jlloyd"
-
-  # GitHub Actions updates
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    ignore:
-      # pnpm/action-setup v6.x silently installs pnpm v11 which breaks multi-repo
-      # CI lockfile parsing (ERR_PNPM_BROKEN_LOCKFILE). Verified v6.0.0 and v6.0.2
-      # both fail. See pnpm/action-setup#225, #227, #228.
-      - dependency-name: "pnpm/action-setup"
-        update-types: ["version-update:semver-major"]
-    labels:
-      - "dependencies"
-      - "github-actions"
-    commit-message:
-      prefix: "chore(ci)"
+- commit-message:
+    include: scope
+    prefix: chore(deps)
+  directory: /
+  groups:
+    aws-sdk:
+      patterns:
+      - "@aws-sdk/*"
+      update-types:
+      - minor
+      - patch
+    dev-dependencies:
+      dependency-type: development
+      update-types:
+      - patch
+    opentelemetry:
+      patterns:
+      - "@opentelemetry/*"
+      update-types:
+      - patch
+    typescript-eslint:
+      patterns:
+      - "@typescript-eslint/*"
+      update-types:
+      - minor
+      - patch
+  ignore:
+  - dependency-name: "@aws-sdk/*"
+  - dependency-name: "drizzle-orm"
+  - dependency-name: "drizzle-kit"
+  - dependency-name: "zod"
+  - dependency-name: "better-auth"
+  - dependency-name: "@better-auth/*"
+  - dependency-name: "@opentelemetry/*"
+  - dependency-name: "typescript"
+  - dependency-name: "vitest"
+  - dependency-name: "@vitest/*"
+  - dependency-name: "vite"
+  - dependency-name: "unbuild"
+  - dependency-name: "dprint"
+  - dependency-name: "eslint"
+  - dependency-name: "@typescript-eslint/*"
+  - dependency-name: "*"
+    update-types:
+    - version-update:semver-major
+  labels:
+  - dependencies
+  - security
+  open-pull-requests-limit: 10
+  package-ecosystem: npm
+  reviewers:
+  - jlloyd
+  schedule:
+    day: monday
+    interval: weekly
+    time: "06:00"
+    timezone: America/Los_Angeles
+- commit-message:
+    prefix: chore(ci)
+  directory: /
+  ignore:
+  - dependency-name: "pnpm/action-setup"
+    update-types:
+    - version-update:semver-major
+  - dependency-name: "github/gh-aw-actions*"
+  - dependency-name: "actions/checkout"
+  - dependency-name: "actions/setup-node"
+  - dependency-name: "actions/github-script"
+  - dependency-name: "github/gh-aw-actions/**" # Managed by gh aw compile. Version-locked to the gh-aw compiler; do not bump.
+  labels:
+  - dependencies
+  - github-actions
+  package-ecosystem: github-actions
+  schedule:
+    interval: weekly
+version: 2
