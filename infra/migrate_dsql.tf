@@ -17,6 +17,7 @@ module "lambda_migrate_dsql" {
   environment        = var.environment
   tags               = module.core.common_tags
   timeout            = 300
+  layers             = [local.adot_layer_arn]
 
   environment_variables = merge(local.common_lambda_env, {
     DSQL_ENDPOINT     = module.database.cluster_endpoint
