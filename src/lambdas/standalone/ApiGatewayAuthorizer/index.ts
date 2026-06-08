@@ -83,8 +83,11 @@ export const handler = authorizer(async ({event, headers, queryStringParameters,
   const pathPart = event.path.substring(1)
   const multiAuthPaths = getRequiredEnv('MULTI_AUTHENTICATION_PATH_PARTS').split(',')
 
-  if (headers && 'Authorization' in headers && headers.Authorization !== undefined) {
-    const maybeUserId = await getUserIdFromAuthenticationHeader(headers.Authorization)
+  // Framework normalizes headers to lowercase per HTTP/2 spec (C90).
+  const authorizationHeader = headers?.authorization
+
+  if (authorizationHeader !== undefined) {
+    const maybeUserId = await getUserIdFromAuthenticationHeader(authorizationHeader)
     if (maybeUserId) {
       principalId = maybeUserId
       userStatus = UserStatus.Authenticated

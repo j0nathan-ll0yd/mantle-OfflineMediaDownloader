@@ -152,7 +152,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
   describe('session token validation', () => {
     it('should return Allow with authenticated user when valid session token', async () => {
       const event = makeEvent()
-      event.headers = {Authorization: 'Bearer valid-session-token'}
+      event.headers = {authorization: 'Bearer valid-session-token'}
       vi.mocked(validateSessionToken).mockResolvedValue({userId: 'user-1', sessionId: 'sess-1', expiresAt: Date.now() + 86400000})
 
       const result = await handler(event)
@@ -163,7 +163,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
 
     it('should throw Unauthorized for invalid Bearer token on non-multi-auth path', async () => {
       const event = makeEvent({path: '/protected-resource'})
-      event.headers = {Authorization: 'Bearer invalid-token'}
+      event.headers = {authorization: 'Bearer invalid-token'}
       vi.mocked(validateSessionToken).mockRejectedValue(new Error('Invalid session'))
 
       await expect(handler(event)).rejects.toThrow('Unauthorized')
@@ -171,7 +171,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
 
     it('should reject malformed Authorization header (no Bearer prefix)', async () => {
       const event = makeEvent({path: '/protected-resource'})
-      event.headers = {Authorization: 'Basic abc123'}
+      event.headers = {authorization: 'Basic abc123'}
 
       await expect(handler(event)).rejects.toThrow('Unauthorized')
     })
@@ -200,7 +200,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
 
     it('should deny invalid token on multi-auth path', async () => {
       const event = makeEvent({path: '/files'})
-      event.headers = {Authorization: 'Bearer invalid-token'}
+      event.headers = {authorization: 'Bearer invalid-token'}
       vi.mocked(validateSessionToken).mockRejectedValue(new Error('Invalid session'))
 
       await expect(handler(event)).rejects.toThrow('Unauthorized')
@@ -211,7 +211,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
     it('should bypass auth for remote test requests in non-production', async () => {
       const event = makeEvent()
       event.event.requestContext = {identity: {sourceIp: '104.1.88.244'}}
-      event.headers = {'User-Agent': 'localhost@lifegames'}
+      event.headers = {'user-agent': 'localhost@lifegames'}
 
       const result = await handler(event)
 
@@ -231,7 +231,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
       })
       const event = makeEvent({path: '/protected-resource'})
       event.event.requestContext = {identity: {sourceIp: '104.1.88.244'}}
-      event.headers = {'User-Agent': 'localhost@lifegames'}
+      event.headers = {'user-agent': 'localhost@lifegames'}
 
       await expect(handler(event)).rejects.toThrow('Unauthorized')
     })
@@ -239,7 +239,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
     it('should not bypass when IP does not match', async () => {
       const event = makeEvent({path: '/protected-resource'})
       event.event.requestContext = {identity: {sourceIp: '10.0.0.1'}}
-      event.headers = {'User-Agent': 'localhost@lifegames'}
+      event.headers = {'user-agent': 'localhost@lifegames'}
 
       await expect(handler(event)).rejects.toThrow('Unauthorized')
     })
@@ -247,7 +247,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
     it('should not bypass when User-Agent does not match', async () => {
       const event = makeEvent({path: '/protected-resource'})
       event.event.requestContext = {identity: {sourceIp: '104.1.88.244'}}
-      event.headers = {'User-Agent': 'Mozilla/5.0'}
+      event.headers = {'user-agent': 'Mozilla/5.0'}
 
       await expect(handler(event)).rejects.toThrow('Unauthorized')
     })
@@ -289,7 +289,7 @@ describe('ApiGatewayAuthorizer Lambda', () => {
 
     it('should track AuthorizationSuccess for authenticated user', async () => {
       const event = makeEvent()
-      event.headers = {Authorization: 'Bearer valid-token'}
+      event.headers = {authorization: 'Bearer valid-token'}
       vi.mocked(validateSessionToken).mockResolvedValue({userId: 'user-1', sessionId: 'sess-1', expiresAt: Date.now() + 86400000})
 
       await handler(event)

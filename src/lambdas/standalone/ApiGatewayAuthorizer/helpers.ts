@@ -50,7 +50,7 @@ export function isRemoteTestRequest(headers: Record<string, string | undefined>,
   if (!reservedIp) {
     return false
   }
-  const userAgent = headers['User-Agent'] ?? headers['user-agent']
+  const userAgent = headers['user-agent']
   logDebug('isRemoteTestRequest <=', {reservedIp, userAgent, clientIp: sourceIp})
   return sourceIp === reservedIp && userAgent === 'localhost@lifegames'
 }
