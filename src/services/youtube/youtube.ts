@@ -58,18 +58,18 @@ function runLayerDiagnostics(binaryPath: string): void {
   try {
     checks['yt-dlp-version'] = execSync(`${binaryPath} --version`, {timeout: 5000}).toString().trim()
   } catch (e) {
-    checks['yt-dlp-version'] = `error: ${String(e).substring(0, 200)}`
+    checks['yt-dlp-version'] = `error: ${String(e).slice(0, 200)}`
   }
 
   // Check if deno is executable
   try {
     checks['deno-version'] = execSync('/opt/bin/deno --version', {timeout: 5000}).toString().split('\n')[0]?.trim()
   } catch (e) {
-    checks['deno-version'] = `error: ${String(e).substring(0, 200)}`
+    checks['deno-version'] = `error: ${String(e).slice(0, 200)}`
   }
 
   // Check PATH
-  checks['PATH'] = getOptionalEnv('PATH', '').substring(0, 300)
+  checks['PATH'] = getOptionalEnv('PATH', '').slice(0, 300)
 
   logDebug('Layer diagnostics', checks)
 }
@@ -258,7 +258,7 @@ function getVideoInfo(binaryPath: string, args: string[]): Promise<YtDlpVideoInf
     proc.on('close', (code) => {
       // Always log stderr for debugging yt-dlp client/format behavior
       if (stderr) {
-        logDebug('yt-dlp stderr', {stderr: stderr.substring(0, 8000)})
+        logDebug('yt-dlp stderr', {stderr: stderr.slice(0, 8000)})
       }
       if (code === 0) {
         try {
@@ -458,7 +458,9 @@ function execYtDlp(ytdlpBinaryPath: string, args: string[], onProgress?: (percen
         }
 
         const progress = parseProgressLine(trimmed)
-        if (progress?.percent !== undefined) {
+        if (progress?.percent === undefined) {
+          logDebug('yt-dlp stdout', trimmed)
+        } else {
           // Invoke onProgress at 25% milestones (exclude 100%)
           if (onProgress && progress.percent < 100) {
             const milestone = Math.floor(progress.percent / 25) * 25
@@ -467,8 +469,6 @@ function execYtDlp(ytdlpBinaryPath: string, args: string[], onProgress?: (percen
               onProgress(milestone)
             }
           }
-        } else {
-          logDebug('yt-dlp stdout', trimmed)
         }
       }
     })
@@ -478,7 +478,9 @@ function execYtDlp(ytdlpBinaryPath: string, args: string[], onProgress?: (percen
     })
 
     ytdlp.on('exit', (code) => {
-      if (code !== 0) {
+      if (code === 0) {
+        resolve()
+      } else {
         logError('yt-dlp stderr output', {stderr})
 
         if (isCookieExpirationError(stderr)) {
@@ -486,8 +488,6 @@ function execYtDlp(ytdlpBinaryPath: string, args: string[], onProgress?: (percen
         } else {
           reject(new UnexpectedError(`yt-dlp exited with code ${code}: ${stderr}`))
         }
-      } else {
-        resolve()
       }
     })
   })

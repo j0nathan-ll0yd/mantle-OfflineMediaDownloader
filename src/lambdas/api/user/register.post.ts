@@ -96,7 +96,7 @@ export const handler = api(async ({event, context, body}) => {
   logInfo('RegisterUser: Better Auth sign-in/registration successful', {
     userId: result.userId,
     sessionToken: 'present',
-    sessionId: result.sessionId.substring(0, 8),
+    sessionId: result.sessionId.slice(0, 8),
     expiresAt: result.expiresAt,
     isNewUser: result.isNewUser
   })

@@ -67,9 +67,8 @@ async function dispatchHealthCheckNotificationToDeviceToken(token: string): Prom
     if (err && typeof err === 'object' && 'reason' in err) {
       const apnsError = err as Apns2Error
       return {statusCode: Number(apnsError.statusCode), reason: apnsError.reason}
-    } else {
-      throw new UnexpectedError('Unexpected result from APNS')
     }
+    throw new UnexpectedError('Unexpected result from APNS')
   }
 }
 

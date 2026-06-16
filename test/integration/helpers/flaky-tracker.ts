@@ -20,12 +20,14 @@ const retriedTests: Array<{testName: string; attempt: number; duration: number}>
  * @param durationMs - How long the successful attempt took
  */
 export function logFlakyTest(testName: string, attempt: number, durationMs = 0): void {
-  if (attempt > 1) {
-    retriedTests.push({testName, attempt, duration: durationMs})
-
-    // Always log flaky tests as warnings
-    console.warn(`[FLAKY] Test "${testName}" passed on attempt ${attempt}${durationMs ? ` (${durationMs}ms)` : ''}`)
+  if (!(attempt > 1)) {
+    return
   }
+
+  retriedTests.push({testName, attempt, duration: durationMs})
+
+  // Always log flaky tests as warnings
+  console.warn(`[FLAKY] Test "${testName}" passed on attempt ${attempt}${durationMs ? ` (${durationMs}ms)` : ''}`)
 }
 
 /**

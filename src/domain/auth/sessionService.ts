@@ -22,13 +22,13 @@ import type {SessionPayload} from '#types/util'
  * @throws UnauthorizedError if token is invalid or expired
  */
 export async function validateSessionToken(token: string): Promise<SessionPayload> {
-  logDebug('validateSessionToken: validating token', {tokenLength: token.length, tokenPrefix: token.substring(0, 8)})
+  logDebug('validateSessionToken: validating token', {tokenLength: token.length, tokenPrefix: token.slice(0, 8)})
 
   // Use index for O(1) lookup
   const session = await getSessionByToken(token)
 
   if (!session) {
-    logError('validateSessionToken: session not found', {tokenPrefix: token.substring(0, 8), tokenLength: token.length})
+    logError('validateSessionToken: session not found', {tokenPrefix: token.slice(0, 8), tokenLength: token.length})
     throw new UnauthorizedError('Invalid session token')
   }
 

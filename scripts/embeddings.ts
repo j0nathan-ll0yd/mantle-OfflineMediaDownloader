@@ -21,5 +21,5 @@ async function getExtractor(): Promise<FeatureExtractionPipeline> {
 export async function generateEmbedding(text: string): Promise<number[]> {
   const model = await getExtractor()
   const output = await model(text, {pooling: 'mean', normalize: true})
-  return Array.from(output.data as Float32Array)
+  return [...output.data as Float32Array]
 }

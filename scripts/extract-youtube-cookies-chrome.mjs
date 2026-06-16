@@ -24,13 +24,13 @@ function findChromeExecutable() {
   if (platform === 'darwin') {
     // macOS
     return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-  } else if (platform === 'win32') {
+  }
+  if (platform === 'win32') {
     // Windows
     return 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-  } else {
-    // Linux
-    return '/usr/bin/google-chrome'
   }
+  // Linux
+  return '/usr/bin/google-chrome'
 }
 
 // Convert Puppeteer cookies to Netscape format

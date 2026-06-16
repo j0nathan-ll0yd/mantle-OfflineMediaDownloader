@@ -26,9 +26,8 @@ async function getFileByFilename(fileName: string): Promise<File> {
   logDebug('query file by key =>', {count: files.length})
   if (files.length > 0) {
     return files[0] as File
-  } else {
-    throw new NotFoundError('Unable to locate file')
   }
+  throw new NotFoundError('Unable to locate file')
 }
 
 /** Get user IDs who have requested a given file */
@@ -53,10 +52,10 @@ function logDispatchResults(results: PromiseSettledResult<unknown>[], userIds: s
   const failedResults = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
 
   if (failedResults.length > 0) {
-    failedResults.forEach((failure) => {
+    for (const failure of failedResults) {
       const userId = userIds[results.indexOf(failure)]
       logError('Failed to dispatch notification', {fileId, userId, error: failure.reason instanceof Error ? failure.reason.message : String(failure.reason)})
-    })
+    }
     logInfo('S3ObjectCreated completed with partial failures', {fileId, totalUsers: userIds.length, succeeded, failed: failedResults.length})
   } else {
     logInfo('All notifications dispatched successfully', {fileId, userCount: userIds.length})

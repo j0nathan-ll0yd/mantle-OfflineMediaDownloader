@@ -49,12 +49,12 @@ function createMockAuth(overrides: {signInSocialResult?: object; getSessionResul
       token: 'test-token',
       user: {id: 'user-1', email: 'test@example.com', emailVerified: true, name: 'Test', createdAt: now, updatedAt: now}
     }
-  const getSessionResult = overrides.getSessionResult !== undefined
-    ? overrides.getSessionResult
-    : {
+  const getSessionResult = overrides.getSessionResult === undefined
+    ? {
       session: {id: 'session-1', token: 'test-token', userId: 'user-1', expiresAt: new Date(Date.now() + 86400000), createdAt: now, updatedAt: now},
       user: {id: 'user-1', email: 'test@example.com', emailVerified: true, name: 'Test', createdAt: now, updatedAt: now}
     }
+    : overrides.getSessionResult
   return {api: {signInSocial: vi.fn().mockResolvedValue(signInSocialResult), getSession: vi.fn().mockResolvedValue(getSessionResult)}}
 }
 

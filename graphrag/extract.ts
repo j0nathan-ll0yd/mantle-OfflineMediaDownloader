@@ -420,7 +420,7 @@ function extractAwsServices(deps: string[], awsServices: ServiceMetadata[]): str
       }
     }
   }
-  return Array.from(services)
+  return [...services]
 }
 
 /**
@@ -469,7 +469,7 @@ function extractExternalServices(deps: string[], externalServices: ServiceMetada
       services.add('GitHub')
     }
   }
-  return Array.from(services)
+  return [...services]
 }
 
 /**
@@ -494,7 +494,9 @@ function extractEntities(deps: string[], knownEntities: string[]): string[] {
     if (queryMatch) {
       const queryModule = queryMatch[1]
       const mappedEntities = queryModuleToEntities[queryModule] || []
-      mappedEntities.forEach((e) => entities.add(e))
+      for (const e of mappedEntities) {
+        entities.add(e)
+      }
     }
 
     // Match src/entities/queries barrel import (without specific file)
@@ -516,7 +518,7 @@ function extractEntities(deps: string[], knownEntities: string[]): string[] {
       }
     }
   }
-  return Array.from(entities)
+  return [...entities]
 }
 
 /**
@@ -796,22 +798,22 @@ async function main() {
     console.log('Relationship Types:', stats.relationshipTypes)
 
     console.log('\nMost Connected Nodes:')
-    stats.mostConnected.forEach((item) => {
+    for (const item of stats.mostConnected) {
       console.log(`  ${item.node}: ${item.connections} connections`)
-    })
+    }
 
     if (stats.lambdaChains.length > 0) {
       console.log('\nLambda Invocation Chains:')
-      stats.lambdaChains.forEach((chain) => {
+      for (const chain of stats.lambdaChains) {
         console.log('  ' + chain.join(' → '))
-      })
+      }
     }
 
     if (stats.missingMetadata.length > 0) {
       console.log('\n⚠️  Lambdas missing metadata in graphrag/metadata.json:')
-      stats.missingMetadata.forEach((name) => {
+      for (const name of stats.missingMetadata) {
         console.log(`  - ${name}`)
-      })
+      }
     }
   } catch (error) {
     console.error('Error extracting knowledge graph:', error)

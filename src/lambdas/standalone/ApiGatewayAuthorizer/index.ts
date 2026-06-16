@@ -80,7 +80,7 @@ export const handler = authorizer(async ({event, headers, queryStringParameters,
 
   let principalId = 'anonymous'
   let userStatus: UserStatus = UserStatus.Anonymous
-  const pathPart = event.path.substring(1)
+  const pathPart = event.path.slice(1)
   const multiAuthPaths = getRequiredEnv('MULTI_AUTHENTICATION_PATH_PARTS').split(',')
 
   // Framework normalizes headers to lowercase per HTTP/2 spec (C90).

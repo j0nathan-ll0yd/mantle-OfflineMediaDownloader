@@ -44,7 +44,7 @@ export function createMockFile(id: string, status: FileStatus, partial?: Partial
  * @param partial - Partial device fields to override defaults
  */
 export function createMockDevice(partial?: Partial<Device>): Partial<Device> {
-  const deviceId = partial?.deviceId || `device-${Math.random().toString(36).substring(7)}`
+  const deviceId = partial?.deviceId || `device-${Math.random().toString(36).slice(7)}`
   return {
     deviceId,
     name: partial?.name || 'Test iPhone',
@@ -62,7 +62,7 @@ export function createMockDevice(partial?: Partial<Device>): Partial<Device> {
  */
 export function createMockUser(partial?: Partial<User> & {userId?: string}): Partial<User> {
   // Support both 'id' (domain type) and 'userId' (legacy tests) for backwards compatibility
-  const id = partial?.id || partial?.userId || `user-${Math.random().toString(36).substring(7)}`
+  const id = partial?.id || partial?.userId || `user-${Math.random().toString(36).slice(7)}`
   return {
     id,
     email: partial?.email || `${id}@example.com`,

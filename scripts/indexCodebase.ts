@@ -205,7 +205,7 @@ async function createChunk(node: any, type: string, name: string, filePath: stri
 
   // Extract documentation if present
   const jsDoc = extractJsDoc(node)
-  const docSection = jsDoc ? `\nDocumentation: ${jsDoc.replace(/\/\*\*|\*\/|\n\s*\*/g, ' ').trim()}\n` : ''
+  const docSection = jsDoc ? `\nDocumentation: ${jsDoc.replaceAll(/\/\*\*|\*\/|\n\s*\*/g, ' ').trim()}\n` : ''
 
   // Create enhanced context header for better conceptual query matching
   const contextHeader = `File: ${filePath}

@@ -31,16 +31,16 @@ export function classifyAuthError(error: Error): ErrorClassification {
       retryable: true,
       retryDelayMs: 1000,
       maxRetries: 3,
-      reason: `Transient auth service error: ${message.substring(0, 100)}`,
+      reason: `Transient auth service error: ${message.slice(0, 100)}`,
       createIssue: false
     }
   }
 
   // Check for invalid credentials
   if (AUTH_INVALID_PATTERNS.some((p) => message.includes(p))) {
-    return {category: 'auth_invalid', retryable: false, maxRetries: 0, reason: `Invalid authentication: ${message.substring(0, 100)}`, createIssue: false}
+    return {category: 'auth_invalid', retryable: false, maxRetries: 0, reason: `Invalid authentication: ${message.slice(0, 100)}`, createIssue: false}
   }
 
   // Default: treat as invalid auth (user needs to take action)
-  return {category: 'auth_invalid', retryable: false, maxRetries: 0, reason: `Auth failure: ${message.substring(0, 100)}`, createIssue: false}
+  return {category: 'auth_invalid', retryable: false, maxRetries: 0, reason: `Auth failure: ${message.slice(0, 100)}`, createIssue: false}
 }
