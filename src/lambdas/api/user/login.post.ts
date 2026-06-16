@@ -65,7 +65,7 @@ export const handler = api(async ({event, context, body}) => {
   logInfo('LoginUser: Better Auth sign-in successful', {
     userId: result.user.id,
     sessionToken: 'present',
-    sessionId: session.id.substring(0, 8),
+    sessionId: session.id.slice(0, 8),
     expiresAt: session.expiresAt
   })
 

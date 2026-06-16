@@ -9,7 +9,7 @@ export type { FingerprintInput, FingerprintResult } from '#types/errorFingerprin
  */
 function normalizeStackFrame(frame: string): string {
   // Remove line:column patterns like :123:45 or :123
-  let normalized = frame.replace(/:\d+(?::\d+)?/g, '')
+  let normalized = frame.replaceAll(/:\d+(?::\d+)?/g, '')
 
   // Remove absolute paths, keep only filename
   normalized = normalized.replace(/.*[/\\]([^/\\]+)$/, '$1')
@@ -89,7 +89,7 @@ export function generateErrorFingerprint(input: FingerprintInput): FingerprintRe
   const hashInput = components.join('|')
   const hash = createHash('sha256').update(hashInput).digest('hex')
 
-  return {fingerprint: `error-fp-${hash.substring(0, 12)}`, summary: components.join(', ')}
+  return {fingerprint: `error-fp-${hash.slice(0, 12)}`, summary: components.join(', ')}
 }
 
 /**

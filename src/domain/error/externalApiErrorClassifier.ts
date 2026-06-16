@@ -39,7 +39,7 @@ export function classifyExternalApiError(error: Error, serviceName: string): Err
       retryable: true,
       retryDelayMs: 60000, // 1 minute for rate limits
       maxRetries: 3,
-      reason: `${serviceName} rate limit: ${message.substring(0, 100)}`,
+      reason: `${serviceName} rate limit: ${message.slice(0, 100)}`,
       createIssue: false
     }
   }
@@ -51,7 +51,7 @@ export function classifyExternalApiError(error: Error, serviceName: string): Err
       retryable: true,
       retryDelayMs: 5000,
       maxRetries: 3,
-      reason: `${serviceName} transient error: ${message.substring(0, 100)}`,
+      reason: `${serviceName} transient error: ${message.slice(0, 100)}`,
       createIssue: false
     }
   }
@@ -62,7 +62,7 @@ export function classifyExternalApiError(error: Error, serviceName: string): Err
       category: 'permanent',
       retryable: false,
       maxRetries: 0,
-      reason: `${serviceName} client error: ${message.substring(0, 100)}`,
+      reason: `${serviceName} client error: ${message.slice(0, 100)}`,
       createIssue: true,
       issuePriority: 'normal'
     }
@@ -73,7 +73,7 @@ export function classifyExternalApiError(error: Error, serviceName: string): Err
     category: 'permanent',
     retryable: false,
     maxRetries: 0,
-    reason: `${serviceName} error: ${message.substring(0, 100)}`,
+    reason: `${serviceName} error: ${message.slice(0, 100)}`,
     createIssue: true,
     issuePriority: 'normal'
   }

@@ -330,9 +330,9 @@ async function main() {
   console.log('\n=== Multi-hop Reasoning ===')
   const paths = query.findPaths('lambda:StartFileUpload', 'lambda:SendPushNotification')
   console.log('Paths from StartFileUpload to SendPushNotification:')
-  paths.forEach((path, i) => {
+  for (const [i, path] of paths.entries()) {
     console.log(`  Path ${i + 1}: ${path.join(' → ')}`)
-  })
+  }
 
   // Impact analysis
   console.log('\n=== Impact Analysis ===')

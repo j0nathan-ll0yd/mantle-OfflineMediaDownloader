@@ -208,7 +208,7 @@ export function classifyVideoError(error: Error, videoInfo?: SchedulingVideoInfo
       retryable: true,
       retryAfter: calculateExponentialBackoff(retryCount),
       maxRetries: DEFAULT_MAX_RETRIES.transient,
-      reason: `Transient error detected: ${errorMessage.substring(0, 100)}`,
+      reason: `Transient error detected: ${errorMessage.slice(0, 100)}`,
       createIssue: false
     }
   }
@@ -220,7 +220,7 @@ export function classifyVideoError(error: Error, videoInfo?: SchedulingVideoInfo
       retryable: true,
       retryAfter: calculateExponentialBackoff(retryCount),
       maxRetries: DEFAULT_MAX_RETRIES.transient,
-      reason: `SABR streaming restriction detected - format fallback may resolve: ${errorMessage.substring(0, 100)}`,
+      reason: `SABR streaming restriction detected - format fallback may resolve: ${errorMessage.slice(0, 100)}`,
       createIssue: false
     }
   }
@@ -231,7 +231,7 @@ export function classifyVideoError(error: Error, videoInfo?: SchedulingVideoInfo
       category: 'permanent',
       retryable: false,
       maxRetries: DEFAULT_MAX_RETRIES.permanent,
-      reason: `Permanent failure: ${errorMessage.substring(0, 200)}`,
+      reason: `Permanent failure: ${errorMessage.slice(0, 200)}`,
       createIssue: true,
       issuePriority: 'normal'
     }
@@ -244,7 +244,7 @@ export function classifyVideoError(error: Error, videoInfo?: SchedulingVideoInfo
     retryable: true,
     retryAfter: calculateExponentialBackoff(retryCount),
     maxRetries: DEFAULT_MAX_RETRIES.transient,
-    reason: `Unknown error, treating as transient: ${errorMessage.substring(0, 100)}`,
+    reason: `Unknown error, treating as transient: ${errorMessage.slice(0, 100)}`,
     createIssue: false
   }
 }

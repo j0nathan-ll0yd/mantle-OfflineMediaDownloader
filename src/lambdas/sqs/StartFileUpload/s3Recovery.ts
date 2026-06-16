@@ -71,7 +71,7 @@ export async function recoverFromS3(message: ValidatedDownloadQueueMessage, s3Si
     key: fileName,
     size: s3Size,
     authorName: videoInfo?.uploader || 'Unknown',
-    authorUser: (videoInfo?.uploader || 'unknown').toLowerCase().replace(/\s+/g, '_'),
+    authorUser: (videoInfo?.uploader || 'unknown').toLowerCase().replaceAll(/\s+/g, '_'),
     title: videoInfo?.title || fileId,
     description: videoInfo?.description || '',
     publishDate: videoInfo?.upload_date || new Date().toISOString(),

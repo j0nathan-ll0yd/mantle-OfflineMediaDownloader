@@ -35,7 +35,7 @@ export function truncateDescription(description: string): string {
   if (!description || description.length <= MAX_DESCRIPTION_LENGTH) {
     return description || ''
   }
-  return description.substring(0, MAX_DESCRIPTION_LENGTH - 3) + '...'
+  return description.slice(0, Math.max(0, MAX_DESCRIPTION_LENGTH - 3)) + '...'
 }
 
 /**
@@ -55,7 +55,7 @@ export function createMetadataNotification(
     key: `${fileId}.mp4`,
     title: videoInfo.title || '',
     authorName: videoInfo.uploader || 'Unknown',
-    authorUser: (videoInfo.uploader || 'unknown').toLowerCase().replace(/\s+/g, '_'),
+    authorUser: (videoInfo.uploader || 'unknown').toLowerCase().replaceAll(/\s+/g, '_'),
     description: truncateDescription(videoInfo.description || ''),
     publishDate: videoInfo.upload_date || (new Date().toISOString().split('T')[0] ?? new Date().toISOString()),
     contentType: 'video/mp4',

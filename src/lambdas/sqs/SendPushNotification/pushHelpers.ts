@@ -42,9 +42,8 @@ export async function getDevice(deviceId: string): Promise<Device> {
   logDebug('getDevice =>', (device as unknown as Record<string, unknown>) ?? {found: false})
   if (device) {
     return device as Device
-  } else {
-    throw new UnexpectedError(providerFailureErrorMessage)
   }
+  throw new UnexpectedError(providerFailureErrorMessage)
 }
 
 /**
@@ -111,11 +110,11 @@ export function processNotificationResults(
       failed: failed.length,
       disabledEndpoints: disabledEndpoints.length
     })
-    failed.forEach((r) => {
+    for (const r of failed) {
       if (isErr(r)) {
         logError('Device notification failed', {deviceId: r.error.deviceId, error: r.error.error, endpointDisabled: r.error.endpointDisabled})
       }
-    })
+    }
   }
 
   return {succeeded, failed, disabledEndpoints}

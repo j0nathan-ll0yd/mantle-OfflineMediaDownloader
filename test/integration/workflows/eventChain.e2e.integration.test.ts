@@ -131,7 +131,7 @@ describe('Event Chain E2E Integration Tests', () => {
     })
 
     test('should preserve correlation ID through event chain', async () => {
-      const correlationId = `trace-${Date.now()}-${Math.random().toString(36).substring(7)}`
+      const correlationId = `trace-${Date.now()}-${Math.random().toString(36).slice(7)}`
 
       await publishDownloadRequestedEvent(TEST_EVENT_BUS, 'correlation-test', 'https://youtube.com/watch?v=test', correlationId)
 

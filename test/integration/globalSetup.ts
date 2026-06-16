@@ -85,12 +85,12 @@ function adaptMigrationForSchema(migrationSql: string, schema: string): string {
 
   // Convert Aurora DSQL specific syntax for regular PostgreSQL:
   // - CREATE INDEX ASYNC → CREATE INDEX (Aurora DSQL uses async index creation)
-  adapted = adapted.replace(/CREATE INDEX ASYNC/g, 'CREATE INDEX')
+  adapted = adapted.replaceAll('CREATE INDEX ASYNC', 'CREATE INDEX')
 
   // Convert UUID to TEXT for test simplicity with regular PostgreSQL
   // Better Auth uses `generateId: false` which sends DEFAULT for id columns
-  adapted = adapted.replace(/UUID PRIMARY KEY DEFAULT gen_random_uuid\(\)/g, 'TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text')
-  adapted = adapted.replace(/UUID NOT NULL/g, 'TEXT NOT NULL')
+  adapted = adapted.replaceAll('UUID PRIMARY KEY DEFAULT gen_random_uuid()', 'TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text')
+  adapted = adapted.replaceAll('UUID NOT NULL', 'TEXT NOT NULL')
 
   return adapted
 }
@@ -131,7 +131,7 @@ function validateAdaptations(adapted: string): void {
  */
 function parseSqlStatements(sql: string): string[] {
   // Remove SQL comments
-  const noComments = sql.replace(/--.*$/gm, '')
+  const noComments = sql.replaceAll(/--.*$/gm, '')
 
   // Split by semicolons, filter empty statements
   return noComments.split(';').map((s) => s.trim()).filter((s) => s.length > 0)
@@ -211,7 +211,7 @@ export async function setup(): Promise<void> {
           await sql.unsafe(statement)
         } catch (stmtError) {
           // Log the failing statement for debugging — include first 120 chars
-          const preview = statement.substring(0, 120).replace(/\n/g, ' ')
+          const preview = statement.slice(0, 120).replaceAll('\n', ' ')
           console.error(`[globalSetup] Statement ${i + 1}/${schemaStatements.length} failed in ${schemaName}: ${preview}`)
           console.error(`[globalSetup] Error:`, stmtError)
           throw stmtError

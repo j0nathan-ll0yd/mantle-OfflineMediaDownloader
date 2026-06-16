@@ -96,12 +96,12 @@ export const handler = api(async ({context, userId, userStatus, body}) => {
     const userDevices = await getUserDevices(userId)
     if (userDevices.length === 1) {
       return buildValidatedResponse(context, 200, {endpointArn: device.endpointArn}, deviceRegistrationResponseSchema)
-    } else {
-      const subscriptionArn = await getSubscriptionArnFromEndpointAndTopic(device.endpointArn, pushNotificationTopicArn)
-      await unsubscribeEndpointToTopic(subscriptionArn)
-      return buildValidatedResponse(context, 201, {endpointArn: platformEndpoint.EndpointArn}, deviceRegistrationResponseSchema)
     }
-  } else if (userStatus === UserStatus.Anonymous) {
+    const subscriptionArn = await getSubscriptionArnFromEndpointAndTopic(device.endpointArn, pushNotificationTopicArn)
+    await unsubscribeEndpointToTopic(subscriptionArn)
+    return buildValidatedResponse(context, 201, {endpointArn: platformEndpoint.EndpointArn}, deviceRegistrationResponseSchema)
+  }
+  if (userStatus === UserStatus.Anonymous) {
     await subscribeEndpointToTopic(device.endpointArn, pushNotificationTopicArn)
   }
 

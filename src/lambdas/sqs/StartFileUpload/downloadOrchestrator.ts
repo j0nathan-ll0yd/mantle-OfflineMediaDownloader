@@ -119,7 +119,7 @@ export async function processDownloadRequest(message: ValidatedDownloadQueueMess
     key: fileName,
     size: uploadResult.fileSize,
     authorName: videoInfo.uploader || 'Unknown',
-    authorUser: (videoInfo.uploader || 'unknown').toLowerCase().replace(/\s+/g, '_'),
+    authorUser: (videoInfo.uploader || 'unknown').toLowerCase().replaceAll(/\s+/g, '_'),
     title: videoInfo.title,
     description: videoInfo.description || '',
     publishDate: videoInfo.upload_date || new Date().toISOString(),

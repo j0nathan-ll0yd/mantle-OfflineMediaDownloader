@@ -21,7 +21,7 @@ export const handler = api(async ({event, context, userId, body}) => {
 
   if (userId) {
     const userDevices = await getUserDevicesByDeviceId(deviceId)
-    if (!userDevices.some((ud) => ud.userId === userId)) {
+    if (userDevices.every((ud) => !(ud.userId === userId))) {
       return buildValidatedResponse(context, 403)
     }
   }

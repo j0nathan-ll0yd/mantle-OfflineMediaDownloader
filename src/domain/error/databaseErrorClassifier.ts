@@ -52,7 +52,7 @@ export function classifyDatabaseError(error: Error): ErrorClassification {
       retryable: true,
       retryDelayMs: 500,
       maxRetries: 3,
-      reason: `Transient database error: ${message.substring(0, 100)}`,
+      reason: `Transient database error: ${message.slice(0, 100)}`,
       createIssue: false
     }
   }
@@ -66,7 +66,7 @@ export function classifyDatabaseError(error: Error): ErrorClassification {
       category: 'permanent',
       retryable: false,
       maxRetries: 0,
-      reason: `Database constraint error: ${message.substring(0, 100)}`,
+      reason: `Database constraint error: ${message.slice(0, 100)}`,
       createIssue: true,
       issuePriority: 'high'
     }
@@ -80,7 +80,7 @@ export function classifyDatabaseError(error: Error): ErrorClassification {
       retryable: true,
       retryDelayMs: 1000,
       maxRetries: 2,
-      reason: `Unknown database error: ${message.substring(0, 100)}`,
+      reason: `Unknown database error: ${message.slice(0, 100)}`,
       createIssue: false
     }
   }
@@ -91,7 +91,7 @@ export function classifyDatabaseError(error: Error): ErrorClassification {
     retryable: true,
     retryDelayMs: 1000,
     maxRetries: 2,
-    reason: `Unknown database error: ${message.substring(0, 100)}`,
+    reason: `Unknown database error: ${message.slice(0, 100)}`,
     createIssue: false
   }
 }

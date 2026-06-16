@@ -25,7 +25,7 @@ const QUERY_EXPANSIONS: Record<string, string[]> = {
  * Type boost factors - higher values boost certain types for specific queries
  */
 const TYPE_BOOSTS: Record<string, number> = {
-  function: 1.0,
+  function: 1,
   class: 0.95,
   interface: 0.9,
   variable: 0.85,
@@ -84,7 +84,7 @@ function applyTypeBoost(results: SearchResult[], query: string): SearchResult[] 
   const typespecBoost = lowerQuery.includes('api') || lowerQuery.includes('schema') ? 1.1 : 0.9
 
   return results.map((r) => {
-    let boost = TYPE_BOOSTS[r.type] || 1.0
+    let boost = TYPE_BOOSTS[r.type] || 1
     if (r.type === 'documentation') {
       boost = docBoost
     } else if (r.type.startsWith('typespec')) {
@@ -98,7 +98,7 @@ function applyTypeBoost(results: SearchResult[], query: string): SearchResult[] 
  * Search the codebase with optional query expansion and type boosting
  */
 export async function search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
-  const {limit = 5, expand = true, maxDistance = 1.0} = options
+  const {limit = 5, expand = true, maxDistance = 1} = options
 
   const db = await lancedb.connect(DB_DIR)
   const table = await db.openTable(TABLE_NAME)
@@ -136,7 +136,7 @@ Results for query: "${query}"
     console.log(`--- Result (Distance: ${distanceStr}) ---`)
     console.log(`File: ${result.filePath}:${result.startLine}`)
     console.log(`Type: ${result.type}, Name: ${result.name}`)
-    console.log(`Preview: ${result.text.substring(0, 100).replace(/\n/g, ' ')}...`)
+    console.log(`Preview: ${result.text.slice(0, 100).replaceAll('\n', ' ')}...`)
     console.log()
   }
 }

@@ -39,7 +39,7 @@ const TEST_USAGE_PLAN_ID = 'test-usage-plan'
 function createAuthorizerEvent(options: {path?: string; resource?: string; headers?: Record<string, string>} = {}): APIGatewayRequestAuthorizerEvent {
   // Extract token from Authorization header if present
   const authHeader = options.headers?.Authorization
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined
 
   const baseEvent = createMockAPIGatewayRequestAuthorizerEvent({token, path: options.path ?? '/resource', apiKey: TEST_API_KEY})
 
