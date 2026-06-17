@@ -27,14 +27,22 @@ pnpm outdated
 
 ### Phase 1: Worktree Setup
 
-Create an isolated worktree for the upgrade work:
+Create an isolated worktree for the upgrade work. The branch name is dated
+(`chore/upgrade-deps-YYYY-MM-DD`) so it never collides with a stale branch left
+by a previous run. Base the worktree on `origin/main` (not local `HEAD`, which
+may be behind the merged default branch):
 
 ```bash
-git worktree add -b chore/upgrade-dependencies ../mantle-OfflineMediaDownloader-upgrade HEAD
+git fetch origin
+git worktree add -b chore/upgrade-deps-$(date +%Y-%m-%d) ../mantle-OfflineMediaDownloader-upgrade origin/main
 cd ../mantle-OfflineMediaDownloader-upgrade
 mkdir -p build
 pnpm install --frozen-lockfile
 ```
+
+> The dated branch name re-evaluates to the same value within a single day, so
+> reuse the literal `chore/upgrade-deps-$(date +%Y-%m-%d)` in later phases
+> (push, cleanup) rather than a hardcoded name.
 
 ### Phase 2: Dependency Updates
 
@@ -66,7 +74,7 @@ pnpm update --latest
 Run type checking to identify breaking changes:
 
 ```bash
-pnpm run check-types
+pnpm run check:types
 ```
 
 **Common breaking change patterns to watch for:**
@@ -81,13 +89,13 @@ pnpm run check-types
 
 ### Phase 4: Verify
 
-Run the full local CI:
+Run the full local CI (`mantle ci --mode pre-push`):
 
 ```bash
-pnpm run ci:local
+pnpm run precheck
 ```
 
-If tests fail, fix the issues and re-run. The pre-push hook will run `ci:local:full` (including integration tests).
+If tests fail, fix the issues and re-run. The pre-push hook runs the same `precheck` pipeline. Note: when running inside a sandbox, the container build step (StartFileUpload) may fail spuriously due to Docker access — re-run with the sandbox disabled to confirm before treating it as a real failure.
 
 ### Phase 5: Commit and Push
 
@@ -100,7 +108,7 @@ git commit -m 'chore(deps): upgrade all dependencies to latest versions
 - Fix [any breaking changes]
 - Supersedes dependabot PRs #X, #Y, #Z'
 
-git push -u origin chore/upgrade-dependencies
+git push -u origin chore/upgrade-deps-$(date +%Y-%m-%d)
 ```
 
 **IMPORTANT**: No AI attribution in commits per project conventions.
@@ -145,13 +153,13 @@ unset GITHUB_TOKEN && gh pr close <PR_NUMBER> --comment "Superseded by comprehen
 cd /Users/jlloyd/Repositories/mantle-OfflineMediaDownloader
 
 # Pull merged changes
-git fetch origin && git pull origin master
+git fetch origin && git checkout main && git pull origin main
 
 # Remove worktree
 git worktree remove ../mantle-OfflineMediaDownloader-upgrade --force
 
 # Delete local branch if still exists
-git branch -D chore/upgrade-dependencies 2>/dev/null || true
+git branch -D chore/upgrade-deps-$(date +%Y-%m-%d) 2>/dev/null || true
 
 # Verify cleanup
 git worktree list
@@ -225,7 +233,7 @@ done
 ## Human Checkpoints
 
 1. **Review breaking change analysis** - Before applying any upgrades
-2. **Verify local CI passes** - After `pnpm run ci:local` completes
+2. **Verify local CI passes** - After `pnpm run precheck` completes
 3. **Monitor GitHub CI** - After push, watch for failures
 4. **Confirm merge** - Before squash-merging the PR
 5. **Verify Dependabot PRs closed** - After merge completes
@@ -274,7 +282,7 @@ cd /Users/jlloyd/Repositories/mantle-OfflineMediaDownloader
 git worktree remove ~/wt/mantle-OfflineMediaDownloader-upgrade --force
 
 # Delete remote branch
-git push origin --delete chore/upgrade-dependencies
+git push origin --delete chore/upgrade-deps-$(date +%Y-%m-%d)
 ```
 
 ### Step 4: Worktree Cleanup (Always)
@@ -286,13 +294,13 @@ After successful merge OR rollback:
 cd /Users/jlloyd/Repositories/mantle-OfflineMediaDownloader
 
 # Pull merged changes (if merged)
-git fetch origin && git pull origin master
+git fetch origin && git checkout main && git pull origin main
 
 # Remove worktree
 git worktree remove ~/wt/mantle-OfflineMediaDownloader-upgrade --force
 
 # Delete local branch
-git branch -D chore/upgrade-dependencies 2>/dev/null || true
+git branch -D chore/upgrade-deps-$(date +%Y-%m-%d) 2>/dev/null || true
 
 # Verify cleanup
 git worktree list
@@ -305,4 +313,4 @@ git worktree list
 - **GitHub auth**: If you see 401 errors, the `GITHUB_TOKEN` env var may be invalid. Use `unset GITHUB_TOKEN` to fall back to keyring auth.
 - **AWS SDK alignment**: Per `docs/wiki/Methodologies/Dependabot-Resolution.md`, all AWS SDK packages must be updated together.
 - **Major version upgrades**: Check changelogs for Jest, Joi, glob, and other major bumps before proceeding.
-- **Pre-push hook**: The project runs `ci:local:full` on push, which includes integration tests with LocalStack.
+- **Pre-push hook**: The project runs `mantle ci` (the same pipeline as `pnpm run precheck`) on push, which includes integration tests with LocalStack.
