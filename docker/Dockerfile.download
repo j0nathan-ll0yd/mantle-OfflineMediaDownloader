@@ -37,10 +37,11 @@ ADD https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86
 RUN cd /tmp && unzip deno.zip && chmod +x deno && mv deno /opt/bin/deno && rm deno.zip
 
 # --- ffmpeg + ffprobe (static build for stream muxing and analysis) ---
-# BtbN/FFmpeg-Builds is pinned to an immutable autobuild tag so this URL never silently
-# changes. Bump FFMPEG_BUILD and FFMPEG_ASSET together when refreshing.
-ARG FFMPEG_BUILD=autobuild-2026-06-08-14-24
-ARG FFMPEG_ASSET=ffmpeg-n7.1.4-9-gc06af95f12-linux64-gpl-7.1
+# BtbN/FFmpeg-Builds: track the never-purged `latest` tag with the n7.1 branch asset.
+# (The timestamped autobuild-* tags are NOT immutable -- BtbN deletes old ones, which
+# 404'd the build. `latest` always exists; the n7.1 asset stays on the stable 7.1 line.)
+ARG FFMPEG_BUILD=latest
+ARG FFMPEG_ASSET=ffmpeg-n7.1-latest-linux64-gpl-7.1
 ADD https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BUILD}/${FFMPEG_ASSET}.tar.xz /tmp/ffmpeg.tar.xz
 RUN cd /tmp && tar xf ffmpeg.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 \
   && chmod +x ffmpeg ffprobe && mv ffmpeg ffprobe /opt/bin/ && rm ffmpeg.tar.xz
