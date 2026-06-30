@@ -6,8 +6,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/types/api-schema/**'
-      - 'src/lambdas/api/**/index.ts'
+      - "src/types/api-schema/**"
+      - "src/lambdas/api/**/index.ts"
   workflow_dispatch:
 
 engine:
@@ -26,7 +26,7 @@ pre-agent-steps:
       token: ${{ secrets.GH_CROSS_REPO_PAT }}
   - uses: actions/setup-node@v6
     with:
-      node-version: '24'
+      node-version-file: ".nvmrc"
   - uses: pnpm/action-setup@v6
   - run: pnpm install --frozen-lockfile
   - run: npx mantle generate openapi --output /tmp/gh-aw/agent/openapi-check.yaml
@@ -59,12 +59,9 @@ The pre-agent-steps already generated the expected OpenAPI spec at `/tmp/gh-aw/a
 3. If there are differences (diff exits 1):
    a. Analyze the diff output to identify which endpoints or schemas changed
    b. Create an issue in the iOS repo with:
-      - Title: "[Codegen Drift] OpenAPI spec out of sync — <brief summary of what changed>"
-      - Body containing:
-        - A summary of which endpoints/schemas were added, removed, or modified
-        - The raw diff output in a collapsible details block
-        - Instructions: "Run `bash Scripts/sync-openapi.sh` in `ios-OfflineMediaDownloader` to regenerate Swift types from the updated spec."
-   c. Add a comment on this commit: "Codegen drift detected — an issue has been created in ios-OfflineMediaDownloader."
+   - Title: "[Codegen Drift] OpenAPI spec out of sync — <brief summary of what changed>"
+   - Body containing: - A summary of which endpoints/schemas were added, removed, or modified - The raw diff output in a collapsible details block - Instructions: "Run `bash Scripts/sync-openapi.sh` in `ios-OfflineMediaDownloader` to regenerate Swift types from the updated spec."
+     c. Add a comment on this commit: "Codegen drift detected — an issue has been created in ios-OfflineMediaDownloader."
 
 ## Important
 
