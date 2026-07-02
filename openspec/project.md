@@ -130,6 +130,16 @@ placed as a comment at the top of the covering test file or test block. Example:
 // covers: cascade-deletion#children-deleted-before-parent
 ```
 
+**Scope-match rule:** a requirement may claim ONLY what its covering test actually asserts;
+broader behavior belongs in untethered requirements or prose. A `covers:` badge on a test that
+asserts less than the requirement claims is net-negative — the tether signals existence, not
+correctness; authoring review is the semantic backstop.
+
+**Multi-test labeling:** when multiple tests share a single requirement (as
+`cascade-deletion#children-deleted-before-parent` does after the B3 iteration), each `verified by`
+citation MUST include a parenthetical scope label identifying what that specific test asserts —
+e.g., `test/path.test.ts (endpoint cleanup ordering)`.
+
 The framework lane is building a `mantle check openspec` drift-tether gate (Workstream A). Once
 that gate is live, the `covers:` format may be finalized. Adjust annotations when the team-lead
 broadcasts the final format. Until then, the provisional format is the canonical form.
