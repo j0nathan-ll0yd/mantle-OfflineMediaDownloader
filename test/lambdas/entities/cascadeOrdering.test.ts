@@ -44,7 +44,7 @@ describe('cascade deletion ordering — endpoint cleanup', () => {
     })
     vi.mocked(deleteEndpoint).mockImplementation(() => {
       callOrder.push('deleteEndpoint')
-      return Promise.resolve()
+      return Promise.resolve({$metadata: {}})
     })
     vi.mocked(deleteDevice).mockImplementation(() => {
       callOrder.push('deleteDevice')
