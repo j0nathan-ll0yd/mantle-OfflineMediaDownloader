@@ -1,5 +1,8 @@
-@~/.claude/principles/mantle-checks-high.md
 @AGENTS.md
+
+<!-- Convention checks are injected per-session by the agent-enforcement retrieval
+     system (~/Repositories/agent-enforcement/rules/mantle/) — the former static
+     import of ~/.claude/principles/mantle-checks-high.md is retired. -->
 
 ## Mantle Convention Enforcement
 

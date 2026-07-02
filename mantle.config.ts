@@ -96,5 +96,18 @@ export default defineConfig({
       {source: '#types/notification-schemas', prefix: 'Notifications.'}
     ]
   },
-  ci: {mantleRepo: 'j0nathan-ll0yd/mantle', mantleRef: 'main', mantleAuthSecret: 'MANTLE_DEPLOY_KEY', deploy: false}
+  ci: {
+    mantleRepo: 'j0nathan-ll0yd/mantle',
+    mantleRef: 'main',
+    mantleAuthSecret: 'MANTLE_DEPLOY_KEY',
+    deploy: false,
+    customSteps: [
+      {
+        name: 'openspec-validate',
+        phase: 'validate',
+        command: 'OPENSPEC_TELEMETRY=0 DO_NOT_TRACK=1 npx -y @fission-ai/openspec@1.4.1 validate --all --strict'
+      },
+      {name: 'openspec-behavior-only', phase: 'validate', command: 'bash scripts/check-openspec-behavior-only.sh'}
+    ]
+  }
 })
