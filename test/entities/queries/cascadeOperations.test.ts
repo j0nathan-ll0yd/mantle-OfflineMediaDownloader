@@ -1,12 +1,16 @@
+// covers: cascade-deletion#children-deleted-before-parent
 /**
  * Unit tests for Cascade Operations
  *
  * Tests mutable logic: conditional branching in deleteFileCascade
  * (!existing -> early return, remaining.length > 0 -> partial return).
+ * Also verifies cascade deletion ORDER (children before parents) for
+ * deleteUserCascade and deleteFileCascade.
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {createDefineQueryMock, createMockDrizzleDb} from '#test/helpers/defineQuery-mock'
 import {createMockUserFile} from '#test/helpers/entity-fixtures'
+import {accounts, fileDownloads, files, sessions, userDevices, userFiles, users} from '#db/schema'
 
 const mockDb = createMockDrizzleDb()
 
@@ -39,6 +43,19 @@ describe('Cascade Operations', () => {
 
       // Should call delete 5 times: userFiles, userDevices, sessions, accounts, users
       expect(mockDb.delete).toHaveBeenCalledTimes(5)
+    })
+
+    it('deletes junction tables before auth records, and auth records before the User record', async () => {
+      mockDb._setDeleteResult([])
+
+      await deleteUserCascade('user-1')
+
+      const deletedTables = mockDb.delete.mock.calls.map((args) => args[0])
+      expect(deletedTables[0]).toBe(userFiles)
+      expect(deletedTables[1]).toBe(userDevices)
+      expect(deletedTables[2]).toBe(sessions)
+      expect(deletedTables[3]).toBe(accounts)
+      expect(deletedTables[4]).toBe(users)
     })
   })
 
@@ -133,6 +150,35 @@ describe('Cascade Operations', () => {
       const result = await deleteFileCascade('user-1', 'file-1')
 
       expect(result).toEqual({existed: true, fileRemoved: true})
+    })
+
+    it('removes FileDownload records before the File record when the file is orphaned', async () => {
+      const existingLink = createMockUserFile()
+
+      let selectCallCount = 0
+      mockDb.select.mockImplementation(() => {
+        selectCallCount++
+        const result = selectCallCount === 1 ? [existingLink] : []
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue({
+                then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+              }),
+              then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+            }),
+            then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+          })
+        }
+      })
+      mockDb._setDeleteResult([])
+
+      await deleteFileCascade('user-1', 'file-1')
+
+      const deletedTables = mockDb.delete.mock.calls.map((args) => args[0])
+      expect(deletedTables[0]).toBe(userFiles)
+      expect(deletedTables[1]).toBe(fileDownloads)
+      expect(deletedTables[2]).toBe(files)
     })
   })
 })
