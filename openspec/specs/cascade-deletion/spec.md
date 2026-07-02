@@ -16,7 +16,7 @@ restate them.
 ### Requirement: children-deleted-before-parent
 
 The system SHALL delete all child records before deleting the parent record in every cascade
-operation, verified by `test/cascadeOperations.spec.ts`.
+operation, verified by `test/lambdas/entities/cascadeOrdering.test.ts`.
 
 For user deletion (`deleteUserCascade`): junction records (UserFiles, UserDevices) SHALL be deleted
 first, then auth records (Sessions, Accounts), then the User. The parent User row SHALL NOT be

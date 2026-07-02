@@ -40,7 +40,7 @@ When an Authorization header is present with a Bearer token, the authorizer SHAL
 token against the Better Auth session store. If the token is present but invalid (expired, malformed,
 or not found), the authorizer SHALL deny authorization. It SHALL NOT fall back to anonymous
 access — an invalid token is treated as an active denial, not as a missing token.
-This requirement is verified by `src/lambdas/standalone/ApiGatewayAuthorizer/test/index.test.ts`.
+This requirement is verified by `test/lambdas/standalone/apiGatewayAuthorizer.test.ts`.
 
 #### Scenario: Valid Bearer token authenticates the request
 

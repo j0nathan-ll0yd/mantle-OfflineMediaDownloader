@@ -42,8 +42,7 @@ When APNs signals that a device token is invalid (endpoint disabled), the system
 the SNS endpoint and remove the associated device records. Cleanup SHALL follow children-before-
 parent ordering: UserDevice junction records first, then the SNS endpoint, then the Device record.
 Cleanup is initiated asynchronously after the notification batch completes and SHALL NOT block the
-SQS response. This requirement is verified by
-`src/lambdas/sqs/SendPushNotification/test/endpointCleanup.test.ts`.
+SQS response. This requirement is verified by `test/lambdas/sqs/pushEndpointCleanup.test.ts`.
 
 #### Scenario: Invalid token detected during delivery
 
