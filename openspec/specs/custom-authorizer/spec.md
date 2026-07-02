@@ -13,6 +13,12 @@ Source of truth for behavior: `src/lambdas/standalone/ApiGatewayAuthorizer/index
 The IAM policy shape returned by `generateAllow`/`denyAuthorization` is owned by
 `src/lambdas/standalone/ApiGatewayAuthorizer/helpers.ts` — this spec does NOT restate it.
 
+Note: `isRemoteTestRequest` (`src/lambdas/standalone/ApiGatewayAuthorizer/index.ts:66–73`) is a
+documented test-only bypass that short-circuits the session-validation path for requests matching a
+specific source IP and header combination, returning a hardcoded `fakeUserId`. This path is entered
+only after a valid API key is confirmed; it exists solely for remote integration testing and does not
+represent normal authentication flow.
+
 ## Requirements
 
 ### Requirement: api-key-required-before-session-check

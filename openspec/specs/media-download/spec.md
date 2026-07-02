@@ -20,8 +20,9 @@ them.
 
 The `StartFileUpload` Lambda SHALL run on the `x86_64` architecture as a container image. This is a
 deliberate exception to the default `arm64` preference (C20 exception documented in `AGENTS.md`)
-because the yt-dlp binary distributed in the Lambda layer is a native x86_64 Linux executable and
-has no ARM equivalent in the current deployment.
+because yt-dlp is baked into the container image (`docker/Dockerfile.download`; binary at
+`/opt/bin/yt-dlp`) as a native x86_64 Linux executable and has no ARM equivalent in the current
+deployment.
 
 #### Scenario: Lambda configured as x86_64 container
 
@@ -73,16 +74,34 @@ silently swallow retriable errors.
 
 ### Requirement: permanent-failure-files-github-issue
 
-When retries are exhausted (`shouldRetry: false`), the system SHALL set the file status to `Failed`
-and SHALL create a GitHub issue documenting the failure. The Lambda SHALL NOT throw after a
-permanent failure — it SHALL complete normally to prevent further SQS redelivery.
+The system SHALL differentiate three non-retrying terminal failure paths based on error category
+(`src/lambdas/sqs/StartFileUpload/failureHandler.ts:101–113`):
 
-#### Scenario: Max retries exhausted
+- **`category === 'permanent'`**: the system SHALL create a GitHub issue via
+  `createVideoDownloadFailureIssue` documenting the failure.
+- **`category === 'cookie_expired'`**: a cookie-expiration GitHub issue SHALL be filed via
+  `createCookieExpirationIssue` instead; `createVideoDownloadFailureIssue` SHALL NOT be called.
+- **Retry-exhausted transient** (retryable category, retry count ≥ maximum): no GitHub issue SHALL
+  be created; the system SHALL record metrics and log the exhaustion only.
 
-- **GIVEN** a download that has failed beyond the maximum retry count
-- **WHEN** `handleDownloadFailure` returns `shouldRetry: false`
+In all three paths the file status SHALL be updated to `Failed` and the Lambda SHALL return normally
+without throwing, preventing further SQS redelivery.
+
+#### Scenario: Permanently classified failure files GitHub issue
+
+- **GIVEN** a download that fails with a permanently classified error (`category === 'permanent'`)
+- **WHEN** `handleDownloadFailure` processes the failure
 - **THEN** the file status SHALL be updated to `Failed`
-- **AND** a GitHub issue SHALL be created via `createVideoDownloadFailureIssue`
+- **AND** a GitHub issue SHALL be filed via `createVideoDownloadFailureIssue`
+- **AND** the Lambda SHALL return without throwing
+
+#### Scenario: Retry-exhausted transient failure — no GitHub issue filed
+
+- **GIVEN** a download with a transient error category whose retry count equals or exceeds the
+  configured maximum
+- **WHEN** `handleDownloadFailure` processes the failure (`shouldRetry: false`)
+- **THEN** the file status SHALL be updated to `Failed`
+- **AND** no `createVideoDownloadFailureIssue` call SHALL be made
 - **AND** the Lambda SHALL return without throwing
 
 ### Requirement: cookie-expiration-issue-closed-on-success
