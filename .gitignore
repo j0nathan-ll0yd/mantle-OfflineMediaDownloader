@@ -96,6 +96,11 @@ deployment-logs/
 # Mantle CLI temp directories
 .mantle-openapi-tmp-*
 
+# OpenSpec agent wiring (local-only; regenerate with `openspec init`)
+.gemini/
+.github/prompts/
+.github/skills/
+
 # Terraform variable overrides (contains secrets)
 infra/terraform.tfvars
 
