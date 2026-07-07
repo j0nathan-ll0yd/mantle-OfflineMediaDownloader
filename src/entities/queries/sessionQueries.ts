@@ -105,10 +105,12 @@ export const deleteSessionsByUserId = defineQuery({tables: [{table: sessions, op
 
 /**
  * Deletes expired sessions.
+ * @returns Count of deleted records
  */
 export const deleteExpiredSessions = defineQuery({tables: [{table: sessions, operations: [DatabaseOperation.Select, DatabaseOperation.Delete]}]},
-  async function deleteExpiredSessions(db): Promise<void> {
-    await db.delete(sessions).where(lt(sessions.expiresAt, new Date()))
+  async function deleteExpiredSessions(db): Promise<number> {
+    const result = await db.delete(sessions).where(lt(sessions.expiresAt, new Date())).returning({id: sessions.id})
+    return result.length
   })
 
 // Account Operations
@@ -202,8 +204,10 @@ export const deleteVerification = defineQuery({tables: [{table: verification, op
 
 /**
  * Deletes expired verification tokens.
+ * @returns Count of deleted records
  */
 export const deleteExpiredVerifications = defineQuery({tables: [{table: verification, operations: [DatabaseOperation.Select, DatabaseOperation.Delete]}]},
-  async function deleteExpiredVerifications(db): Promise<void> {
-    await db.delete(verification).where(lt(verification.expiresAt, new Date()))
+  async function deleteExpiredVerifications(db): Promise<number> {
+    const result = await db.delete(verification).where(lt(verification.expiresAt, new Date())).returning({id: verification.id})
+    return result.length
   })

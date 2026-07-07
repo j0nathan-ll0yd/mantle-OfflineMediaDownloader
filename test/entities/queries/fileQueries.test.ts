@@ -12,7 +12,7 @@ import {createMockFile, createMockFileDownload} from '#test/helpers/entity-fixtu
 const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
-vi.mock('#db/schema', () => ({files: {fileId: 'fileId', key: 'key', status: 'status'}, fileDownloads: {fileId: 'fileId'}}))
+vi.mock('#db/schema', () => ({files: {fileId: 'fileId', key: 'key', status: 'status'}, fileDownloads: {fileId: 'fileId', status: 'status', updatedAt: 'updatedAt'}}))
 vi.mock('#db/zodSchemas',
   () => ({
     fileInsertSchema: {parse: vi.fn((v: unknown) => v)},
@@ -22,7 +22,12 @@ vi.mock('#db/zodSchemas',
   }))
 vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
 vi.mock('@mantleframework/database/orm',
-  () => ({eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'), inArray: vi.fn((_col: unknown, _vals: unknown) => 'inArray-condition')}))
+  () => ({
+    and: vi.fn((...conds: unknown[]) => ({type: 'and', conds})),
+    eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'),
+    inArray: vi.fn((_col: unknown, _vals: unknown) => 'inArray-condition'),
+    lt: vi.fn((_col: unknown, _val: unknown) => 'lt-condition')
+  }))
 
 const {
   getFile,
@@ -37,7 +42,8 @@ const {
   createFileDownload,
   upsertFileDownload,
   updateFileDownload,
-  deleteFileDownload
+  deleteFileDownload,
+  deleteExpiredFileDownloads
 } = await import('#entities/queries/fileQueries')
 
 describe('File Queries', () => {
@@ -235,6 +241,24 @@ describe('File Queries', () => {
       mockDb._setDeleteResult([])
 
       await expect(deleteFileDownload('file-1')).resolves.toBeUndefined()
+    })
+  })
+
+  describe('deleteExpiredFileDownloads', () => {
+    it('should return the count of deleted downloads', async () => {
+      mockDb._setDeleteResult([{fileId: 'file-1'}, {fileId: 'file-2'}])
+
+      const result = await deleteExpiredFileDownloads(new Date('2024-01-01T00:00:00Z'), ['Completed', 'Failed'])
+
+      expect(result).toBe(2)
+    })
+
+    it('should return zero when nothing is expired', async () => {
+      mockDb._setDeleteResult([])
+
+      const result = await deleteExpiredFileDownloads(new Date('2024-01-01T00:00:00Z'), ['Completed', 'Failed'])
+
+      expect(result).toBe(0)
     })
   })
 })

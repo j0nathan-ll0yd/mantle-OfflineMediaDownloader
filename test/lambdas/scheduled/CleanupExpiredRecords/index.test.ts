@@ -1,8 +1,10 @@
 /**
  * Unit tests for CleanupExpiredRecords Lambda (scheduled handler)
  *
- * Tests cleanup of expired file downloads, sessions, and verification tokens.
- * CRITICAL: This Lambda uses getDrizzleClient() directly, not defineQuery.
+ * Tests cleanup of expired file downloads, sessions, verification tokens, and
+ * device events. The handler orchestrates entity queries (defineQuery) — each
+ * delete is a mocked query returning a count, so these tests verify the
+ * per-section error isolation and aggregate metrics rather than raw SQL.
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
@@ -22,122 +24,69 @@ vi.mock('@mantleframework/observability',
     startSpan: vi.fn(() => ({}))
   }))
 
-vi.mock('@mantleframework/database/orm',
+vi.mock('#entities/queries',
   () => ({
-    and: vi.fn((...args: unknown[]) => ({type: 'and', conditions: args})),
-    eq: vi.fn((col: unknown, val: unknown) => ({type: 'eq', col, val})),
-    lt: vi.fn((col: unknown, val: unknown) => ({type: 'lt', col, val})),
-    or: vi.fn((...args: unknown[]) => ({type: 'or', conditions: args}))
+    deleteExpiredFileDownloads: vi.fn(() => Promise.resolve(0)),
+    deleteExpiredSessions: vi.fn(() => Promise.resolve(0)),
+    deleteExpiredVerifications: vi.fn(() => Promise.resolve(0)),
+    deleteExpiredDeviceEvents: vi.fn(() => Promise.resolve(0))
   }))
 
-// Create chainable mock for Drizzle client
-function createChainableMock(returnValue: unknown[] = []) {
-  const chain = {returning: vi.fn(() => Promise.resolve(returnValue)), where: vi.fn(() => chain)}
-  const deleteMethod = vi.fn(() => chain)
-  return {db: {delete: deleteMethod}, chain, deleteMethod}
-}
-
-const drizzleMock = createChainableMock()
-
-vi.mock('#db/client', () => ({getDrizzleClient: vi.fn(() => Promise.resolve(drizzleMock.db))}))
-
-vi.mock('drizzle-zod', () => {
-  const passthrough = () => ({parse: (v: unknown) => v, safeParse: (v: unknown) => ({success: true, data: v}), optional: () => passthrough()})
-  return {createInsertSchema: () => passthrough(), createSelectSchema: () => passthrough(), createUpdateSchema: () => passthrough()}
-})
-
-vi.mock('#db/schema',
-  () => ({
-    accounts: {id: 'id'},
-    deviceEvents: {id: 'id'},
-    devices: {id: 'id'},
-    fileDownloads: {fileId: 'fileId', status: 'status', updatedAt: 'updatedAt'},
-    files: {fileId: 'fileId', status: 'status'},
-    sessions: {id: 'id', expiresAt: 'expiresAt'},
-    userDevices: {userId: 'userId', deviceId: 'deviceId'},
-    userFiles: {userId: 'userId', fileId: 'fileId'},
-    users: {id: 'id'},
-    verification: {id: 'id', expiresAt: 'expiresAt'}
-  }))
-
-vi.mock('#types/enums',
-  () => ({
-    DownloadStatus: {Pending: 'Pending', InProgress: 'InProgress', Scheduled: 'Scheduled', Completed: 'Completed', Failed: 'Failed'},
-    FileStatus: {Queued: 'Queued', Downloading: 'Downloading', Downloaded: 'Downloaded', Failed: 'Failed'},
-    ResponseStatus: {Dispatched: 'Dispatched', Initiated: 'Initiated', Accepted: 'Accepted', Success: 'Success'}
-  }))
-
-vi.mock('#types/sharedPrimitives', () => ({downloadStatusZodSchema: {optional: () => ({})}, fileStatusZodSchema: {optional: () => ({})}}))
-
-vi.mock('#entities/queries', () => ({deleteExpiredDeviceEvents: vi.fn(() => Promise.resolve(0))}))
+vi.mock('#types/enums', () => ({DownloadStatus: {Pending: 'Pending', InProgress: 'InProgress', Completed: 'Completed', Failed: 'Failed'}}))
 
 vi.mock('#utils/time', () => ({secondsAgo: vi.fn(() => new Date('2024-01-01T00:00:00Z')), TIME: {DAY_SEC: 86400}}))
 
 const {handler} = (await import('#lambdas/scheduled/CleanupExpiredRecords/index.js')) as unknown as MockedModule<typeof CleanupMod>
-import {getDrizzleClient} from '#db/client'
+import {deleteExpiredDeviceEvents, deleteExpiredFileDownloads, deleteExpiredSessions, deleteExpiredVerifications} from '#entities/queries'
 import {metrics} from '@mantleframework/observability'
 
 describe('CleanupExpiredRecords Lambda', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-
-    // Reset the chainable mock for each test
-    const freshMock = createChainableMock()
-    vi.mocked(getDrizzleClient).mockResolvedValue(freshMock.db as never)
+    // clearAllMocks resets call history but not implementations — restore the
+    // zero-count defaults so each test starts from a clean baseline.
+    vi.mocked(deleteExpiredFileDownloads).mockResolvedValue(0)
+    vi.mocked(deleteExpiredSessions).mockResolvedValue(0)
+    vi.mocked(deleteExpiredVerifications).mockResolvedValue(0)
+    vi.mocked(deleteExpiredDeviceEvents).mockResolvedValue(0)
   })
 
   it('should cleanup all record types successfully', async () => {
-    // Each cleanup call returns different counts
-    const fileDownloadsMock = createChainableMock([{fileId: 'f1'}, {fileId: 'f2'}])
-    const sessionsMock = createChainableMock([{id: 's1'}])
-    const verificationMock = createChainableMock([{id: 'v1'}, {id: 'v2'}, {id: 'v3'}])
-
-    let callCount = 0
-    vi.mocked(getDrizzleClient).mockImplementation(() => {
-      callCount++
-      if (callCount === 1) {
-        return Promise.resolve(fileDownloadsMock.db as never)
-      }
-      if (callCount === 2) {
-        return Promise.resolve(sessionsMock.db as never)
-      }
-      return Promise.resolve(verificationMock.db as never)
-    })
+    vi.mocked(deleteExpiredFileDownloads).mockResolvedValue(2)
+    vi.mocked(deleteExpiredSessions).mockResolvedValue(1)
+    vi.mocked(deleteExpiredVerifications).mockResolvedValue(3)
+    vi.mocked(deleteExpiredDeviceEvents).mockResolvedValue(4)
 
     const result = await handler()
 
     expect(result.fileDownloadsDeleted).toBe(2)
     expect(result.sessionsDeleted).toBe(1)
     expect(result.verificationTokensDeleted).toBe(3)
+    expect(result.deviceEventsDeleted).toBe(4)
     expect(result.errors).toHaveLength(0)
-    expect(metrics.addMetric).toHaveBeenCalledWith('RecordsCleanedUp', 'Count', 6)
+    expect(metrics.addMetric).toHaveBeenCalledWith('RecordsCleanedUp', 'Count', 10)
+  })
+
+  it('should pass the terminal statuses and a cutoff to deleteExpiredFileDownloads', async () => {
+    await handler()
+
+    expect(deleteExpiredFileDownloads).toHaveBeenCalledWith(new Date('2024-01-01T00:00:00Z'), ['Completed', 'Failed'])
   })
 
   it('should return zero counts when nothing to cleanup', async () => {
-    const emptyMock = createChainableMock([])
-    vi.mocked(getDrizzleClient).mockResolvedValue(emptyMock.db as never)
-
     const result = await handler()
 
     expect(result.fileDownloadsDeleted).toBe(0)
     expect(result.sessionsDeleted).toBe(0)
     expect(result.verificationTokensDeleted).toBe(0)
+    expect(result.deviceEventsDeleted).toBe(0)
     expect(result.errors).toHaveLength(0)
   })
 
   it('should continue cleanup when fileDownloads fails', async () => {
-    const failingMock = createChainableMock()
-    failingMock.chain.returning.mockRejectedValue(new Error('DB timeout'))
-    const successMock = createChainableMock([{id: 's1'}])
-
-    let callCount = 0
-    vi.mocked(getDrizzleClient).mockImplementation(() => {
-      callCount++
-      if (callCount === 1) {
-        return Promise.resolve(failingMock.db as never)
-      }
-      return Promise.resolve(successMock.db as never)
-    })
+    vi.mocked(deleteExpiredFileDownloads).mockRejectedValue(new Error('DB timeout'))
+    vi.mocked(deleteExpiredSessions).mockResolvedValue(1)
+    vi.mocked(deleteExpiredVerifications).mockResolvedValue(1)
 
     const result = await handler()
 
@@ -149,22 +98,9 @@ describe('CleanupExpiredRecords Lambda', () => {
   })
 
   it('should continue cleanup when sessions fails', async () => {
-    const successMock = createChainableMock([{fileId: 'f1'}])
-    const failingMock = createChainableMock()
-    failingMock.chain.returning.mockRejectedValue(new Error('Session table locked'))
-    const verifyMock = createChainableMock([{id: 'v1'}])
-
-    let callCount = 0
-    vi.mocked(getDrizzleClient).mockImplementation(() => {
-      callCount++
-      if (callCount === 1) {
-        return Promise.resolve(successMock.db as never)
-      }
-      if (callCount === 2) {
-        return Promise.resolve(failingMock.db as never)
-      }
-      return Promise.resolve(verifyMock.db as never)
-    })
+    vi.mocked(deleteExpiredFileDownloads).mockResolvedValue(1)
+    vi.mocked(deleteExpiredSessions).mockRejectedValue(new Error('Session table locked'))
+    vi.mocked(deleteExpiredVerifications).mockResolvedValue(1)
 
     const result = await handler()
 
@@ -176,22 +112,9 @@ describe('CleanupExpiredRecords Lambda', () => {
   })
 
   it('should continue cleanup when verification fails', async () => {
-    const successMock = createChainableMock([{fileId: 'f1'}])
-    const sessionMock = createChainableMock([{id: 's1'}])
-    const failingMock = createChainableMock()
-    failingMock.chain.returning.mockRejectedValue(new Error('Verification error'))
-
-    let callCount = 0
-    vi.mocked(getDrizzleClient).mockImplementation(() => {
-      callCount++
-      if (callCount === 1) {
-        return Promise.resolve(successMock.db as never)
-      }
-      if (callCount === 2) {
-        return Promise.resolve(sessionMock.db as never)
-      }
-      return Promise.resolve(failingMock.db as never)
-    })
+    vi.mocked(deleteExpiredFileDownloads).mockResolvedValue(1)
+    vi.mocked(deleteExpiredSessions).mockResolvedValue(1)
+    vi.mocked(deleteExpiredVerifications).mockRejectedValue(new Error('Verification error'))
 
     const result = await handler()
 
@@ -202,24 +125,36 @@ describe('CleanupExpiredRecords Lambda', () => {
     expect((result.errors as string[])[0]).toContain('Verification cleanup failed')
   })
 
+  it('should continue cleanup when device events fails', async () => {
+    vi.mocked(deleteExpiredFileDownloads).mockResolvedValue(1)
+    vi.mocked(deleteExpiredSessions).mockResolvedValue(1)
+    vi.mocked(deleteExpiredVerifications).mockResolvedValue(1)
+    vi.mocked(deleteExpiredDeviceEvents).mockRejectedValue(new Error('DeviceEvents error'))
+
+    const result = await handler()
+
+    expect(result.deviceEventsDeleted).toBe(0)
+    expect(result.errors).toHaveLength(1)
+    expect((result.errors as string[])[0]).toContain('DeviceEvents cleanup failed')
+  })
+
   it('should record errors for all failures but not throw', async () => {
-    const failingMock = createChainableMock()
-    failingMock.chain.returning.mockRejectedValue(new Error('Total failure'))
-    vi.mocked(getDrizzleClient).mockResolvedValue(failingMock.db as never)
+    vi.mocked(deleteExpiredFileDownloads).mockRejectedValue(new Error('Total failure'))
+    vi.mocked(deleteExpiredSessions).mockRejectedValue(new Error('Total failure'))
+    vi.mocked(deleteExpiredVerifications).mockRejectedValue(new Error('Total failure'))
+    vi.mocked(deleteExpiredDeviceEvents).mockRejectedValue(new Error('Total failure'))
 
     const result = await handler()
 
     expect(result.fileDownloadsDeleted).toBe(0)
     expect(result.sessionsDeleted).toBe(0)
     expect(result.verificationTokensDeleted).toBe(0)
-    expect(result.errors).toHaveLength(3)
+    expect(result.deviceEventsDeleted).toBe(0)
+    expect(result.errors).toHaveLength(4)
     expect(metrics.addMetric).toHaveBeenCalledWith('RecordsCleanedUp', 'Count', 0)
   })
 
   it('should emit CleanupRun metric', async () => {
-    const emptyMock = createChainableMock([])
-    vi.mocked(getDrizzleClient).mockResolvedValue(emptyMock.db as never)
-
     await handler()
 
     expect(metrics.addMetric).toHaveBeenCalledWith('CleanupRun', 'Count', 1)

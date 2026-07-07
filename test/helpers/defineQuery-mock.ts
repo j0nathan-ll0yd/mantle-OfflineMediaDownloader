@@ -95,8 +95,16 @@ export function createMockDrizzleDb(): MockDrizzleDb {
     return {set: vi.fn().mockImplementation(() => ({where: vi.fn().mockImplementation(() => ({returning: returningFn}))}))}
   }
 
-  // Delete chain: delete() -> where()
-  const deleteChain = () => ({where: vi.fn().mockImplementation(() => Promise.resolve(deleteResult))})
+  // Delete chain: delete() -> where() [-> returning()]
+  // `where()` is thenable (await db.delete().where(cond)) and also exposes
+  // `returning()` for queries that need the deleted rows (await db.delete().where(cond).returning({...})).
+  const deleteChain = () => {
+    const whereResult = {
+      then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(deleteResult).then(resolve, reject),
+      returning: vi.fn().mockImplementation(() => Promise.resolve(deleteResult))
+    }
+    return {where: vi.fn().mockImplementation(() => whereResult)}
+  }
 
   const db: MockDrizzleDb = {
     select: vi.fn().mockImplementation(() => selectChain()),
