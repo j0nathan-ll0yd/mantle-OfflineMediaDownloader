@@ -58,6 +58,33 @@ jobs:
       - name: Run convention validation (Mantle CLI)
         run: pnpm run check:conventions
 
+      - name: OpenSpec advisory drift tether (non-blocking)
+        # `mantle check openspec` is advisory (exit 0) by default. This step never
+        # gates the build; it only surfaces the advisory finding count so the
+        # advisory->blocking graduation criterion ("consecutive green advisory
+        # weeks") is measurable. Runs here to reuse the already-built mantle.
+        continue-on-error: true
+        env:
+          OPENSPEC_TELEMETRY: '0'
+          DO_NOT_TRACK: '1'
+        run: |
+          npx mantle check openspec | tee openspec-advisory.log || true
+          count=$(grep -oE 'Found [0-9]+ advisory finding' openspec-advisory.log | grep -oE '[0-9]+' | head -1)
+          count=${count:-unknown}
+          {
+            echo "## OpenSpec advisory tether"
+            echo ""
+            echo "**Advisory findings:** ${count} (non-blocking)"
+            echo ""
+            echo "Graduation target: 0 findings for two consecutive advisory weeks."
+            echo ""
+            echo '```'
+            grep -E '^\[ADVISORY\]' openspec-advisory.log || echo "(no advisory categories reported)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::warning::OpenSpec advisory tether: ${count} finding(s) (non-blocking)"
+          rm -f openspec-advisory.log
+
       - name: Validate environment variables
         run: pnpm run validate:env-vars
 
