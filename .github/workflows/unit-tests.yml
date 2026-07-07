@@ -294,7 +294,12 @@ jobs:
           path: build/
 
       - name: Run unit tests
-        run: pnpm test --coverage 2>&1 | tee test-output.txt
+        shell: bash
+        run: |
+          # pipefail so a vitest failure (incl. coverage ratchet thresholds)
+          # propagates through `tee` instead of being masked by tee's exit 0.
+          set -o pipefail
+          pnpm test --coverage 2>&1 | tee test-output.txt
         env:
           CI: true
 
