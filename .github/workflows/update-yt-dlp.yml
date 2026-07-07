@@ -76,21 +76,19 @@ jobs:
 
           VERSION="${{ steps.check.outputs.latest }}"
 
+          # Deployment target is x86_64 (see docker/Dockerfile.download and the
+          # `architecture = "x86_64"` Lambda config), so we verify the x86_64
+          # `yt-dlp_linux` asset. This job runs on arm64 self-hosted runners, so we
+          # cannot execute the x86_64 binary here (that would fail with "Exec format
+          # error"). The SHA256 checksum against the release's SHA2-256SUMS is an
+          # architecture-agnostic integrity gate that confirms the tag and asset
+          # exist and are intact — sufficient to open a VERSION-bump PR.
           echo "Downloading yt-dlp ${VERSION} for verification..."
           wget -q "https://github.com/yt-dlp/yt-dlp/releases/download/${VERSION}/yt-dlp_linux"
           wget -q "https://github.com/yt-dlp/yt-dlp/releases/download/${VERSION}/SHA2-256SUMS"
 
-          echo "Verifying SHA256 checksum..."
+          echo "Verifying SHA256 checksum of x86_64 yt-dlp_linux..."
           grep "yt-dlp_linux$" SHA2-256SUMS | sha256sum --check --status
-
-          echo "Testing binary execution..."
-          chmod +x yt-dlp_linux
-          BINARY_VERSION=$(./yt-dlp_linux --version)
-
-          if [ "${BINARY_VERSION}" != "${VERSION}" ]; then
-            echo "ERROR: Binary version mismatch (expected: ${VERSION}, got: ${BINARY_VERSION})"
-            exit 1
-          fi
 
           rm -f yt-dlp_linux SHA2-256SUMS
           echo "Binary verification complete"
@@ -156,8 +154,7 @@ jobs:
           - Binary will be downloaded by OpenTofu during deployment
 
           ## Pre-merge Verification
-          - [x] Binary downloaded and SHA256 checksum verified
-          - [x] Binary execution test passed (\`--version\`)
+          - [x] x86_64 \`yt-dlp_linux\` downloaded and SHA256 checksum verified against the release's SHA2-256SUMS
           - [ ] CI/CD tests pending
 
           ## Deployment Process

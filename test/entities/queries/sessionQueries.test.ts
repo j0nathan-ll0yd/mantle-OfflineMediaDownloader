@@ -149,9 +149,14 @@ describe('Session Queries', () => {
   })
 
   describe('deleteExpiredSessions', () => {
-    it('should complete without error', async () => {
+    it('should return the count of deleted sessions', async () => {
+      mockDb._setDeleteResult([{id: 'session-1'}, {id: 'session-2'}])
+      await expect(deleteExpiredSessions()).resolves.toBe(2)
+    })
+
+    it('should return zero when nothing expired', async () => {
       mockDb._setDeleteResult([])
-      await expect(deleteExpiredSessions()).resolves.toBeUndefined()
+      await expect(deleteExpiredSessions()).resolves.toBe(0)
     })
   })
 
@@ -252,9 +257,14 @@ describe('Session Queries', () => {
   })
 
   describe('deleteExpiredVerifications', () => {
-    it('should complete without error', async () => {
+    it('should return the count of deleted verification tokens', async () => {
+      mockDb._setDeleteResult([{id: 'verification-1'}])
+      await expect(deleteExpiredVerifications()).resolves.toBe(1)
+    })
+
+    it('should return zero when nothing expired', async () => {
       mockDb._setDeleteResult([])
-      await expect(deleteExpiredVerifications()).resolves.toBeUndefined()
+      await expect(deleteExpiredVerifications()).resolves.toBe(0)
     })
   })
 })

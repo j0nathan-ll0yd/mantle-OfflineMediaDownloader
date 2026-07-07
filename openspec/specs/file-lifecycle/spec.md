@@ -23,6 +23,11 @@ to `Downloading` when the download Lambda begins processing. On success the stat
 transitions are valid; a file SHALL NOT move from `Downloaded` or `Failed` back to an earlier status
 via the normal download path.
 
+Verified by `test/integration/workflows/startFileUpload.workflow.integration.test.ts:1` (the
+Queued→Downloading→Downloaded and Queued→Downloading→Failed sequences persist at the DSQL layer); the
+StartFileUpload/S3ObjectCreated driving of these transitions and the no-backward-transition invariant are not
+directly asserted by this test.
+
 #### Scenario: Successful download progression
 
 - **GIVEN** a file record with status `Queued`
@@ -42,6 +47,10 @@ via the normal download path.
 The system SHALL dispatch an SQS notification message to each user linked to a file when S3 emits
 an `ObjectCreated` event for that media upload. Dispatch SHALL use `Promise.allSettled` so that a
 failure for one user does not prevent notification of other users.
+
+Verified by `test/lambdas/s3/S3ObjectCreated/index.test.ts:1` (an object-created event dispatches one SQS
+message per linked user, both dispatches are attempted when one fails, a file with no linked users is a no-op,
+and a key matching no File record throws `NotFoundError`).
 
 #### Scenario: File upload notifies all linked users
 
@@ -69,6 +78,9 @@ has been successfully uploaded to S3 and the File entity has been updated in the
 SHALL be awaited before the handler returns, ensuring it is not silently dropped if Lambda
 terminates.
 
+Verified by `test/lambdas/sqs/StartFileUpload/downloadOrchestrator.test.ts:5` (the awaited DownloadCompleted
+emission is invoked after the File upsert in call order, and is not emitted when the S3 download stage fails).
+
 #### Scenario: Successful upload emits event
 
 - **GIVEN** a media file that has been successfully downloaded and uploaded to S3
@@ -82,6 +94,8 @@ Before initiating a download, `StartFileUpload` SHALL check whether the target S
 exists. If the object exists (from a prior partially-completed run), the Lambda SHALL recover the
 database state from S3 metadata and return without re-downloading, ensuring that SQS redelivery
 of the same message does not cause a duplicate download.
+
+Verified by `test/lambdas/sqs/StartFileUpload/downloadOrchestrator.test.ts:4` (an existing S3 object recovers state and returns without invoking yt-dlp) and `test/lambdas/sqs/StartFileUpload/s3Recovery.test.ts:2` (the recovery path reconstructs state and emits completion, remaining resilient when YouTube metadata is unavailable).
 
 #### Scenario: File already present in S3
 

@@ -12,8 +12,9 @@ older spec continue to parse current payloads.
 
 Source of truth for behavior: `package.json` (`generate:openapi` script),
 `.github/workflows/codegen-drift.md` (drift gate specification),
-`.github/workflows/codegen-drift.lock.yml` (drift gate workflow). The structural contract itself
-lives in `docs/api/openapi.yaml` — this spec describes behavioral invariants only.
+`.github/workflows/codegen-drift.lock.yml` (drift gate workflow). The structural contract itself is
+owned by `docs/api/openapi.yaml` — this spec describes behavioral invariants only and does NOT restate
+its field-level shapes.
 
 ## Requirements
 

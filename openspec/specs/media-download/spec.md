@@ -37,6 +37,8 @@ exists. If the object is found, the Lambda SHALL restore database state from the
 return successfully without invoking yt-dlp. This prevents duplicate downloads when SQS redelivers
 a message after a Lambda timeout that completed the upload but did not acknowledge the message.
 
+Verified by `test/lambdas/sqs/StartFileUpload/downloadOrchestrator.test.ts:1` (recovery short-circuits the pipeline before yt-dlp) and `test/lambdas/sqs/StartFileUpload/s3Recovery.test.ts:1` (checkS3FileExists presence semantics plus recoverFromS3 state reconstruction).
+
 #### Scenario: Target file already in S3
 
 - **GIVEN** an SQS message for a file whose S3 key already has an object
@@ -51,6 +53,10 @@ A successful download SHALL execute in a fixed sequence: (1) fetch video metadat
 `DownloadCompleted` EventBridge event. The `DownloadCompleted` event SHALL NOT be emitted unless
 steps 1-3 all succeeded.
 
+Verified by `test/lambdas/sqs/StartFileUpload/downloadOrchestrator.test.ts:2` (the happy path runs fetch,
+download, upsert, then the awaited DownloadCompleted emission in that invocation order, and emits no
+completion event when the fetch or download stage fails).
+
 #### Scenario: Happy-path completes all four steps
 
 - **GIVEN** a valid YouTube URL and no pre-existing S3 object
@@ -64,6 +70,8 @@ steps 1-3 all succeeded.
 The Lambda SHALL re-throw an error when `handleDownloadFailure` determines the failure is retriable
 (retry count below the maximum), causing SQS to redeliver the message. The system SHALL NOT
 silently swallow retriable errors.
+
+Verified by `test/lambdas/sqs/StartFileUpload/downloadOrchestrator.test.ts:3` (a retriable failure at the fetch or download stage re-throws so SQS redelivers) and `test/lambdas/sqs/StartFileUpload/failureHandler.test.ts:1` (a retriable classification within retry limits returns shouldRetry true).
 
 #### Scenario: Transient yt-dlp failure triggers SQS retry
 
@@ -87,6 +95,11 @@ The system SHALL differentiate three non-retrying terminal failure paths based o
 In all three paths the file status SHALL be updated to `Failed` and the Lambda SHALL return normally
 without throwing, preventing further SQS redelivery.
 
+Verified by `test/lambdas/sqs/StartFileUpload/failureHandler.test.ts:2` (a permanent classification files a
+video-download issue; a cookie-expired classification files a cookie-expiration issue instead and never a
+generic issue; a retry-exhausted transient failure files no issue; and all three set status Failed and return
+without throwing).
+
 #### Scenario: Permanently classified failure files GitHub issue
 
 - **GIVEN** a download that fails with a permanently classified error (`category === 'permanent'`)
@@ -109,6 +122,10 @@ without throwing, preventing further SQS redelivery.
 After a successful download, the system SHALL attempt to close any open GitHub issue that was filed
 for a previous cookie expiration error on the same account. This is a best-effort fire-and-forget
 call — it SHALL NOT block the Lambda response or cause a failure if the GitHub API is unavailable.
+
+Verified by `test/integrations/github/issue-service.test.ts:1` (the issue-close routine closes an open
+cookie-expiration issue and swallows GitHub API failures without throwing); the post-success invocation from
+the download orchestrator is not directly asserted.
 
 #### Scenario: Successful download closes cookie issue
 

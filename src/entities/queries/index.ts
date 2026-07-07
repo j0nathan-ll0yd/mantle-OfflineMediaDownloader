@@ -29,6 +29,7 @@ export {
   createFileDownload,
   type CreateFileDownloadInput,
   type CreateFileInput,
+  deleteExpiredFileDownloads,
   deleteFile,
   deleteFileDownload,
   type FileDownloadRow,

@@ -16,8 +16,8 @@ restate them.
 ### Requirement: children-deleted-before-parent
 
 The system SHALL delete all child records before deleting the parent record in every cascade
-operation, verified by `test/lambdas/entities/cascadeOrdering.test.ts` (endpoint cleanup ordering)
-and `test/entities/queries/cascadeOperations.test.ts` (user and file cascade ordering).
+operation, verified by `test/lambdas/entities/cascadeOrdering.test.ts:1` (endpoint cleanup ordering)
+and `test/entities/queries/cascadeOperations.test.ts:1` (user and file cascade ordering).
 
 For user deletion (`deleteUserCascade`): junction records (UserFiles, UserDevices) SHALL be deleted
 first, then auth records (Sessions, Accounts), then the User. The parent User row SHALL NOT be
@@ -49,6 +49,11 @@ first, then the SNS platform endpoint, then the Device record.
 The system SHALL verify that a file has no remaining UserFile links before removing the file and its
 download records. If other users still reference the file, only the requesting user's UserFile link
 SHALL be removed — the file records SHALL remain.
+
+Verified by `test/entities/queries/cascadeOperations.test.ts:2` (when another user still links the file only the
+requesting user's link is removed and the file is retained (`fileRemoved: false`); when no links remain the
+FileDownload records are deleted before the File record and the file is removed (`fileRemoved: true`); a
+non-existent link is a no-op).
 
 #### Scenario: File has no remaining user links
 

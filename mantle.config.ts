@@ -52,7 +52,7 @@ export default defineConfig({
       }
     ]
   },
-  observability: {adot: true, metricsNamespace: 'MediaDownloader', disableMetrics: true},
+  observability: {adot: true, metricsNamespace: 'MediaDownloader', disableMetrics: true, alerts: {email: 'webmaster@lifegames.org'}},
   secrets: {provider: 'sops', filePattern: 'secrets/secrets.{env}.enc.yaml'},
   sns: {
     topics: [
@@ -107,7 +107,11 @@ export default defineConfig({
         phase: 'validate',
         command: 'OPENSPEC_TELEMETRY=0 DO_NOT_TRACK=1 npx -y @fission-ai/openspec@1.4.1 validate --all --strict'
       },
-      {name: 'openspec-behavior-only', phase: 'validate', command: 'bash scripts/check-openspec-behavior-only.sh'}
+      {name: 'openspec-behavior-only', phase: 'validate', command: 'bash scripts/check-openspec-behavior-only.sh'},
+      // The built-in `typecheck` step only covers the root tsconfig (src/**). tsconfig.test.json
+      // is the only config that type-checks test/** (with the #test/* path mappings), so wire it
+      // into `mantle ci` (Issue #567). Kept in sync with the `typecheck` package.json script.
+      {name: 'typecheck-test', phase: 'validate', command: 'tsc --noEmit -p tsconfig.test.json'}
     ]
   }
 })

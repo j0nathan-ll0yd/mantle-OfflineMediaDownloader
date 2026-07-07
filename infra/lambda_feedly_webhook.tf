@@ -43,7 +43,7 @@ module "lambda_feedly_webhook" {
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = "sqs:SendMessage"
+        Action   = ["sqs:SendMessage"]
         Resource = module.queue_SendPushNotification.queue_arn
       }]
     })
@@ -51,7 +51,7 @@ module "lambda_feedly_webhook" {
       Version = "2012-10-17"
       Statement = [{
         Effect = "Allow"
-        Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Query", "dynamodb:Scan"]
+        Action = ["dynamodb:DeleteItem", "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
         Resource = [
           "${module.dynamodb_idempotency.table_arn}",
           "${module.dynamodb_idempotency.table_arn}/*"

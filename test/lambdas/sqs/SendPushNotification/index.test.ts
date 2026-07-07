@@ -1,3 +1,6 @@
+// covers: push-notification#per-device-fanout-with-isolation
+// covers: push-notification#all-devices-failed-triggers-sqs-retry
+// covers: push-notification#message-attributes-validated-before-delivery
 /**
  * Unit tests for SendPushNotification Lambda (SQS handler)
  *

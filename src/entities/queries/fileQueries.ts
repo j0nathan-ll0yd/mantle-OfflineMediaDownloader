@@ -6,7 +6,7 @@
  * @see src/lib/vendor/Drizzle/instrumentation.ts for query metrics
  */
 import {DatabaseOperation} from '@mantleframework/database'
-import {eq, inArray} from '@mantleframework/database/orm'
+import {and, eq, inArray, lt} from '@mantleframework/database/orm'
 import type {InferInsertModel, InferSelectModel} from '@mantleframework/database/orm'
 import {defineQuery} from '#db/defineQuery'
 import {fileDownloads, files} from '#db/schema'
@@ -214,4 +214,19 @@ export const updateFileDownload = defineQuery({tables: [{table: fileDownloads, o
 export const deleteFileDownload = defineQuery({tables: [{table: fileDownloads, operations: [DatabaseOperation.Select, DatabaseOperation.Delete]}]},
   async function deleteFileDownload(db, fileId: string): Promise<void> {
     await db.delete(fileDownloads).where(eq(fileDownloads.fileId, fileId))
+  })
+
+/**
+ * Deletes file download records in a terminal state that are older than the cutoff.
+ * Used by the scheduled cleanup Lambda to reclaim rows that finished before the retention window.
+ * @param cutoffTime - Records updated before this time are eligible for deletion
+ * @param statuses - Terminal statuses that make a record eligible (e.g. Completed, Failed)
+ * @returns Count of deleted records
+ */
+export const deleteExpiredFileDownloads = defineQuery({tables: [{table: fileDownloads, operations: [DatabaseOperation.Select, DatabaseOperation.Delete]}]},
+  async function deleteExpiredFileDownloads(db, cutoffTime: Date, statuses: string[]): Promise<number> {
+    const result = await db.delete(fileDownloads).where(and(inArray(fileDownloads.status, statuses), lt(fileDownloads.updatedAt, cutoffTime))).returning({
+      fileId: fileDownloads.fileId
+    })
+    return result.length
   })

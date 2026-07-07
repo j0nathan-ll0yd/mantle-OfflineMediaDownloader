@@ -1,3 +1,4 @@
+// covers: file-lifecycle#s3-event-triggers-per-user-notification
 /**
  * Unit tests for S3ObjectCreated Lambda (S3 handler)
  *

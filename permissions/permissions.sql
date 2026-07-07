@@ -29,6 +29,9 @@ GRANT SELECT, UPDATE ON sessions TO lambda_api_gateway_authorizer;
 
 -- CleanupExpiredRecords
 GRANT DELETE, SELECT ON device_events TO lambda_cleanup_expired_records;
+GRANT DELETE, SELECT ON file_downloads TO lambda_cleanup_expired_records;
+GRANT DELETE, SELECT ON sessions TO lambda_cleanup_expired_records;
+GRANT DELETE, SELECT ON verification TO lambda_cleanup_expired_records;
 
 -- DeviceEvent
 GRANT INSERT, SELECT ON device_events TO lambda_device_event;

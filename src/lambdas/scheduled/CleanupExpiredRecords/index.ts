@@ -9,62 +9,19 @@
  * Output: CleanupResult with deletion counts
  */
 import {defineScheduledHandler} from '@mantleframework/core'
-import {and, eq, lt, or} from '@mantleframework/database/orm'
 import {addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
-import {getDrizzleClient} from '#db/client'
-import {deleteExpiredDeviceEvents} from '#entities/queries'
-import {fileDownloads, sessions, verification} from '#db/schema'
+import {deleteExpiredDeviceEvents, deleteExpiredFileDownloads, deleteExpiredSessions, deleteExpiredVerifications} from '#entities/queries'
 import {DownloadStatus} from '#types/enums'
 import type {CleanupResult} from '#types/lambda'
 import {secondsAgo, TIME} from '#utils/time'
 
 export type { CleanupResult }
 
-/**
- * Deletes completed or failed FileDownloads older than 24 hours.
- * @returns Count of deleted records
- */
-async function cleanupFileDownloads(): Promise<number> {
-  const db = await getDrizzleClient()
-  const cutoffTime = secondsAgo(TIME.DAY_SEC)
+/** Terminal download statuses eligible for cleanup once past the retention window. */
+const TERMINAL_DOWNLOAD_STATUSES: string[] = [DownloadStatus.Completed, DownloadStatus.Failed]
 
-  // mantle-ignore: grandfathered(C10, #88, expires:2026-07-20)
-  const result = await db.delete(fileDownloads).where(
-    and(or(eq(fileDownloads.status, DownloadStatus.Completed), eq(fileDownloads.status, DownloadStatus.Failed)), lt(fileDownloads.updatedAt, cutoffTime))
-  ).returning({fileId: fileDownloads.fileId})
-
-  return result.length
-}
-
-/**
- * Deletes expired sessions.
- * Sessions now use TIMESTAMP WITH TIME ZONE for expiresAt.
- * @returns Count of deleted records
- */
-async function cleanupSessions(): Promise<number> {
-  const db = await getDrizzleClient()
-  const now = new Date()
-
-  // mantle-ignore: grandfathered(C10, #88, expires:2026-07-20)
-  const result = await db.delete(sessions).where(lt(sessions.expiresAt, now)).returning({id: sessions.id})
-
-  return result.length
-}
-
-/**
- * Deletes expired verification tokens.
- * Verification table uses TIMESTAMP WITH TIME ZONE for expiresAt.
- * @returns Count of deleted records
- */
-async function cleanupVerificationTokens(): Promise<number> {
-  const db = await getDrizzleClient()
-  const now = new Date()
-
-  // mantle-ignore: grandfathered(C10, #88, expires:2026-07-20)
-  const result = await db.delete(verification).where(lt(verification.expiresAt, now)).returning({id: verification.id})
-
-  return result.length
-}
+/** Retention window for device events before they are purged. */
+const DEVICE_EVENT_RETENTION_DAYS = 90
 
 const scheduled = defineScheduledHandler({operationName: 'CleanupExpiredRecords', schedule: {expression: 'cron(0 3 * * ? *)'}, timeout: 60})
 
@@ -76,7 +33,7 @@ export const handler = scheduled(async (): Promise<CleanupResult> => {
   logInfo('CleanupExpiredRecords starting')
 
   try {
-    result.fileDownloadsDeleted = await cleanupFileDownloads()
+    result.fileDownloadsDeleted = await deleteExpiredFileDownloads(secondsAgo(TIME.DAY_SEC), TERMINAL_DOWNLOAD_STATUSES)
     logDebug('Cleaned up file downloads', {count: result.fileDownloadsDeleted})
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -85,7 +42,7 @@ export const handler = scheduled(async (): Promise<CleanupResult> => {
   }
 
   try {
-    result.sessionsDeleted = await cleanupSessions()
+    result.sessionsDeleted = await deleteExpiredSessions()
     logDebug('Cleaned up sessions', {count: result.sessionsDeleted})
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -94,7 +51,7 @@ export const handler = scheduled(async (): Promise<CleanupResult> => {
   }
 
   try {
-    result.verificationTokensDeleted = await cleanupVerificationTokens()
+    result.verificationTokensDeleted = await deleteExpiredVerifications()
     logDebug('Cleaned up verification tokens', {count: result.verificationTokensDeleted})
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -103,7 +60,7 @@ export const handler = scheduled(async (): Promise<CleanupResult> => {
   }
 
   try {
-    const cutoffTime = secondsAgo(90 * TIME.DAY_SEC)
+    const cutoffTime = secondsAgo(DEVICE_EVENT_RETENTION_DAYS * TIME.DAY_SEC)
     result.deviceEventsDeleted = await deleteExpiredDeviceEvents(cutoffTime)
     logDebug('Cleaned up device events', {count: result.deviceEventsDeleted})
   } catch (error) {

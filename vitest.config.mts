@@ -27,7 +27,12 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.test.ts', 'src/**/test/**', '**/*.json'],
       provider: 'v8',
-      reportsDirectory: './coverage/unit'
+      reportsDirectory: './coverage/unit',
+      // Ratchet thresholds: set to current actuals minus ~2 points, capped at the
+      // fleet standard (branches/functions 80, lines/statements 70). Passes today and
+      // blocks regressions. Raise as coverage improves. Actuals 2026-07-07:
+      // statements 73.15%, branches 63.34%, functions 73.57%, lines 73.36%.
+      thresholds: {branches: 61, functions: 71, lines: 70, statements: 70}
     },
     resolve: {
       alias: {

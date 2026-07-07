@@ -1,3 +1,4 @@
+// covers: media-download#cookie-expiration-issue-closed-on-success
 import {beforeEach, describe, expect, test, vi} from 'vitest'
 import type {Device} from '#types/domainModels'
 
