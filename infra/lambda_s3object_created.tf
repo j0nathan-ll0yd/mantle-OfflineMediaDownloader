@@ -37,7 +37,7 @@ module "lambda_s3object_created" {
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = "sqs:SendMessage"
+        Action   = ["sqs:SendMessage"]
         Resource = module.queue_SendPushNotification.queue_arn
       }]
     })

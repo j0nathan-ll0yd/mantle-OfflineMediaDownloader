@@ -42,10 +42,6 @@ locals {
       role_name      = "lambda_files_get"
       requires_admin = false
     }
-    "MigrateDSQL" = {
-      role_name      = "lambda_migrate_d_s_q_l"
-      requires_admin = false
-    }
     "PruneDevices" = {
       role_name      = "lambda_prune_devices"
       requires_admin = false
