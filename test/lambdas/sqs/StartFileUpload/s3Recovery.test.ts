@@ -58,7 +58,13 @@ import {updateDownloadState} from '#services/download/stateManager'
 import {fetchVideoInfoTraced} from '#services/download/youtubeTracing'
 import {upsertFile} from '#lambdas/sqs/StartFileUpload/fileHelpers'
 
-const makeMessage = (): ValidatedDownloadQueueMessage => ({fileId: 'dQw4w9WgXcQ', correlationId: 'corr-1', sourceUrl: 'https://youtube.com/watch?v=dQw4w9WgXcQ', userId: 'user-1', attempt: 1})
+const makeMessage = (): ValidatedDownloadQueueMessage => ({
+  fileId: 'dQw4w9WgXcQ',
+  correlationId: 'corr-1',
+  sourceUrl: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+  userId: 'user-1',
+  attempt: 1
+})
 
 const bucket = S3BucketName('test-bucket')
 
@@ -125,7 +131,9 @@ describe('recoverFromS3', () => {
     await recoverFromS3(makeMessage(), 61548900)
 
     expect(dispatchMetadataNotifications).toHaveBeenCalled()
-    expect(upsertFile).toHaveBeenCalledWith(expect.objectContaining({fileId: 'dQw4w9WgXcQ', size: 61548900, title: 'Never Gonna Give You Up', authorName: 'Rick Astley'}))
+    expect(upsertFile).toHaveBeenCalledWith(
+      expect.objectContaining({fileId: 'dQw4w9WgXcQ', size: 61548900, title: 'Never Gonna Give You Up', authorName: 'Rick Astley'})
+    )
     expect(updateDownloadState).toHaveBeenCalledWith('dQw4w9WgXcQ', DownloadStatus.Completed)
     expect(emitEvent).toHaveBeenCalledWith({
       detailType: 'DownloadCompleted',

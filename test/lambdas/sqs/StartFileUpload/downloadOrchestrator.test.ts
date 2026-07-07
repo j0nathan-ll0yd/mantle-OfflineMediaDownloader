@@ -83,7 +83,13 @@ import {checkS3FileExists, recoverFromS3} from '#lambdas/sqs/StartFileUpload/s3R
 import {handleDownloadFailure} from '#lambdas/sqs/StartFileUpload/failureHandler'
 import {upsertFile} from '#lambdas/sqs/StartFileUpload/fileHelpers'
 
-const makeMessage = (): ValidatedDownloadQueueMessage => ({fileId: 'dQw4w9WgXcQ', correlationId: 'corr-1', sourceUrl: 'https://youtube.com/watch?v=dQw4w9WgXcQ', userId: 'user-1', attempt: 1})
+const makeMessage = (): ValidatedDownloadQueueMessage => ({
+  fileId: 'dQw4w9WgXcQ',
+  correlationId: 'corr-1',
+  sourceUrl: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+  userId: 'user-1',
+  attempt: 1
+})
 
 const makeVideoInfo = (): YtDlpVideoInfo => ({
   id: 'dQw4w9WgXcQ',
@@ -226,7 +232,16 @@ describe('processDownloadRequest', () => {
     })
 
     it('passes the existing retry state from FileDownload into the failure handler', async () => {
-      vi.mocked(getFileDownload).mockResolvedValue(createMockFileDownload({fileId: 'dQw4w9WgXcQ', status: DownloadStatus.Scheduled, retryCount: 2, maxRetries: 4, lastError: 'prev', errorCategory: 'transient'}))
+      vi.mocked(getFileDownload).mockResolvedValue(
+        createMockFileDownload({
+          fileId: 'dQw4w9WgXcQ',
+          status: DownloadStatus.Scheduled,
+          retryCount: 2,
+          maxRetries: 4,
+          lastError: 'prev',
+          errorCategory: 'transient'
+        })
+      )
       const error = new Error('http error 503')
       vi.mocked(fetchVideoInfoTraced).mockResolvedValue(failedVideoInfo(error))
       vi.mocked(handleDownloadFailure).mockResolvedValue({shouldRetry: false, classification: retriable})

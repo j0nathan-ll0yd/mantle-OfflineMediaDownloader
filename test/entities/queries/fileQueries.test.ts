@@ -12,7 +12,8 @@ import {createMockFile, createMockFileDownload} from '#test/helpers/entity-fixtu
 const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
-vi.mock('#db/schema', () => ({files: {fileId: 'fileId', key: 'key', status: 'status'}, fileDownloads: {fileId: 'fileId', status: 'status', updatedAt: 'updatedAt'}}))
+vi.mock('#db/schema',
+  () => ({files: {fileId: 'fileId', key: 'key', status: 'status'}, fileDownloads: {fileId: 'fileId', status: 'status', updatedAt: 'updatedAt'}}))
 vi.mock('#db/zodSchemas',
   () => ({
     fileInsertSchema: {parse: vi.fn((v: unknown) => v)},

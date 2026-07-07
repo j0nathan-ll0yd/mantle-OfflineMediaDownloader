@@ -225,8 +225,8 @@ export const deleteFileDownload = defineQuery({tables: [{table: fileDownloads, o
  */
 export const deleteExpiredFileDownloads = defineQuery({tables: [{table: fileDownloads, operations: [DatabaseOperation.Select, DatabaseOperation.Delete]}]},
   async function deleteExpiredFileDownloads(db, cutoffTime: Date, statuses: string[]): Promise<number> {
-    const result = await db.delete(fileDownloads)
-      .where(and(inArray(fileDownloads.status, statuses), lt(fileDownloads.updatedAt, cutoffTime)))
-      .returning({fileId: fileDownloads.fileId})
+    const result = await db.delete(fileDownloads).where(and(inArray(fileDownloads.status, statuses), lt(fileDownloads.updatedAt, cutoffTime))).returning({
+      fileId: fileDownloads.fileId
+    })
     return result.length
   })

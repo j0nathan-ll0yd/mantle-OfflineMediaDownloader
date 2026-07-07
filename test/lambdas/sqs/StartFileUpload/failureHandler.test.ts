@@ -30,12 +30,11 @@ vi.mock('@mantleframework/observability',
 
 vi.mock('#entities/queries', () => ({getFile: vi.fn(), updateFile: vi.fn()}))
 
-vi.mock('#domain/video/errorClassifier',
-  () => ({
-    classifyVideoError: vi.fn(),
-    // Preserve the real exhaustion comparison so retry-count boundaries are genuinely exercised.
-    isRetryExhausted: vi.fn((retryCount: number, maxRetries: number) => retryCount >= maxRetries)
-  }))
+vi.mock('#domain/video/errorClassifier', () => ({
+  classifyVideoError: vi.fn(),
+  // Preserve the real exhaustion comparison so retry-count boundaries are genuinely exercised.
+  isRetryExhausted: vi.fn((retryCount: number, maxRetries: number) => retryCount >= maxRetries)
+}))
 
 vi.mock('#integrations/github/issueService',
   () => ({
@@ -124,7 +123,9 @@ describe('handleDownloadFailure', () => {
   })
 
   it('files a cookie-expiration issue (not a generic issue) for the cookie_expired category', async () => {
-    vi.mocked(classifyVideoError).mockReturnValue(makeClassification({category: 'cookie_expired', retryable: false, maxRetries: 0, reason: 'cookie expired'}))
+    vi.mocked(classifyVideoError).mockReturnValue(
+      makeClassification({category: 'cookie_expired', retryable: false, maxRetries: 0, reason: 'cookie expired'})
+    )
     const error = new Error("sign in to confirm you're not a bot")
 
     const result = await handleDownloadFailure('file-1', 'https://yt/v', error, 'corr-1', errResult(), 0, 5)
