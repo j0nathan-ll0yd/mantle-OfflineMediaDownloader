@@ -110,6 +110,10 @@ After a successful download, the system SHALL attempt to close any open GitHub i
 for a previous cookie expiration error on the same account. This is a best-effort fire-and-forget
 call — it SHALL NOT block the Lambda response or cause a failure if the GitHub API is unavailable.
 
+Verified by `test/integrations/github/issue-service.test.ts:1` (the issue-close routine closes an open
+cookie-expiration issue and swallows GitHub API failures without throwing); the post-success invocation from
+the download orchestrator is not directly asserted.
+
 #### Scenario: Successful download closes cookie issue
 
 - **GIVEN** a download that completes successfully
