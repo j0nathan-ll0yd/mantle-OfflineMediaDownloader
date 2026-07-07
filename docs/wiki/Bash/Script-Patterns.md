@@ -1,6 +1,7 @@
 # Bash Script Patterns
 
 ## Quick Reference
+
 - **When to use**: All bash scripts
 - **Enforcement**: Required
 - **Impact if violated**: MEDIUM - Inconsistent scripts
@@ -83,12 +84,14 @@ deploy_lambda() {
 ## Common Patterns
 
 ### Check Dependencies
+
 ```bash
 command -v aws >/dev/null || error "AWS CLI not installed"
 command -v npm >/dev/null || error "npm not installed"
 ```
 
 ### Parse Arguments
+
 ```bash
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -112,10 +115,12 @@ done
 ## When to Use Bash vs TypeScript
 
 The project uses two directories for scripts:
+
 - **`bin/`** - Bash scripts for CLI orchestration
 - **`scripts/`** - TypeScript files for complex transformations
 
-### Use Bash (bin/) when:
+### Use Bash (bin/) when
+
 - Script primarily orchestrates external CLI commands (aws, tofu, curl, pnpm)
 - Script uses shell text processing tools (grep, sed, awk, jq)
 - Script manages CI/CD workflows with multiple steps
@@ -123,7 +128,8 @@ The project uses two directories for scripts:
 - No complex business logic or data transformations needed
 - Exit codes are sufficient for error handling
 
-### Use TypeScript (scripts/) when:
+### Use TypeScript (scripts/) when
+
 - Script involves AST parsing (ts-morph)
 - Script generates complex output files (HTML, JSON schemas)
 - Script requires type safety for correctness
@@ -134,25 +140,27 @@ The project uses two directories for scripts:
 
 ### Decision Criteria Table
 
-| Factor | Favor Bash | Favor TypeScript |
-|--------|------------|------------------|
-| Primary purpose | Orchestrating CLI commands | Complex data transformations |
-| Dependencies | External tools (curl, aws, tofu) | npm libraries (ts-morph, lancedb) |
-| Type safety | Not needed | Required for correctness |
-| Testing | Shell assertions sufficient | Unit tests with mocking needed |
-| Error handling | Exit codes sufficient | Custom error classes needed |
-| Data structures | Simple strings/arrays | Complex objects/interfaces |
-| AST manipulation | Never | Always |
-| File generation | Simple templates | Complex structured output |
+| Factor           | Favor Bash                       | Favor TypeScript                  |
+| ---------------- | -------------------------------- | --------------------------------- |
+| Primary purpose  | Orchestrating CLI commands       | Complex data transformations      |
+| Dependencies     | External tools (curl, aws, tofu) | npm libraries (ts-morph, lancedb) |
+| Type safety      | Not needed                       | Required for correctness          |
+| Testing          | Shell assertions sufficient      | Unit tests with mocking needed    |
+| Error handling   | Exit codes sufficient            | Custom error classes needed       |
+| Data structures  | Simple strings/arrays            | Complex objects/interfaces        |
+| AST manipulation | Never                            | Always                            |
+| File generation  | Simple templates                 | Complex structured output         |
 
 ### Examples
 
 **Bash is appropriate for:**
+
 - `ci-local.sh` - Orchestrates 15+ pnpm commands
 - `aws-audit.sh` - Runs aws CLI and tofu commands
 - `update-yt-dlp.sh` - curl + version comparison
 
 **TypeScript is appropriate for:**
+
 - `generateDependencyGraph.ts` - ts-morph AST analysis
 - `validateConventions.ts` - MCP validation rules
 - `processFixtures.ts` - Complex data transformation with types
@@ -165,40 +173,40 @@ The project has 20+ scripts in `bin/` covering CI, testing, documentation, and m
 
 ### CI & Validation Scripts
 
-| Script | Purpose | Key Features |
-|--------|---------|--------------|
-| `ci-local.sh` | Fast local CI runner | 15 steps, skips integration tests |
-| `ci-local-full.sh` | Complete local CI | Includes LocalStack integration |
-| `cleanup.sh` | Comprehensive cleanup | `--fast`, `--check` modes |
-| `pre-deploy-check.sh` | Pre-deployment validation | Terraform, types, tests |
-| `validate-docs.sh` | Documentation validation | Script existence checks |
-| `validate-doc-sync.sh` | Doc-code sync | Convention compliance |
-| `validate-graphrag.sh` | GraphRAG validation | Knowledge graph integrity |
-| `verify-state.sh` | State verification | Check all systems |
+| Script                 | Purpose                   | Key Features                      |
+| ---------------------- | ------------------------- | --------------------------------- |
+| `ci-local.sh`          | Fast local CI runner      | 15 steps, skips integration tests |
+| `ci-local-full.sh`     | Complete local CI         | Includes LocalStack integration   |
+| `cleanup.sh`           | Comprehensive cleanup     | `--fast`, `--check` modes         |
+| `pre-deploy-check.sh`  | Pre-deployment validation | Terraform, types, tests           |
+| `validate-docs.sh`     | Documentation validation  | Script existence checks           |
+| `validate-doc-sync.sh` | Doc-code sync             | Convention compliance             |
+| `validate-graphrag.sh` | GraphRAG validation       | Knowledge graph integrity         |
+| `verify-state.sh`      | State verification        | Check all systems                 |
 
 ### Test Scripts
 
-| Script | Purpose | Key Features |
-|--------|---------|--------------|
-| `test-integration.sh` | Integration tests | LocalStack, DynamoDB, S3 |
-| `test-hook.sh` | Webhook testing | Remote Feedly endpoint |
-| `test-list.sh` | File listing test | Remote API testing |
-| `test-registerDevice.sh` | Device registration | APNS token testing |
+| Script                   | Purpose             | Key Features             |
+| ------------------------ | ------------------- | ------------------------ |
+| `test-integration.sh`    | Integration tests   | LocalStack, DynamoDB, S3 |
+| `test-hook.sh`           | Webhook testing     | Remote Feedly endpoint   |
+| `test-list.sh`           | File listing test   | Remote API testing       |
+| `test-registerDevice.sh` | Device registration | APNS token testing       |
 
 ### Documentation Scripts
 
-| Script | Purpose | Key Features |
-|--------|---------|--------------|
-| `document-api.sh` | API documentation | TypeSpec to OpenAPI |
-| `document-source.sh` | Source documentation | TypeDoc generation |
+| Script               | Purpose              | Key Features        |
+| -------------------- | -------------------- | ------------------- |
+| `document-api.sh`    | API documentation    | TypeSpec to OpenAPI |
+| `document-source.sh` | Source documentation | TypeDoc generation  |
 
 ### Maintenance Scripts
 
-| Script | Purpose | Key Features |
-|--------|---------|--------------|
-| `update-yt-dlp.sh` | yt-dlp updates | Lambda layer management |
-| `update-ffmpeg.sh` | ffmpeg updates | Lambda layer management |
-| `update-agents-prs.sh` | AI agent context | PR history for AGENTS.md |
+| Script                 | Purpose          | Key Features                                             |
+| ---------------------- | ---------------- | -------------------------------------------------------- |
+| `update-yt-dlp.sh`     | yt-dlp updates   | Container image VERSION pin (docker/Dockerfile.download) |
+| `update-ffmpeg.sh`     | ffmpeg updates   | Container image VERSION pin (docker/Dockerfile.download) |
+| `update-agents-prs.sh` | AI agent context | PR history for AGENTS.md                                 |
 
 ---
 
@@ -348,4 +356,4 @@ echo "All checks passed in ${MINUTES}m ${SECONDS}s"
 
 ---
 
-*Consistent bash scripts with proper error handling and clear output.*
+_Consistent bash scripts with proper error handling and clear output._

@@ -2,7 +2,7 @@
 
 ## Convention Enforcement
 
-Conventions are enforced by `mantle check` (95 checks, C1-C95) and documented in `~/.claude/principles/mantle.md`. Architecture decisions are recorded as ADRs in `docs/wiki/Decisions/`.
+Conventions are enforced by `mantle check` (C1-C143) and documented in `~/.claude/principles/mantle.md`. Architecture decisions are recorded as ADRs in `docs/wiki/Decisions/`.
 
 ---
 
@@ -11,6 +11,7 @@ Conventions are enforced by `mantle check` (95 checks, C1-C95) and documented in
 AWS Serverless media downloader service built with OpenTofu and TypeScript. Downloads media content (primarily YouTube videos) and integrates with a companion iOS app for offline playback. Created as a cost-effective alternative to YouTube Premium's offline playback feature.
 
 ### Architecture
+
 - **Infrastructure**: OpenTofu (IaC)
 - **Runtime**: AWS Lambda (Node.js 24.x)
 - **Language**: TypeScript
@@ -21,6 +22,7 @@ AWS Serverless media downloader service built with OpenTofu and TypeScript. Down
 - **Monitoring**: CloudWatch, X-Ray (optional)
 
 ### Project Structure
+
 ```
 .
 ├── config/                # Tool configuration (ESLint rules, dependency-cruiser, repomix, etc.)
@@ -69,18 +71,19 @@ AWS Serverless media downloader service built with OpenTofu and TypeScript. Down
 ## System Architecture
 
 See [System Diagrams](docs/wiki/Architecture/System-Diagrams.md) for visual representations:
+
 - **Lambda Data Flow**: API Gateway → Lambdas → Aurora DSQL/S3
 - **Entity Relationships**: Users ↔ Files/Devices (many-to-many), Sessions/Accounts (one-to-many)
 - **Service Interaction Map**: External services, AWS layer
 
 ### Key Architecture Points
 
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| Database | Aurora DSQL + Drizzle | Serverless PostgreSQL, type-safe queries |
-| Auth | Better Auth | Sessions, OAuth accounts, tokens |
-| Storage | S3 | Media files with transfer acceleration |
-| Events | EventBridge + SQS | Async processing, notifications |
+| Component | Technology            | Purpose                                  |
+| --------- | --------------------- | ---------------------------------------- |
+| Database  | Aurora DSQL + Drizzle | Serverless PostgreSQL, type-safe queries |
+| Auth      | Better Auth           | Sessions, OAuth accounts, tokens         |
+| Storage   | S3                    | Media files with transfer acceleration   |
+| Events    | EventBridge + SQS     | Async processing, notifications          |
 
 ### Dependency Analysis with graph.json
 
@@ -104,20 +107,22 @@ cat build/graph.json | jq '.files | to_entries | map({file: .key, importCount: (
 
 The GraphRAG system (`graphrag/`) is **active** and integrated into CI. It uses shared data sources for accuracy:
 
-| Data Source | Purpose | Auto-Updated |
-|-------------|---------|--------------|
-| `src/lambdas/` | Lambda discovery | ✓ Filesystem scan |
-| `src/entities/` | Entity discovery | ✓ Filesystem scan |
-| `build/graph.json` | Dependencies | ✓ Generated before build |
-| `graphrag/metadata.json` | Semantic info | ✗ Manual updates required |
+| Data Source              | Purpose          | Auto-Updated              |
+| ------------------------ | ---------------- | ------------------------- |
+| `src/lambdas/`           | Lambda discovery | ✓ Filesystem scan         |
+| `src/entities/`          | Entity discovery | ✓ Filesystem scan         |
+| `build/graph.json`       | Dependencies     | ✓ Generated before build  |
+| `graphrag/metadata.json` | Semantic info    | ✗ Manual updates required |
 
 **When adding/removing Lambdas or Entities:**
+
 1. The MCP handlers and GraphRAG auto-discover from filesystem
 2. Update `graphrag/metadata.json` with trigger types and purposes
 3. Run `pnpm run graphrag:extract` to regenerate the knowledge graph
 4. CI will fail if `knowledge-graph.json` is out of date
 
 **When changing Lambda invocation chains:**
+
 1. Update `graphrag/metadata.json` `lambdaInvocations` array
 2. Run `pnpm run graphrag:extract`
 
@@ -146,12 +151,14 @@ See [System Diagrams](docs/wiki/Architecture/System-Diagrams.md) for Lambda Trig
 **CRITICAL**: This project uses Drizzle ORM with Aurora DSQL for type-safe, serverless database operations.
 
 ### Key Drizzle Features
+
 - **Serverless Aurora DSQL**: PostgreSQL-compatible with automatic scaling, no VPC required
 - **IAM Authentication**: Secure connection using AWS IAM tokens (auto-refreshed)
 - **Type-safe queries**: Full TypeScript type inference for all operations
 - **Relational support**: Standard SQL JOINs, foreign keys (application-enforced)
 
 ### Entity Relationships
+
 - **Users** ↔ **Files**: Many-to-many via UserFiles entity
 - **Users** ↔ **Devices**: Many-to-many via UserDevices entity
 - **Users** ↔ **Sessions**: One-to-many (Better Auth sessions)
@@ -159,11 +166,13 @@ See [System Diagrams](docs/wiki/Architecture/System-Diagrams.md) for Lambda Trig
 - **Files** ↔ **FileDownloads**: One-to-many (download tracking)
 
 ### Testing with Drizzle
+
 - **ALWAYS** mock `#entities/queries` with `vi.mock()` and `vi.fn()` for each query function
 - **PREFER** `test/helpers/entity-fixtures.ts` for creating mock entity data
 - See [Mock Factory Patterns](docs/wiki/Testing/Mock-Factory-Patterns.md) for patterns
 
 ### Testing with AWS SDK
+
 - **PREFER** `test/helpers/aws-sdk-mock.ts` for AWS SDK v3 mocking (uses aws-sdk-client-mock)
 - Mock helpers integrate with vendor wrappers via test client injection
 - See [Mock Factory Patterns](docs/wiki/Testing/Mock-Factory-Patterns.md) for patterns
@@ -179,45 +188,45 @@ Convention enforcement is handled by `mantle check` (95 checks) and `~/.claude/p
 
 ## Anti-Patterns (Quick Reference)
 
-| Anti-Pattern | Severity | Example | Enforcement |
-|--------------|----------|---------|-------------|
-| Direct AWS SDK Imports | CRITICAL | `import {S3} from '@aws-sdk/client-s3'` | `mantle check` rule: no-raw-aws-sdk |
-| Legacy Entity Mocks | CRITICAL | `vi.mock('#entities/Users')` | `mantle check` rule: entity-mocking |
-| Promise.all for Cascades | CRITICAL | `Promise.all([deleteUser(), deleteFiles()])` | `mantle check` rule: cascade-safety |
-| AI Attribution in Commits | CRITICAL | `Co-Authored-By: Claude` | C17: Conventional Commits |
-| Module-Level getRequiredEnv | HIGH | `const X = getRequiredEnv('X')` at top level | `mantle check` rule: no-raw-process-env |
-| Raw Response Objects | HIGH | `return {statusCode: 200, body: ...}` | `mantle check` rule: response-validation |
-| Underscore-Prefixed Vars | HIGH | `handler(event, _context)` | `mantle check` rule: naming-conventions |
+| Anti-Pattern                | Severity | Example                                      | Enforcement                              |
+| --------------------------- | -------- | -------------------------------------------- | ---------------------------------------- |
+| Direct AWS SDK Imports      | CRITICAL | `import {S3} from '@aws-sdk/client-s3'`      | `mantle check` rule: no-raw-aws-sdk      |
+| Legacy Entity Mocks         | CRITICAL | `vi.mock('#entities/Users')`                 | `mantle check` rule: entity-mocking      |
+| Promise.all for Cascades    | CRITICAL | `Promise.all([deleteUser(), deleteFiles()])` | `mantle check` rule: cascade-safety      |
+| AI Attribution in Commits   | CRITICAL | `Co-Authored-By: Claude`                     | C17: Conventional Commits                |
+| Module-Level getRequiredEnv | HIGH     | `const X = getRequiredEnv('X')` at top level | `mantle check` rule: no-raw-process-env  |
+| Raw Response Objects        | HIGH     | `return {statusCode: 200, body: ...}`        | `mantle check` rule: response-validation |
+| Underscore-Prefixed Vars    | HIGH     | `handler(event, _context)`                   | `mantle check` rule: naming-conventions  |
 
 **Quick fixes**: Use `#lib/vendor/AWS/*` for AWS SDK, `#entities/queries` for entity mocks, `buildValidatedResponse()` for Lambda returns.
 
 ## Type Naming Patterns
 
-| Pattern | Usage | Examples |
-|---------|-------|----------|
-| Simple nouns | Domain entities | `User`, `File`, `Device`, `Session` |
-| `*Row` | Drizzle database rows | `UserRow`, `FileRow`, `DeviceRow` |
-| `*Item` | Entity row types with joins | `UserItem`, `FileItem`, `DeviceItem` |
-| `*Input` | Request payloads & mutations | `UserLoginInput`, `CreateFileInput` |
-| `*Response` | API response wrappers | `FileResponse`, `LoginResponse` |
-| `*Error` | Error classes | `AuthorizationError`, `ValidationError` |
+| Pattern      | Usage                        | Examples                                |
+| ------------ | ---------------------------- | --------------------------------------- |
+| Simple nouns | Domain entities              | `User`, `File`, `Device`, `Session`     |
+| `*Row`       | Drizzle database rows        | `UserRow`, `FileRow`, `DeviceRow`       |
+| `*Item`      | Entity row types with joins  | `UserItem`, `FileItem`, `DeviceItem`    |
+| `*Input`     | Request payloads & mutations | `UserLoginInput`, `CreateFileInput`     |
+| `*Response`  | API response wrappers        | `FileResponse`, `LoginResponse`         |
+| `*Error`     | Error classes                | `AuthorizationError`, `ValidationError` |
 
 ### File Organization (`src/types/`)
 
-| File | Contents |
-|------|----------|
-| `domainModels.d.ts` | User, File, Device |
-| `schemas.ts` | Zod schemas and inferred *Input types |
-| `notificationTypes.d.ts` | Push notification payloads |
-| `persistenceTypes.d.ts` | Relationship types (UserDevice, UserFile) |
-| `infrastructureTypes.d.ts` | AWS/API Gateway types |
-| `enums.ts` | FileStatus, UserStatus, ResponseStatus |
+| File                       | Contents                                  |
+| -------------------------- | ----------------------------------------- |
+| `domainModels.d.ts`        | User, File, Device                        |
+| `schemas.ts`               | Zod schemas and inferred \*Input types    |
+| `notificationTypes.d.ts`   | Push notification payloads                |
+| `persistenceTypes.d.ts`    | Relationship types (UserDevice, UserFile) |
+| `infrastructureTypes.d.ts` | AWS/API Gateway types                     |
+| `enums.ts`                 | FileStatus, UserStatus, ResponseStatus    |
 
 ### Enum Values (PascalCase)
 
 ```typescript
 // FileStatus values (aligned with iOS)
-Queued | Downloading | Downloaded | Failed
+Queued | Downloading | Downloaded | Failed;
 ```
 
 ## MCP Tools (Developer Debugging)
@@ -231,6 +240,7 @@ This instance can register framework MCP tools at `src/lambdas/mcp/DevTools/`. A
 ## Development Workflow
 
 ### Essential Commands
+
 ```bash
 pnpm run precheck              # Type check + lint (run before commits)
 pnpm run test                  # Unit tests
@@ -239,6 +249,7 @@ npx mantle ci                  # Full local CI
 ```
 
 ### OpenAPI & Type Generation
+
 ```bash
 pnpm run generate:openapi            # mantle generate openapi → docs/api/openapi.yaml + docs/api/index.html
 ```
@@ -249,6 +260,7 @@ pnpm run generate:openapi            # mantle generate openapi → docs/api/open
 - After changing Zod schemas in `src/types/api-schema/`, run `pnpm run generate:openapi` then sync to iOS
 
 ### Deployment Commands
+
 ```bash
 pnpm run deploy:staging        # Deploy to staging (local agents)
 pnpm run deploy:production     # Deploy to production (manual, or auto via GitHub Actions)
@@ -264,6 +276,7 @@ mantle db clone --stage staging   # clones remote Aurora DSQL to local Docker Po
 ```
 
 ### Infrastructure Verification
+
 ```bash
 pnpm run deploy:check:staging    # Check staging for drift
 pnpm run deploy:check:production # Check production for drift
@@ -276,6 +289,7 @@ pnpm run plan:production         # Preview production changes
 ```
 
 ### Pre-Commit Checklist
+
 1. `pnpm run check:conventions` - No rule violations
 2. `pnpm run precheck` - TypeScript + ESLint clean
 3. `pnpm run test` - All tests pass
@@ -284,10 +298,10 @@ pnpm run plan:production         # Preview production changes
 
 See `package.json` for complete command list (cleanup, integration tests, deployment, etc.).
 
-
 ## Integration Points
 
 ### External Services
+
 - **Feedly**: Webhook-based article processing (query auth)
 - **YouTube**: yt-dlp for video downloads (cookie auth required)
 - **APNS**: iOS push notifications (requires certificates)
@@ -295,6 +309,7 @@ See `package.json` for complete command list (cleanup, integration tests, deploy
 - **GitHub API**: Automated issue creation for errors
 
 ### AWS Services
+
 - **Lambda**: Event-driven compute (all business logic)
 - **S3**: Media storage with transfer acceleration
 - **Aurora DSQL**: Serverless PostgreSQL-compatible database via Drizzle ORM for all entities
@@ -306,6 +321,7 @@ See `package.json` for complete command list (cleanup, integration tests, deploy
 ## Common Development Tasks
 
 ### Adding New Lambda Function
+
 1. Create `src/lambdas/[name]/` directory structure
 2. Implement handler in `src/index.ts` with TypeDoc
 3. Write tests in `test/index.test.ts` with fixtures
@@ -316,6 +332,7 @@ See `package.json` for complete command list (cleanup, integration tests, deploy
 8. Import utilities from `util/` directory
 
 ### Debugging Production Issues
+
 1. Check CloudWatch logs for Lambda
 2. Review automated GitHub issues
 3. Use AWS X-Ray for tracing (if enabled)
@@ -323,6 +340,7 @@ See `package.json` for complete command list (cleanup, integration tests, deploy
 5. Use `test-remote-*` scripts for validation
 
 ### Updating API Endpoints
+
 1. Modify API Gateway configuration in OpenTofu
 2. Update Lambda handler code
 3. Adjust custom authorizer if needed
@@ -357,16 +375,19 @@ See `package.json` for complete command list (cleanup, integration tests, deploy
 
 ## Mantle Spec Conformance — Acknowledged Exceptions
 
-This project passes all Mantle spec checks (C1–C95) with three documented exceptions:
+This project passes all Mantle spec checks (C1–C143) with three documented exceptions:
 
 ### C6: MigrateDSQL dynamic env var substitution
+
 `src/lambdas/standalone/MigrateDSQL/index.ts:44` uses `process.env[varName]` for dynamic variable substitution in SQL migration files. This is intentional because the variable name is not known at compile time (comes from `${VAR_NAME}` patterns in SQL files), and `getOptionalEnv`/`getRequiredEnv` require a static string key. The eslint-disable comment documents the reason. The access is inside a function body (not module-level).
 
 ### C9: buildErrorResponse handled by defineApiHandler
+
 `buildErrorResponse()` is not called directly in application code. This is not a violation — `defineApiHandler` (from `@mantleframework/validation`) calls `buildErrorResponse` internally at its catch boundary. All API handlers use `defineApiHandler`, so errors are formatted through `buildErrorResponse` automatically.
 
 ### C20: x86_64 for StartFileUpload
-`infra/lambda_start_file_upload.tf` sets `architecture = "x86_64"`. This is intentional — the Lambda uses yt-dlp which requires a native x86_64 Linux binary distributed in a Lambda layer. The `.tf` file is CLI-generated (has header comment), configured via `mantle.config.ts`.
+
+`infra/lambda_start_file_upload.tf` sets `architecture = "x86_64"`. This is intentional — `StartFileUpload` is a container-image Lambda (`src/lambdas/sqs/StartFileUpload/index.ts`: `packageType: 'container'`, `dockerfile: 'docker/Dockerfile.download'`) that bakes a native x86_64 Linux yt-dlp binary at `/opt/bin/yt-dlp`, so the function architecture must match. The `.tf` file is CLI-generated (has header comment), configured via `mantle.config.ts`.
 
 ---
 
@@ -375,6 +396,7 @@ This project passes all Mantle spec checks (C1–C95) with three documented exce
 Track major changes to AI agent configuration.
 
 ### 2026-01-20 - Token Optimization & Subagents
+
 - Extracted Mermaid diagrams to `docs/wiki/Architecture/System-Diagrams.md` (47% reduction)
 - Consolidated Anti-Patterns section into summary table with wiki links
 - Streamlined Development Workflow section (66% reduction)
@@ -382,6 +404,7 @@ Track major changes to AI agent configuration.
 - Updated evaluation report with AI Agent Configuration findings
 
 ### 2026-01-19 - Quick Start & Multi-Tool Support
+
 - Added Quick Start section with TL;DR and session checklist
 - Created `.github/copilot-instructions.md` for GitHub Copilot
 - Added this changelog section
@@ -392,20 +415,21 @@ Track major changes to AI agent configuration.
 ### Update Process
 
 When making significant changes to AGENTS.md:
+
 1. Add entry to this changelog with date and summary
 2. Reference the PR number when merged
 3. Update `.gemini/instructions.md` if critical rules changed
 4. Update `.github/copilot-instructions.md` if patterns changed
-6. Run `pnpm run check:conventions` to verify consistency
+5. Run `pnpm run check:conventions` to verify consistency
 
 ### Version Compatibility
 
-| File | Synced With | Last Updated |
-|------|-------------|--------------|
-| `CLAUDE.md` | AGENTS.md (passthrough) | Always current |
-| `.claude/agents/` | AGENTS.md (specialist subagents) | 2026-01-20 |
-| `.gemini/instructions.md` | AGENTS.md (condensed) | 2026-01-19 |
-| `.github/copilot-instructions.md` | AGENTS.md (condensed) | 2026-01-19 |
+| File                              | Synced With                      | Last Updated   |
+| --------------------------------- | -------------------------------- | -------------- |
+| `CLAUDE.md`                       | AGENTS.md (passthrough)          | Always current |
+| `.claude/agents/`                 | AGENTS.md (specialist subagents) | 2026-01-20     |
+| `.gemini/instructions.md`         | AGENTS.md (condensed)            | 2026-01-19     |
+| `.github/copilot-instructions.md` | AGENTS.md (condensed)            | 2026-01-19     |
 
 ---
 
