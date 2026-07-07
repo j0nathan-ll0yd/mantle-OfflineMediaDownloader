@@ -1,3 +1,4 @@
+// covers: file-lifecycle#file-status-transitions
 /**
  * StartFileUpload Workflow Integration Tests
  *

@@ -23,6 +23,11 @@ to `Downloading` when the download Lambda begins processing. On success the stat
 transitions are valid; a file SHALL NOT move from `Downloaded` or `Failed` back to an earlier status
 via the normal download path.
 
+Verified by `test/integration/workflows/startFileUpload.workflow.integration.test.ts:1` (the
+Queued→Downloading→Downloaded and Queued→Downloading→Failed sequences persist at the DSQL layer); the
+StartFileUpload/S3ObjectCreated driving of these transitions and the no-backward-transition invariant are not
+directly asserted by this test.
+
 #### Scenario: Successful download progression
 
 - **GIVEN** a file record with status `Queued`
@@ -42,6 +47,10 @@ via the normal download path.
 The system SHALL dispatch an SQS notification message to each user linked to a file when S3 emits
 an `ObjectCreated` event for that media upload. Dispatch SHALL use `Promise.allSettled` so that a
 failure for one user does not prevent notification of other users.
+
+Verified by `test/lambdas/s3/S3ObjectCreated/index.test.ts:1` (an object-created event dispatches one SQS
+message per linked user, both dispatches are attempted when one fails, a file with no linked users is a no-op,
+and a key matching no File record throws `NotFoundError`).
 
 #### Scenario: File upload notifies all linked users
 
