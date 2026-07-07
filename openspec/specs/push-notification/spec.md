@@ -22,6 +22,11 @@ The system SHALL attempt delivery to all registered devices for the target user 
 devices. Per-device results SHALL be classified as succeeded, failed, or disabled-endpoint after the
 settled batch completes.
 
+Verified by `test/lambdas/sqs/SendPushNotification/index.test.ts:1` (multi-device partial failure records one
+success and one failure without aborting sibling deliveries, a user with no registered devices short-circuits,
+and a disabled endpoint is classified and routed to cleanup); the single-`Promise.allSettled` implementation
+shape is not itself asserted.
+
 #### Scenario: Multiple devices, one fails
 
 - **GIVEN** a user with three registered devices, where one device has an unreachable APNs endpoint
@@ -42,7 +47,7 @@ When APNs signals that a device token is invalid (endpoint disabled), the system
 the SNS endpoint and remove the associated device records. Cleanup SHALL follow children-before-
 parent ordering: UserDevice junction records first, then the SNS endpoint, then the Device record.
 Cleanup is initiated asynchronously after the notification batch completes and SHALL NOT block the
-SQS response. This requirement is verified by `test/lambdas/sqs/pushEndpointCleanup.test.ts`.
+SQS response. This requirement is verified by `test/lambdas/sqs/pushEndpointCleanup.test.ts:1`.
 
 #### Scenario: Invalid token detected during delivery
 
@@ -65,6 +70,9 @@ The Lambda SHALL throw an error when every delivery attempt in the batch fails (
 or more failures), causing SQS to redeliver the message. Partial success (at least one device
 received the notification) SHALL NOT trigger a retry.
 
+Verified by `test/lambdas/sqs/SendPushNotification/index.test.ts:2` (the handler throws when every delivery
+attempt fails, and resolves without throwing when at least one device out of several succeeds).
+
 #### Scenario: Total delivery failure triggers retry
 
 - **GIVEN** a user with devices where all APNs delivery attempts fail with non-disabled-endpoint errors
@@ -84,6 +92,10 @@ received the notification) SHALL NOT trigger a retry.
 The system SHALL validate required SQS message attributes (`notificationType`, `userId`) against the
 schema before any delivery attempt. A message with missing or invalid attributes SHALL be discarded
 with an error log and SHALL NOT trigger a delivery attempt or SQS retry.
+
+Verified by `test/lambdas/sqs/SendPushNotification/index.test.ts:3` (a message failing schema validation is
+discarded before any device lookup or delivery and the handler returns without throwing); the error-log
+emission is not itself asserted.
 
 #### Scenario: Missing userId attribute
 
