@@ -1,4 +1,5 @@
 // covers: cascade-deletion#children-deleted-before-parent
+// covers: cascade-deletion#orphan-check-before-file-removal
 /**
  * Unit tests for Cascade Operations
  *
