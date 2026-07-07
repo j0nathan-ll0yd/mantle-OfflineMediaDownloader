@@ -28,6 +28,9 @@ record. The authorizer SHALL deny access if the `ApiKey` parameter is absent, if
 value exists, or if the matched key has `enabled: false`. This check occurs before any session token
 validation.
 
+Verified by `test/lambdas/standalone/ApiGatewayAuthorizer/index.test.ts:1` (missing, non-matching, and
+`enabled: false` API keys are each denied; the missing-key denial occurs with no Authorization header present).
+
 #### Scenario: Missing API key parameter
 
 - **GIVEN** an incoming request with no `ApiKey` query parameter
@@ -46,7 +49,7 @@ When an Authorization header is present with a Bearer token, the authorizer SHAL
 token against the Better Auth session store. If the token is present but invalid (expired, malformed,
 or not found), the authorizer SHALL deny authorization. It SHALL NOT fall back to anonymous
 access — an invalid token is treated as an active denial, not as a missing token.
-This requirement is verified by `test/lambdas/standalone/apiGatewayAuthorizer.test.ts`.
+This requirement is verified by `test/lambdas/standalone/apiGatewayAuthorizer.test.ts:1`.
 
 #### Scenario: Valid Bearer token authenticates the request
 
@@ -69,6 +72,10 @@ with no Authorization header, assigning `anonymous` as the principalId and `user
 If an Authorization header IS present on these paths, normal session validation applies — an invalid
 header still results in a denial.
 
+Verified by `test/lambdas/standalone/ApiGatewayAuthorizer/index.test.ts:2` (a multi-auth path with no
+Authorization header resolves to principalId `anonymous`, a non-multi-auth path with no header is denied, and
+an invalid Bearer token on a multi-auth path is still denied rather than falling back to anonymous).
+
 #### Scenario: Device registration with no auth header
 
 - **GIVEN** a request to a path in `MULTI_AUTHENTICATION_PATH_PARTS` with no Authorization header
@@ -86,6 +93,9 @@ header still results in a denial.
 The Authorization header value SHALL match the pattern `Bearer <token>` (a single space, then
 alphanumeric characters and URL-safe base64 characters). A header that does not match this pattern
 SHALL result in denial, not a session lookup attempt.
+
+Verified by `test/lambdas/standalone/ApiGatewayAuthorizer/index.test.ts:3` (an Authorization header without the
+`Bearer` prefix is denied); the "without querying the session store" sub-claim is not itself asserted.
 
 #### Scenario: Malformed Authorization header format
 

@@ -1,3 +1,6 @@
+// covers: custom-authorizer#api-key-required-before-session-check
+// covers: custom-authorizer#multi-auth-paths-allow-anonymous
+// covers: custom-authorizer#bearer-header-format-validated
 /**
  * Unit tests for ApiGatewayAuthorizer Lambda (custom authorizer)
  *
