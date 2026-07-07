@@ -59,7 +59,7 @@
     "plan:staging": "mantle deploy --stage staging --dry-run",
     "plan:production": "mantle deploy --stage production --dry-run",
     "precheck": "npx mantle ci --mode pre-push",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && pnpm run check:test:types",
     "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
     "scaffold:test": "node --import tsx scripts/scaffoldTest.ts",
