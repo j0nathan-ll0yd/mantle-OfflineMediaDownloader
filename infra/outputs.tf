@@ -37,6 +37,11 @@ output "endpoint_cleanup_helpers_function_arn" {
   value       = module.lambda_endpoint_cleanup_helpers.function_arn
 }
 
+output "log_notifier_function_arn" {
+  description = "ARN of the LogNotifier Lambda function"
+  value       = module.lambda_log_notifier.function_arn
+}
+
 output "migrate_dsql_function_arn" {
   description = "ARN of the MigrateDSQL Lambda function"
   value       = module.lambda_migrate_dsql.function_arn
