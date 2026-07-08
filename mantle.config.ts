@@ -52,7 +52,7 @@ export default defineConfig({
       }
     ]
   },
-  observability: {adot: true, metricsNamespace: 'MediaDownloader', disableMetrics: true, alerts: {email: 'webmaster@lifegames.org'}},
+  observability: {adot: true, metricsNamespace: 'MediaDownloader', disableMetrics: true},
   secrets: {provider: 'sops', filePattern: 'secrets/secrets.{env}.enc.yaml'},
   sns: {
     topics: [
