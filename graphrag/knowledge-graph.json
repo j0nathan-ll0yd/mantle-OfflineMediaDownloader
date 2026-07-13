@@ -172,6 +172,15 @@
       }
     },
     {
+      "id": "lambda:standalone/LogNotifier",
+      "type": "Lambda",
+      "properties": {
+        "name": "standalone/LogNotifier",
+        "trigger": "CloudWatch Logs subscription filter",
+        "purpose": "Publish SNS alerts summarizing Lambda ERROR logs delivered by the account-level CloudWatch Logs subscription filter"
+      }
+    },
+    {
       "id": "lambda:standalone/MigrateDSQL",
       "type": "Lambda",
       "properties": {

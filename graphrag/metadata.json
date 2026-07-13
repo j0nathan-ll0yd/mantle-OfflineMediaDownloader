@@ -78,6 +78,10 @@
       "trigger": "Manual",
       "purpose": "Apply Drizzle ORM migrations to Aurora DSQL database"
     },
+    "standalone/LogNotifier": {
+      "trigger": "CloudWatch Logs subscription filter",
+      "purpose": "Publish SNS alerts summarizing Lambda ERROR logs delivered by the account-level CloudWatch Logs subscription filter"
+    },
     "mcp/DevTools": {
       "trigger": "Lambda Function URL",
       "purpose": "MCP DevTools server exposing 8 framework debugging tools via JSON-RPC 2.0"
