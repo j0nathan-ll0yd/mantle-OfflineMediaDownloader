@@ -45,12 +45,12 @@ resource "aws_cloudwatch_log_account_policy" "log_error_notifier" {
     FilterPattern  = "{ $.level = \"ERROR\" }"
     Distribution   = "Random"
   })
-  # Note: SUBSCRIPTION_FILTER_POLICY does not support selectionCriteria — AWS rejects any
-  # selection_criteria value with InvalidParameterException (only DATA_PROTECTION_POLICY and
-  # METRIC_EXTRACTION_POLICY support it). The policy applies to all log groups in the account,
-  # which is the correct behavior: the LogNotifier filters to ERROR level internally and
-  # CloudWatch scopes delivery to the instance's own log groups via the Lambda's log group
-  # naming prefix (staging-<name_prefix>-*).
+  # This policy applies to ALL log groups in the account. SUBSCRIPTION_FILTER_POLICY does support
+  # selectionCriteria, but only as "LogGroupName NOT IN [...]" (exclusion; LIKE / positive IN are
+  # rejected). We omit it deliberately: AWS automatically excludes a Lambda destination's own log
+  # group from account-level subscription filters, so there is no recursion (AWS "Log recursion
+  # prevention"), and the FilterPattern is the effective scope — only structured Powertools ERROR
+  # logs match and are delivered. Each instance runs in a dedicated AWS account.
 }
 
 resource "aws_lambda_permission" "log_error_notifier_invoke" {
