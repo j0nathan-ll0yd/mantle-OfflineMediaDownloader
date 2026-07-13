@@ -186,6 +186,7 @@ erDiagram
 | DeleteFile | API Gateway | DELETE /files/{fileId} | Delete file, cascade user-file link, optional S3 cleanup |
 | ListFiles | API Gateway | GET /files | List user's available files |
 | LoginUser | API Gateway | POST /user/login | Authenticate user |
+| LogNotifier | CloudWatch Logs | Account-level ERROR subscription filter | Publish SNS alerts summarizing Lambda errors |
 | MigrateDSQL | Manual | CLI invocation | Run Drizzle migrations on Aurora DSQL |
 | PruneDevices | CloudWatch Events | Daily schedule | Clean inactive devices |
 | RefreshToken | API Gateway | POST /user/refresh | Refresh authentication token |
