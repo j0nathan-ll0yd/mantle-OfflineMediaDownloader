@@ -31,7 +31,9 @@ jobs:
           LATEST=$(gh api repos/yt-dlp/yt-dlp/releases \
             --jq '[.[] | select(.prerelease == false)][0].tag_name')
 
-          CURRENT=$(cat layers/yt-dlp/VERSION 2>/dev/null | tr -d '[:space:]' || echo "none")
+          # Single source of truth: the ARG YTDLP_VERSION line in the Dockerfile
+          # (the StartFileUpload container's runtime binary).
+          CURRENT=$(grep -E '^ARG YTDLP_VERSION=' docker/Dockerfile.download | head -1 | cut -d= -f2 | tr -d '[:space:]' || echo "none")
 
           echo "latest=${LATEST}" >> "$GITHUB_OUTPUT"
           echo "current=${CURRENT}" >> "$GITHUB_OUTPUT"
@@ -118,7 +120,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Update VERSION file and create PR
+      - name: Bump Dockerfile ARG and create PR
         if: steps.check.outputs.update_needed == 'true' && steps.pr_check.outputs.skip != 'true'
         run: |
           set -e
@@ -127,8 +129,10 @@ jobs:
           readonly CURRENT_VERSION="${{ steps.check.outputs.current }}"
           readonly BRANCH_NAME="chore/update-yt-dlp-${VERSION}"
 
-          echo "Updating VERSION file to ${VERSION}..."
-          echo "${VERSION}" > layers/yt-dlp/VERSION
+          echo "Bumping ARG YTDLP_VERSION to ${VERSION} in docker/Dockerfile.download..."
+          tmp="$(mktemp)"
+          sed "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${VERSION}|" docker/Dockerfile.download > "$tmp"
+          mv "$tmp" docker/Dockerfile.download
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -140,7 +144,7 @@ jobs:
           fi
 
           git checkout -b "${BRANCH_NAME}"
-          git add layers/yt-dlp/VERSION
+          git add docker/Dockerfile.download
           git commit -m "chore(deps): update yt-dlp to ${VERSION}"
           git push origin "${BRANCH_NAME}"
 
@@ -150,26 +154,26 @@ jobs:
           **Release Notes**: https://github.com/yt-dlp/yt-dlp/releases/tag/${VERSION}
 
           ## Changes
-          - Updated VERSION file from ${CURRENT_VERSION} to ${VERSION}
-          - Binary will be downloaded by OpenTofu during deployment
+          - Bumped \`ARG YTDLP_VERSION\` in \`docker/Dockerfile.download\` from ${CURRENT_VERSION} to ${VERSION}
+          - The new binary is baked into the StartFileUpload container image at build time (\`ADD .../\${YTDLP_VERSION}/yt-dlp_linux\`)
 
           ## Pre-merge Verification
           - [x] x86_64 \`yt-dlp_linux\` downloaded and SHA256 checksum verified against the release's SHA2-256SUMS
           - [ ] CI/CD tests pending
 
           ## Deployment Process
-          1. Merge this PR to update the VERSION file
-          2. Run \`pnpm run deploy\` to trigger binary download via \`null_resource.DownloadYtDlpBinary\`
-          3. OpenTofu will download, verify, and package the new binary into the Lambda layer
+          1. Merge this PR
+          2. Run \`pnpm run build\` to rebuild the StartFileUpload container with the new yt-dlp
+          3. Run \`pnpm run deploy:staging\` to push the new image
           4. Monitor CloudWatch logs for any download issues after deployment
 
           ## Rollback Procedure
           If issues occur after deployment:
           \`\`\`bash
-          echo "${CURRENT_VERSION}" > layers/yt-dlp/VERSION
+          sed -i '' "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${CURRENT_VERSION}|" docker/Dockerfile.download  # macOS; drop the '' on Linux
           git commit -am "chore(deps): revert yt-dlp to ${CURRENT_VERSION}"
           git push
-          pnpm run deploy
+          pnpm run build && pnpm run deploy:staging
           \`\`\`
           EOF
 
