@@ -20,7 +20,9 @@ FROM public.ecr.aws/lambda/nodejs:24-x86_64 AS base
 RUN microdnf install -y unzip tar xz && microdnf clean all
 
 # --- yt-dlp ---
-ARG YTDLP_VERSION=2026.03.17
+# Keep in sync with layers/yt-dlp/VERSION (bin/update-yt-dlp.sh bumps that file;
+# this ARG is the actual runtime source for the StartFileUpload container).
+ARG YTDLP_VERSION=2026.07.04
 ADD --chmod=755 \
   https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp_linux \
   /opt/bin/yt-dlp
