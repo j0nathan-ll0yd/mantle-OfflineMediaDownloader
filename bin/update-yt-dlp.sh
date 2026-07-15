@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
 # update-yt-dlp.sh
-# Checks for latest yt-dlp version and optionally updates VERSION file
+# Checks for the latest yt-dlp release and optionally bumps the version.
+# The single source of truth is the `ARG YTDLP_VERSION=` line in
+# docker/Dockerfile.download (the StartFileUpload container's runtime binary).
 # Usage: pnpm run update-yt-dlp [check|update]
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-VERSION_FILE="${PROJECT_ROOT}/layers/yt-dlp/VERSION"
+DOCKERFILE="${PROJECT_ROOT}/docker/Dockerfile.download"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -22,6 +24,21 @@ error() {
   exit "${2:-1}"
 }
 
+# Read the current version from the Dockerfile ARG (single source of truth).
+read_current_version() {
+  grep -E '^ARG YTDLP_VERSION=' "$DOCKERFILE" | head -1 | cut -d= -f2 | tr -d '[:space:]'
+}
+
+# Replace the Dockerfile ARG version. Portable across macOS/BSD and GNU sed
+# (avoids the `sed -i` incompatibility) by writing through a temp file.
+write_version() {
+  local new_version="$1"
+  local tmp
+  tmp="$(mktemp)"
+  sed "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${new_version}|" "$DOCKERFILE" > "$tmp"
+  mv "$tmp" "$DOCKERFILE"
+}
+
 main() {
   local MODE="${1:-check}"
 
@@ -31,6 +48,10 @@ main() {
 
   if ! command -v gh &> /dev/null; then
     error "GitHub CLI (gh) is required but not installed. Install with: brew install gh"
+  fi
+
+  if [ ! -f "$DOCKERFILE" ]; then
+    error "Dockerfile not found at ${DOCKERFILE}"
   fi
 
   echo -e "${BLUE}Fetching latest yt-dlp release...${NC}"
@@ -44,13 +65,11 @@ main() {
   echo -e "${GREEN}Latest version:${NC} ${LATEST_VERSION}"
 
   local CURRENT_VERSION
-  if [ -f "$VERSION_FILE" ]; then
-    CURRENT_VERSION=$(cat "$VERSION_FILE" 2> /dev/null | tr -d '[:space:]')
-    echo -e "${GREEN}Current version:${NC} ${CURRENT_VERSION}"
-  else
-    CURRENT_VERSION="none"
-    echo -e "${YELLOW}Warning:${NC} VERSION file not found at ${VERSION_FILE}"
+  CURRENT_VERSION="$(read_current_version)"
+  if [ -z "$CURRENT_VERSION" ]; then
+    error "Could not read current ARG YTDLP_VERSION from ${DOCKERFILE}"
   fi
+  echo -e "${GREEN}Current version:${NC} ${CURRENT_VERSION}"
 
   echo ""
 
@@ -63,23 +82,23 @@ main() {
   echo ""
 
   if [ "$MODE" == "check" ]; then
-    echo "Run with 'update' argument to update VERSION file:"
+    echo "Run with 'update' argument to bump the Dockerfile ARG:"
     echo "  pnpm run update-yt-dlp update"
     exit 0
   fi
 
   if [ "$MODE" == "update" ]; then
-    echo -e "${BLUE}Updating VERSION file...${NC}"
-    mkdir -p "$(dirname "$VERSION_FILE")"
-    echo "$LATEST_VERSION" > "$VERSION_FILE"
+    echo -e "${BLUE}Updating docker/Dockerfile.download ARG YTDLP_VERSION...${NC}"
+    write_version "$LATEST_VERSION"
 
-    echo -e "${GREEN}✓${NC} VERSION file updated"
+    echo -e "${GREEN}✓${NC} Dockerfile ARG updated to ${LATEST_VERSION}"
     echo ""
     echo "Next steps:"
-    echo "  1. Review the change: git diff ${VERSION_FILE}"
-    echo "  2. Run Terraform to download binary: pnpm run plan"
-    echo "  3. Commit the change: git add ${VERSION_FILE}"
+    echo "  1. Review the change: git diff ${DOCKERFILE}"
+    echo "  2. Rebuild the container: pnpm run build (rebuilds the StartFileUpload image)"
+    echo "  3. Commit the change: git add ${DOCKERFILE}"
     echo "     git commit -m \"chore(deps): update yt-dlp to ${LATEST_VERSION}\""
+    echo "  4. Deploy: pnpm run deploy:staging"
     exit 0
   fi
 
