@@ -55,8 +55,11 @@ jobs:
       - name: Build mantle packages
         working-directory: ../mantle
         run: pnpm build
-      - name: Refresh bin links after mantle build
-        run: pnpm install
+      # pnpm 11: bins skipped at install time (linked CLI dist did not exist yet)
+      # are NEVER recreated by a later plain or --force install — only a clean
+      # install relinks them. Warm-store reinstall costs ~7s.
+      - name: Reinstall to link mantle bins after build
+        run: rm -rf node_modules && pnpm install --frozen-lockfile
 
       - uses: ./.github/actions/setup-homebrew-tools
 

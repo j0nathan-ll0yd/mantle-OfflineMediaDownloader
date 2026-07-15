@@ -72,3 +72,17 @@ allowBuilds:
 
   # MCP tools
   "@modelcontextprotocol/ext-apps": true  # MCP Inspector extension apps
+
+  # Migrated from package.json pnpm.onlyBuiltDependencies (pnpm 11 drop)
+  "@swc/core": true             # TS/JS transform native binary
+  "sharp": true                 # Image processing native binary
+
+overrides:
+  'qs': '>=6.14.1'
+  'drizzle-zod>zod': '^4.3.4'
+  'undici-types': '7.16.0'
+  'ws': '>=8.20.1'
+  'protobufjs': '>=7.5.8'
+  'shell-quote': '>=1.8.4'
+  'hono': '>=4.12.25'
+  'esbuild': '>=0.28.1'
