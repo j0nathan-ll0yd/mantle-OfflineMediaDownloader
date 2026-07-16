@@ -113,10 +113,11 @@ export default defineConfig({
         command: 'OPENSPEC_TELEMETRY=0 DO_NOT_TRACK=1 npx -y @fission-ai/openspec@1.4.1 validate --all --strict'
       },
       {name: 'openspec-behavior-only', phase: 'validate', command: 'bash scripts/check-openspec-behavior-only.sh'},
-      // The built-in `typecheck` step only covers the root tsconfig (src/**). tsconfig.test.json
-      // is the only config that type-checks test/** (with the #test/* path mappings), so wire it
-      // into `mantle ci` (Issue #567). Kept in sync with the `typecheck` package.json script.
-      {name: 'typecheck-test', phase: 'validate', command: 'tsc --noEmit -p tsconfig.test.json'}
+      // Type-check test/** (tsconfig.test.json + the #test/* path mappings) in `mantle ci`
+      // (Issue #567). Routed through the tsc6 wrapper: a bare `tsc` here would resolve to the
+      // @typescript/native (TS7) alias during the hybrid window (mantle#257), silently running the
+      // wrong compiler on the pre-push gate. Mirrors the `check:test:types` package.json script.
+      {name: 'typecheck-test', phase: 'validate', command: 'node bin/tsc6.mjs --noEmit -p tsconfig.test.json'}
     ]
   }
 })

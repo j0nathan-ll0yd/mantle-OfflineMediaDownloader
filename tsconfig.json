@@ -12,7 +12,6 @@
     "types": ["node"],
     "moduleResolution": "bundler",
     "customConditions": ["source"],
-    "ignoreDeprecations": "6.0",
     "paths": {
       "#entities/*": ["./src/entities/*"],
       "#lambdas/*": ["./src/lambdas/*"],

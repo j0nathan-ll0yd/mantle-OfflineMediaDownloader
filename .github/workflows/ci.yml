@@ -25,6 +25,8 @@ jobs:
           chmod 600 ~/.ssh/mantle_deploy_key
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
       - name: Checkout mantle framework
+        # Prefer the PR head ref (then the pushed ref) so an instance PR can be validated against a
+        # matching mantle branch; fall back to main when no such branch exists.
         run: GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-main}}" git@github.com:j0nathan-ll0yd/mantle.git ../mantle || GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch main git@github.com:j0nathan-ll0yd/mantle.git ../mantle
       - uses: actions/setup-node@v4
         with:
@@ -47,6 +49,49 @@ jobs:
       - name: Type check
         run: pnpm run typecheck
 
+  typecheck-ts7:
+    name: Type Check (TS7 native, advisory)
+    # Non-blocking speed + skew detector for the TypeScript 7 hybrid window. The TS6 typecheck job
+    # stays the authoritative gate; TS7 (native) is much faster but has known non-determinism, so
+    # this lane is advisory (continue-on-error). See the monorepo TS7 plan (mantle#257).
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Checkout mantle framework as a sibling directory.
+      # actions/checkout@v4 requires path to be within $GITHUB_WORKSPACE,
+      # but link: deps point to ../mantle — so we use git clone directly.
+      - name: Setup SSH for mantle checkout
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.MANTLE_DEPLOY_KEY }}" > ~/.ssh/mantle_deploy_key
+          chmod 600 ~/.ssh/mantle_deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Checkout mantle framework
+        # Prefer the PR head ref (then the pushed ref) so an instance PR can be validated against a
+        # matching mantle branch; fall back to main when no such branch exists.
+        run: GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-main}}" git@github.com:j0nathan-ll0yd/mantle.git ../mantle || GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch main git@github.com:j0nathan-ll0yd/mantle.git ../mantle
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - name: Cache dependencies
+        uses: actions/cache@v6
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Install mantle dependencies
+        working-directory: ../mantle
+        run: pnpm install --frozen-lockfile
+      - name: Build mantle packages
+        working-directory: ../mantle
+        run: pnpm build
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Type check (TS7)
+        run: pnpm run typecheck:ts7
+
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest
@@ -62,6 +107,8 @@ jobs:
           chmod 600 ~/.ssh/mantle_deploy_key
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
       - name: Checkout mantle framework
+        # Prefer the PR head ref (then the pushed ref) so an instance PR can be validated against a
+        # matching mantle branch; fall back to main when no such branch exists.
         run: GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-main}}" git@github.com:j0nathan-ll0yd/mantle.git ../mantle || GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch main git@github.com:j0nathan-ll0yd/mantle.git ../mantle
       - uses: actions/setup-node@v4
         with:
@@ -101,6 +148,8 @@ jobs:
           chmod 600 ~/.ssh/mantle_deploy_key
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
       - name: Checkout mantle framework
+        # Prefer the PR head ref (then the pushed ref) so an instance PR can be validated against a
+        # matching mantle branch; fall back to main when no such branch exists.
         run: GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-main}}" git@github.com:j0nathan-ll0yd/mantle.git ../mantle || GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch main git@github.com:j0nathan-ll0yd/mantle.git ../mantle
       - uses: actions/setup-node@v4
         with:
@@ -138,6 +187,8 @@ jobs:
           chmod 600 ~/.ssh/mantle_deploy_key
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
       - name: Checkout mantle framework
+        # Prefer the PR head ref (then the pushed ref) so an instance PR can be validated against a
+        # matching mantle branch; fall back to main when no such branch exists.
         run: GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-main}}" git@github.com:j0nathan-ll0yd/mantle.git ../mantle || GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch main git@github.com:j0nathan-ll0yd/mantle.git ../mantle
       - uses: actions/setup-node@v4
         with:
@@ -175,6 +226,8 @@ jobs:
           chmod 600 ~/.ssh/mantle_deploy_key
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
       - name: Checkout mantle framework
+        # Prefer the PR head ref (then the pushed ref) so an instance PR can be validated against a
+        # matching mantle branch; fall back to main when no such branch exists.
         run: GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-main}}" git@github.com:j0nathan-ll0yd/mantle.git ../mantle || GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch main git@github.com:j0nathan-ll0yd/mantle.git ../mantle
       - uses: actions/setup-node@v4
         with:
