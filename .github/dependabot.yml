@@ -34,6 +34,9 @@ updates:
   - dependency-name: "@better-auth/*"
   - dependency-name: "@opentelemetry/*"
   - dependency-name: "typescript"
+  # TS7 hybrid window: do not auto-bump the @typescript/native (TS7) alias until the coordinated
+  # cutover. See j0nathan-ll0yd/mantle#257 and the hub plan .omc/plans/typescript-7-upgrade.md.
+  - dependency-name: "@typescript/native"
   - dependency-name: "vitest"
   - dependency-name: "@vitest/*"
   - dependency-name: "vite"
