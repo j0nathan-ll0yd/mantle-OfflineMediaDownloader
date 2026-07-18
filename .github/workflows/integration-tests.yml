@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Setup SSH for mantle checkout
         run: |
@@ -38,7 +38,7 @@ jobs:
         # lockfiles in multi-repo CI (ERR_PNPM_BROKEN_LOCKFILE). See action-setup#225.
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320  # v5.0.0
       - name: Setup Node.js
-        uses: actions/setup-node@v6  # TODO: pin to SHA
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
@@ -166,7 +166,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: integration-test-results
           path: |
