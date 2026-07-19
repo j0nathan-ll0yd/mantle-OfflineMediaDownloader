@@ -9,10 +9,15 @@ export default defineConfig({
       key: 'infra.tfstate',
       region: 'us-west-2',
       encrypt: true,
-      dynamodbTable: 'TerraformStateLock',
-      workspaceKeyPrefix: 'env'
+      // OpenTofu-native locking (LP parity, 2026-07-19); DynamoDB table and the
+      // inert workspaceKeyPrefix (mantle never selects a workspace) dropped.
+      useLockfile: true
     }
   },
+  // The single default-workspace state holds ONLY staging resources. A production
+  // deploy would rename everything staging->prod, destroying the live stack; the
+  // CLI refuses it until stage-scoped state keys land (mantle Phase 2d).
+  allowedStages: ['staging'],
   customVariables: [
     {
       name: 'resource_prefix',
