@@ -26,7 +26,7 @@ fi
 TITLE="$1"
 
 # Find the next ADR number
-LAST_ADR=$(find "${ADR_DIR}" -maxdepth 1 -name '[0-9][0-9][0-9][0-9]-*.md' -exec basename {} \; 2>/dev/null | sort -r | head -1 | grep -oE '^[0-9]+' || echo "0000")
+LAST_ADR=$(find "${ADR_DIR}" -maxdepth 1 -name '[0-9][0-9][0-9][0-9]-*.md' -exec basename {} \; 2> /dev/null | sort -r | head -1 | grep -oE '^[0-9]+' || echo "0000")
 NEXT_NUM=$(printf "%04d" $((10#$LAST_ADR + 1)))
 
 # Convert title to kebab-case filename

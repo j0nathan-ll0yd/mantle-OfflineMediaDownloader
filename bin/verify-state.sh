@@ -134,7 +134,7 @@ main() {
   set +e
   # Pin the container image var from live state so an unchanged image does not
   # read as drift (mantle deploy injects it at deploy time).
-  IMAGE_URI=$(tofu state show module.lambda_start_file_upload.aws_lambda_function.function 2>/dev/null | sed -n 's/^ *image_uri *= *"\(.*\)".*/\1/p' | head -1)
+  IMAGE_URI=$(tofu state show module.lambda_start_file_upload.aws_lambda_function.function 2> /dev/null | sed -n 's/^ *image_uri *= *"\(.*\)".*/\1/p' | head -1)
   IMAGE_VAR_ARGS=()
   if [[ -n "${IMAGE_URI}" ]]; then
     IMAGE_VAR_ARGS+=("-var=image_uri_start_file_upload=${IMAGE_URI}")

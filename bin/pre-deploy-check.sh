@@ -111,7 +111,7 @@ main() {
   fi
 
   # Verify file has SOPS encryption markers
-  if ! grep -q "sops:" "${SECRETS_FILE}" 2>/dev/null; then
+  if ! grep -q "sops:" "${SECRETS_FILE}" 2> /dev/null; then
     echo -e "${RED}✗${NC} $(basename "${SECRETS_FILE}") does not appear to be SOPS-encrypted"
     echo "  File should contain 'sops:' metadata section"
     exit 1
@@ -148,7 +148,7 @@ main() {
   # Mantle uses NO terraform workspaces: the default workspace's state key is
   # already stage-scoped (infra-staging.tfstate). Pin the container image var from
   # live state so an unchanged image does not read as drift (deploy injects it).
-  IMAGE_URI=$(tofu state show module.lambda_start_file_upload.aws_lambda_function.function 2>/dev/null | sed -n 's/^ *image_uri *= *"\(.*\)".*/\1/p' | head -1)
+  IMAGE_URI=$(tofu state show module.lambda_start_file_upload.aws_lambda_function.function 2> /dev/null | sed -n 's/^ *image_uri *= *"\(.*\)".*/\1/p' | head -1)
   IMAGE_VAR_ARGS=()
   if [[ -n "${IMAGE_URI}" ]]; then
     IMAGE_VAR_ARGS+=("-var=image_uri_start_file_upload=${IMAGE_URI}")

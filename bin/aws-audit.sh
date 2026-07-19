@@ -167,7 +167,7 @@ main() {
   echo -e "${YELLOW}[2/8] Selecting workspace: ${WORKSPACE}${NC}"
   cd "${TERRAFORM_DIR}"
 
-  CURRENT_WS=$(tofu workspace show 2>/dev/null || echo "")
+  CURRENT_WS=$(tofu workspace show 2> /dev/null || echo "")
   if [[ "$CURRENT_WS" != "$WORKSPACE" ]]; then
     if ! tofu workspace select "$WORKSPACE" > /dev/null 2>&1; then
       echo -e "${RED}ERROR: Failed to select workspace '${WORKSPACE}'${NC}"
@@ -186,7 +186,7 @@ main() {
   tofu state list 2> /dev/null | grep "aws_iam_policy\." | sed 's/aws_iam_policy\.//' > "$TMP_DIR/tf_policies.txt" || true
   tofu state list 2> /dev/null | grep "aws_cloudfront_distribution\." | sed 's/aws_cloudfront_distribution\.//' > "$TMP_DIR/tf_cloudfront.txt" || true
   tofu state list 2> /dev/null | grep "aws_api_gateway_rest_api\." | sed 's/aws_api_gateway_rest_api\.//' > "$TMP_DIR/tf_apigw.txt" || true
-  tofu state list 2> /dev/null | grep "aws_s3_bucket\."| sed 's/aws_s3_bucket\.//' > "$TMP_DIR/tf_s3.txt" || true
+  tofu state list 2> /dev/null | grep "aws_s3_bucket\." | sed 's/aws_s3_bucket\.//' > "$TMP_DIR/tf_s3.txt" || true
   tofu state list 2> /dev/null | grep "aws_sqs_queue\." | sed 's/aws_sqs_queue\.//' > "$TMP_DIR/tf_sqs.txt" || true
 
   TF_LAMBDA_COUNT=$(wc -l < "$TMP_DIR/tf_lambdas.txt" | tr -d ' ')
