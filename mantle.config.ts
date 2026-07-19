@@ -6,7 +6,7 @@ export default defineConfig({
   backend: {
     s3: {
       bucket: 'mantle-offlinemediadownloader-tfstate',
-      key: 'infra.tfstate',
+      key: 'infra-staging.tfstate', // stage-scoped key convention: infra-<stage>.tfstate
       region: 'us-west-2',
       encrypt: true,
       // OpenTofu-native locking (LP parity, 2026-07-19); DynamoDB table and the
