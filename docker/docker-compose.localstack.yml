@@ -2,9 +2,11 @@ services:
   localstack:
     # Pin to stable version for reproducible builds
     image: localstack/localstack:4.0
-    container_name: aws-media-downloader-localstack
+    # Name and host port are per-worktree via bin/worktree-ports.sh; defaults
+    # preserve the historical fixed values for a bare main checkout.
+    container_name: ${LOCALSTACK_CONTAINER_NAME:-aws-media-downloader-localstack}
     ports:
-      - "4566:4566"
+      - "${LOCALSTACK_PORT:-4566}:4566"
     environment:
       # Enable specific AWS services
       - SERVICES=s3,dynamodb,sns,sqs,lambda,cloudwatch,apigateway,events

@@ -5,7 +5,7 @@
     ".env holds SOPS/TF_VAR secrets (gitignored, no .env.example) — copied from main checkout. The age key lives outside the repo (~/.config/sops/age/keys.txt) and is shared.",
     "pnpm build runs decrypt-cookies.sh and needs that age key; yt-dlp/ffmpeg binaries download on demand (pnpm update:ytdlp / update:ffmpeg).",
     "tfstate is remote (S3 + DynamoDB lock) — safe across worktrees; run `cd infra && terraform init` only for infra work.",
-    "Teardown stops this worktree's compose project only, freeing ports 4566/5432. Do NOT run integration tests concurrently across worktrees — host ports are fixed."
+    "Teardown stops this worktree's compose project (localstack + test postgres). Host ports and container names are per-worktree: bin/worktree-ports.sh (sourced by localstack:* / test:integration / bin scripts) derives a deterministic offset from the worktree path, so integration tests CAN run concurrently across worktrees; a bare main checkout keeps the defaults 4566/5432/5433 and the fixed container names."
   ],
   "worktree": {
     "setup": [
@@ -14,7 +14,8 @@
       "pnpm install"
     ],
     "teardown": [
-      "pnpm localstack:stop >/dev/null 2>&1 || true"
+      "pnpm localstack:stop >/dev/null 2>&1 || true",
+      ". bin/worktree-ports.sh && docker compose -f docker/docker-compose.test.yml down -v >/dev/null 2>&1 || true"
     ]
   }
 }

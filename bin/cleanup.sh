@@ -8,6 +8,10 @@
 
 set -euo pipefail
 
+# Per-worktree LocalStack port (no-op in the main checkout)
+# shellcheck source=bin/worktree-ports.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/worktree-ports.sh"
+
 # Parse arguments
 FAST_MODE=false
 CHECK_ONLY=false
@@ -245,7 +249,7 @@ main() {
       echo "   Waiting for LocalStack to be ready..."
       RETRIES=30
       while [ $RETRIES -gt 0 ]; do
-        if curl -s http://localhost:4566/_localstack/health | grep -q '"ready"' 2> /dev/null; then
+        if curl -s "http://localhost:${LOCALSTACK_PORT:-4566}/_localstack/health" | grep -q '"ready"' 2> /dev/null; then
           break
         fi
         RETRIES=$((RETRIES - 1))

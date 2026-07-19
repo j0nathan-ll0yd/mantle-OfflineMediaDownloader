@@ -5,14 +5,16 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: media-downloader-test-db
+    # Name and host port are per-worktree via bin/worktree-ports.sh; defaults
+    # preserve the historical fixed values for a bare main checkout.
+    container_name: ${TEST_DB_CONTAINER_NAME:-media-downloader-test-db}
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
       POSTGRES_DB: media_downloader_test
       POSTGRES_INITDB_ARGS: "--nosync"
     ports:
-      - "5432:5432"
+      - "${TEST_POSTGRES_PORT:-5432}:5432"
     tmpfs:
       - /var/lib/postgresql/data:size=512m
     command: >
