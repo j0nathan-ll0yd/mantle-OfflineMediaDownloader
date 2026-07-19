@@ -4,7 +4,7 @@
 terraform {
   backend "s3" {
     bucket       = "mantle-offlinemediadownloader-tfstate"
-    key          = "infra.tfstate"
+    key          = "infra-staging.tfstate"
     region       = "us-west-2"
     encrypt      = true
     use_lockfile = true
