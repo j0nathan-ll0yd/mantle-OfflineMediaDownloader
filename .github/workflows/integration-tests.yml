@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 25
     permissions:
       contents: read
+      packages: read # read @j0nathan-ll0yd/config from GitHub Packages
 
     steps:
       - name: Checkout code
@@ -42,6 +43,15 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
+      # @j0nathan-ll0yd/config (shared dprint + tsconfig) is on GitHub Packages,
+      # which requires auth even for reads. Mantle also consumes it, so pnpm's
+      # supply-chain check fetches its metadata during the mantle install below —
+      # authenticate before any install. pnpm config set writes the global config,
+      # so the token covers both the ../mantle install and the project install.
+      - name: Authenticate to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
       - name: Install and build mantle (before project install)
         run: |
           cd ../mantle

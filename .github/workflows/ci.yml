@@ -9,6 +9,12 @@ on:
   pull_request:
     branches: [main, master]
 
+# packages: read lets the run's GITHUB_TOKEN pull @j0nathan-ll0yd/config
+# (shared dprint + tsconfig) from GitHub Packages during install.
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   typecheck:
     name: Type Check
@@ -38,6 +44,15 @@ jobs:
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      # @j0nathan-ll0yd/config (shared dprint + tsconfig) lives on GitHub Packages,
+      # which requires auth even for reads. Mantle also consumes it, so pnpm's
+      # supply-chain check fetches its metadata during this FIRST install —
+      # authenticate before any install. pnpm config set writes the global config,
+      # so the token covers both the ../mantle install and the project install.
+      - name: Authenticate to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
       - name: Install mantle dependencies
         working-directory: ../mantle
         run: pnpm install --frozen-lockfile
@@ -81,6 +96,15 @@ jobs:
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      # @j0nathan-ll0yd/config (shared dprint + tsconfig) lives on GitHub Packages,
+      # which requires auth even for reads. Mantle also consumes it, so pnpm's
+      # supply-chain check fetches its metadata during this FIRST install —
+      # authenticate before any install. pnpm config set writes the global config,
+      # so the token covers both the ../mantle install and the project install.
+      - name: Authenticate to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
       - name: Install mantle dependencies
         working-directory: ../mantle
         run: pnpm install --frozen-lockfile
@@ -120,6 +144,15 @@ jobs:
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      # @j0nathan-ll0yd/config (shared dprint + tsconfig) lives on GitHub Packages,
+      # which requires auth even for reads. Mantle also consumes it, so pnpm's
+      # supply-chain check fetches its metadata during this FIRST install —
+      # authenticate before any install. pnpm config set writes the global config,
+      # so the token covers both the ../mantle install and the project install.
+      - name: Authenticate to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
       - name: Install mantle dependencies
         working-directory: ../mantle
         run: pnpm install --frozen-lockfile
@@ -161,6 +194,15 @@ jobs:
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      # @j0nathan-ll0yd/config (shared dprint + tsconfig) lives on GitHub Packages,
+      # which requires auth even for reads. Mantle also consumes it, so pnpm's
+      # supply-chain check fetches its metadata during this FIRST install —
+      # authenticate before any install. pnpm config set writes the global config,
+      # so the token covers both the ../mantle install and the project install.
+      - name: Authenticate to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
       - name: Install mantle dependencies
         working-directory: ../mantle
         run: pnpm install --frozen-lockfile
@@ -200,6 +242,15 @@ jobs:
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      # @j0nathan-ll0yd/config (shared dprint + tsconfig) lives on GitHub Packages,
+      # which requires auth even for reads. Mantle also consumes it, so pnpm's
+      # supply-chain check fetches its metadata during this FIRST install —
+      # authenticate before any install. pnpm config set writes the global config,
+      # so the token covers both the ../mantle install and the project install.
+      - name: Authenticate to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
       - name: Install mantle dependencies
         working-directory: ../mantle
         run: pnpm install --frozen-lockfile
@@ -239,6 +290,15 @@ jobs:
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      # @j0nathan-ll0yd/config (shared dprint + tsconfig) lives on GitHub Packages,
+      # which requires auth even for reads. Mantle also consumes it, so pnpm's
+      # supply-chain check fetches its metadata during this FIRST install —
+      # authenticate before any install. pnpm config set writes the global config,
+      # so the token covers both the ../mantle install and the project install.
+      - name: Authenticate to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
       - name: Install mantle dependencies
         working-directory: ../mantle
         run: pnpm install --frozen-lockfile

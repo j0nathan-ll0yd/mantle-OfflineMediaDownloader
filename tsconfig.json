@@ -1,4 +1,5 @@
 {
+  "extends": "@j0nathan-ll0yd/config/tsconfig-base.json",
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "module": "esnext",
@@ -6,9 +7,6 @@
     "lib": ["ES2025"],
     "outDir": "./dist",
     "rootDir": ".",
-    "strict": true,
-    "verbatimModuleSyntax": true,
-    "noUncheckedIndexedAccess": true,
     "types": ["node"],
     "moduleResolution": "bundler",
     "customConditions": ["source"],
@@ -34,12 +32,7 @@
     "noUnusedParameters": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "erasableSyntaxOnly": true,
-    "moduleDetection": "force"
+    "erasableSyntaxOnly": true
   },
   "include": ["src/**/*"],
   "exclude": [

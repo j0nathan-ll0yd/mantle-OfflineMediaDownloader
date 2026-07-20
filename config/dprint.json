@@ -1,71 +1,7 @@
 {
   "$schema": "https://dprint.dev/schemas/v0.json",
 
-  "lineWidth": 157,
-  "indentWidth": 2,
-  "useTabs": false,
-  "newLineKind": "lf",
-
-  "typescript": {
-    "quoteStyle": "preferSingle",
-    "jsx.quoteStyle": "preferSingle",
-    "quoteProps": "asNeeded",
-
-    "semiColons": "asi",
-
-    "trailingCommas": "never",
-
-    "bracePosition": "sameLine",
-    "nextControlFlowPosition": "sameLine",
-    "singleBodyPosition": "nextLine",
-    "useBraces": "whenNotSingleLine",
-
-    "operatorPosition": "sameLine",
-    "binaryExpression.operatorPosition": "sameLine",
-    "binaryExpression.preferSingleLine": true,
-    "conditionalExpression.operatorPosition": "nextLine",
-
-    "arrowFunction.useParentheses": "force",
-
-    "objectExpression.preferSingleLine": true,
-    "objectExpression.trailingCommas": "never",
-
-    "arrayExpression.preferSingleLine": false,
-    "arrayExpression.trailingCommas": "never",
-
-    "arguments.preferSingleLine": true,
-    "arguments.preferHanging": "always",
-    "arguments.trailingCommas": "never",
-    "parameters.preferSingleLine": true,
-    "parameters.trailingCommas": "never",
-
-    "preferHanging": false,
-
-    "memberExpression.linePerExpression": false,
-    "memberExpression.preferSingleLine": true,
-
-    "importDeclaration.forceMultiLine": "never",
-    "importDeclaration.sortNamedImports": "caseInsensitive",
-    "importDeclaration.spaceSurroundingNamedImports": false,
-    "module.sortImportDeclarations": "maintain",
-    "module.sortExportDeclarations": "maintain",
-
-    "typeLiteral.separatorKind": "semiColon",
-    "typeLiteral.preferSingleLine": true,
-    "typeAnnotation.spaceBeforeColon": false,
-
-    "spaceSurroundingProperties": false,
-    "binaryExpression.spaceSurroundingBitwiseAndArithmeticOperator": true,
-
-    "ifStatement.useBraces": "whenNotSingleLine",
-    "whileStatement.bracePosition": "sameLine",
-    "forStatement.useBraces": "whenNotSingleLine"
-  },
-
-  "json": {
-    "indentWidth": 2,
-    "trailingCommas": "never"
-  },
+  "extends": "../node_modules/@j0nathan-ll0yd/config/dprint.json",
 
   "includes": [
     "../src/**/*.{ts,tsx,js,jsx}",
@@ -83,10 +19,5 @@
     "**/.git",
     "../.omc/**",
     "../infra/**"
-  ],
-
-  "plugins": [
-    "https://plugins.dprint.dev/typescript-0.93.4.wasm",
-    "https://plugins.dprint.dev/json-0.19.4.wasm"
   ]
 }
