@@ -316,7 +316,7 @@ main() {
           $0 = substr($0, RSTART+RLENGTH)
         }
       }
-    ' "$md_file" 2>/dev/null || true)
+    ' "$md_file" 2> /dev/null || true)
 
     # Check each extracted path
     while IFS= read -r path; do
@@ -397,7 +397,7 @@ main() {
     while IFS= read -r line; do
       if [[ "$line" =~ ^\`\`\`(typescript|ts|javascript|js)?$ ]]; then
         in_code_block=true
-        in_legacy_example=false  # Reset legacy flag for new code block
+        in_legacy_example=false # Reset legacy flag for new code block
         continue
       fi
 

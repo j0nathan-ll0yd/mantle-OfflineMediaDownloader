@@ -1,11 +1,13 @@
 # Lightweight PG container for migration testing against real staging data.
 # Used by: mantle db clone --stage staging
-# Port 5433 avoids conflict with docker-compose.test.yml on 5432.
+# Default port 5433 avoids conflict with docker-compose.test.yml on 5432.
+# Per-worktree override via bin/worktree-ports.sh (pass --port "$CLONE_POSTGRES_PORT"
+# to `mantle db clone` so psql targets the same mapping).
 services:
   clone-db:
     image: postgres:17-alpine
     ports:
-      - "5433:5432"
+      - "${CLONE_POSTGRES_PORT:-5433}:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

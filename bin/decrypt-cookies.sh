@@ -16,7 +16,7 @@ fi
 
 mkdir -p "$(dirname "$COOKIES_TXT")"
 
-if ! command -v sops &>/dev/null; then
+if ! command -v sops &> /dev/null; then
   echo "WARNING: sops is not installed — creating placeholder cookies for build"
   echo "# Placeholder — replace with real cookies via: pnpm run cookies:encrypt" > "$COOKIES_TXT"
   exit 0

@@ -10,7 +10,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 COMPOSE_FILE="${PROJECT_ROOT}/docker/docker-compose.localstack.yml"
 POSTGRES_COMPOSE_FILE="${PROJECT_ROOT}/docker/docker-compose.test.yml"
-LOCALSTACK_HEALTH_URL="http://localhost:4566/_localstack/health"
+
+# Per-worktree ports/container names (no-op in the main checkout)
+cd "${PROJECT_ROOT}"
+# shellcheck source=bin/worktree-ports.sh
+. "${SCRIPT_DIR}/worktree-ports.sh"
+
+LOCALSTACK_HEALTH_URL="http://localhost:${LOCALSTACK_PORT:-4566}/_localstack/health"
+TEST_DB_CONTAINER="${TEST_DB_CONTAINER_NAME:-media-downloader-test-db}"
+LOCALSTACK_CONTAINER="${LOCALSTACK_CONTAINER_NAME:-aws-media-downloader-localstack}"
 MAX_HEALTH_RETRIES=30
 HEALTH_RETRY_DELAY=1
 
@@ -66,7 +74,7 @@ check_postgres_health() {
   echo -e "${YELLOW}Waiting for PostgreSQL to be ready...${NC}"
 
   while [ $retry_count -lt $MAX_HEALTH_RETRIES ]; do
-    if docker exec media-downloader-test-db pg_isready -U test -d media_downloader_test > /dev/null 2>&1; then
+    if docker exec "$TEST_DB_CONTAINER" pg_isready -U test -d media_downloader_test > /dev/null 2>&1; then
       echo -e "${GREEN}✓${NC} PostgreSQL is healthy"
       echo ""
       return 0
@@ -138,7 +146,7 @@ main() {
   if [ "$start_localstack" = true ]; then
     # Start PostgreSQL for database tests
     echo -e "${YELLOW}Starting PostgreSQL...${NC}"
-    if docker ps | grep -q "media-downloader-test-db"; then
+    if docker ps | grep -q "$TEST_DB_CONTAINER"; then
       echo -e "${BLUE}➜${NC} PostgreSQL is already running"
       echo ""
     else
@@ -152,7 +160,7 @@ main() {
       echo -e "${RED}PostgreSQL health check failed${NC}"
       echo ""
       echo "Troubleshooting:"
-      echo "  1. Check PostgreSQL logs: docker logs media-downloader-test-db"
+      echo "  1. Check PostgreSQL logs: docker logs $TEST_DB_CONTAINER"
       echo "  2. Restart PostgreSQL: docker compose -f docker/docker-compose.test.yml down && docker compose -f docker/docker-compose.test.yml up -d"
       exit 1
     fi
@@ -161,7 +169,7 @@ main() {
     echo -e "${YELLOW}Starting LocalStack...${NC}"
 
     # Check if LocalStack is already running
-    if docker ps | grep -q "aws-media-downloader-localstack"; then
+    if docker ps | grep -q "$LOCALSTACK_CONTAINER"; then
       echo -e "${BLUE}➜${NC} LocalStack is already running"
       echo ""
     else
@@ -185,7 +193,7 @@ main() {
     echo ""
 
     # Verify PostgreSQL is running
-    if ! docker ps | grep -q "media-downloader-test-db"; then
+    if ! docker ps | grep -q "$TEST_DB_CONTAINER"; then
       echo -e "${RED}Error: PostgreSQL is not running${NC}"
       echo "Start PostgreSQL with: docker compose -f docker/docker-compose.test.yml up -d"
       exit 1
@@ -198,7 +206,7 @@ main() {
     fi
 
     # Verify LocalStack is running
-    if ! docker ps | grep -q "aws-media-downloader-localstack"; then
+    if ! docker ps | grep -q "$LOCALSTACK_CONTAINER"; then
       echo -e "${RED}Error: LocalStack is not running${NC}"
       echo "Start LocalStack with: pnpm run localstack:start"
       exit 1
