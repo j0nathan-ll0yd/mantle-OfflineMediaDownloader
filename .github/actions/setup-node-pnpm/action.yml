@@ -23,6 +23,17 @@ runs:
           echo "::notice::pnpm cache MISS - installing dependencies fresh"
         fi
 
+    # The @j0nathan-ll0yd scope (shared dprint + tsconfig config) lives on GitHub
+    # Packages, which requires auth even for reads. pnpm ignores the token in the
+    # committed project .npmrc, so it must be written to a trusted config here,
+    # before install. Uses the run's GITHUB_TOKEN; the calling job must grant
+    # `permissions: packages: read`.
+    - name: Authenticate to GitHub Packages
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ github.token }}
+      run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
+
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile

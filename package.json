@@ -132,6 +132,7 @@
     "@eslint/eslintrc": "^3.3.6",
     "@eslint/js": "^10.0.1",
     "@huggingface/transformers": "^4.2.0",
+    "@j0nathan-ll0yd/config": "^1.1.0",
     "@lancedb/lancedb": "^0.31.0",
     "@mantleframework/cli": "link:../mantle/packages/cli",
     "@mantleframework/eslint-config": "link:../mantle/packages/eslint-config",

@@ -39,8 +39,12 @@ trustPolicyExclude:
 
 # Packages excluded from minimum release age (same-day security/compat patches)
 # ast-v8-to-istanbul: both 1.0.2 and 1.0.3 published 2026-05-31; needed by @vitest/coverage-v8
+# @j0nathan-ll0yd/config@1.1.0: first-party shared config (dprint + tsconfig base) on
+#   GitHub Packages; our own package, gates format/typecheck adoption, so it is
+#   exempt from the release-age delay.
 minimumReleaseAgeExclude:
   - 'ast-v8-to-istanbul'
+  - '@j0nathan-ll0yd/config@1.1.0'
 
 # Block exotic protocols in transitive dependencies
 # Direct deps can use git/tarball, subdeps cannot (common attack vector)
