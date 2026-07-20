@@ -17,5 +17,12 @@
       "pnpm localstack:stop >/dev/null 2>&1 || true",
       ". bin/worktree-ports.sh && docker compose -f docker/docker-compose.test.yml down -v >/dev/null 2>&1 || true"
     ]
+  },
+  "scripts": {
+    "test": { "command": "pnpm test" },
+    "typecheck": { "command": "pnpm typecheck" },
+    "test-integration": { "command": "pnpm test:integration" },
+    "localstack-start": { "command": "pnpm localstack:start" },
+    "localstack-stop": { "command": "pnpm localstack:stop" }
   }
 }
