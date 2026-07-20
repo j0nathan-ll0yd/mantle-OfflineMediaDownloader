@@ -262,7 +262,7 @@ pnpm run generate:openapi            # mantle generate openapi → docs/api/open
 ### Deployment Commands
 
 ```bash
-pnpm run bootstrap:state       # One-time: create/harden the remote tfstate bucket
+npx mantle bootstrap-state     # One-time: create/harden the remote tfstate bucket
 pnpm run deploy:staging        # Deploy to staging (local agents)
 ```
 
