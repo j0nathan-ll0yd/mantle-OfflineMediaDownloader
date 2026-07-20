@@ -5,11 +5,12 @@
 #
 # Usage:
 #   ./bin/pre-deploy-check.sh --env staging       # Check staging for drift
-#   ./bin/pre-deploy-check.sh --env production    # Check production for drift
 #   ./bin/pre-deploy-check.sh --env staging --force  # Check drift, proceed anyway
 #
 # Arguments:
-#   --env <environment>  Required. Either 'staging' or 'production'
+#   --env <environment>  Required. Only 'staging' — the single default-workspace state
+#                        (infra-staging.tfstate) serves staging only; other stages are
+#                        refused until stage-scoped state keys exist (mantle Phase 2d).
 #   --force              Optional. Proceed even if drift is detected
 #
 # Exit codes:
@@ -47,7 +48,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo -e "${RED}Unknown argument: $1${NC}"
-      echo "Usage: $0 --env <staging|production> [--force]"
+      echo "Usage: $0 --env staging [--force]"
       exit 1
       ;;
   esac
@@ -56,26 +57,20 @@ done
 # Validate environment
 if [[ -z "$ENVIRONMENT" ]]; then
   echo -e "${RED}ERROR: --env parameter is required${NC}"
-  echo "Usage: $0 --env <staging|production> [--force]"
+  echo "Usage: $0 --env staging [--force]"
   exit 1
 fi
 
-if [[ "$ENVIRONMENT" != "staging" && "$ENVIRONMENT" != "production" ]]; then
-  echo -e "${RED}ERROR: Environment must be 'staging' or 'production', got: ${ENVIRONMENT}${NC}"
+if [[ "$ENVIRONMENT" != "staging" ]]; then
+  echo -e "${RED}ERROR: Only 'staging' is deployable (allowedStages guard; stage-scoped state pending mantle Phase 2d), got: ${ENVIRONMENT}${NC}"
   exit 1
 fi
 
 # Map environment to workspace and tfvars
 case $ENVIRONMENT in
   staging)
-    WORKSPACE="staging"
     TFVARS_FILE="environments/staging.tfvars"
-    SECRETS_FILE="${PROJECT_ROOT}/secrets.staging.enc.yaml"
-    ;;
-  production)
-    WORKSPACE="production"
-    TFVARS_FILE="environments/production.tfvars"
-    SECRETS_FILE="${PROJECT_ROOT}/secrets.prod.enc.yaml"
+    SECRETS_FILE="${PROJECT_ROOT}/secrets/secrets.staging.enc.yaml"
     ;;
 esac
 
@@ -150,28 +145,22 @@ main() {
   echo "  State backend: S3 (remote)"
   echo ""
 
-  # =============================================================================
-  # Select Workspace
-  # =============================================================================
-  echo -e "${BLUE}Selecting workspace: ${WORKSPACE}${NC}"
-
-  CURRENT_WS=$(tofu workspace show 2>/dev/null || echo "")
-  if [[ "$CURRENT_WS" != "$WORKSPACE" ]]; then
-    if ! tofu workspace select "$WORKSPACE" > /dev/null 2>&1; then
-      echo -e "${RED}ERROR: Failed to select workspace '${WORKSPACE}'${NC}"
-      echo "  Run './bin/init-workspaces.sh' to create workspaces"
-      exit 1
-    fi
+  # Mantle uses NO terraform workspaces: the default workspace's state key is
+  # already stage-scoped (infra-staging.tfstate). Pin the container image var from
+  # live state so an unchanged image does not read as drift (deploy injects it).
+  IMAGE_URI=$(tofu state show module.lambda_start_file_upload.aws_lambda_function.function 2>/dev/null | sed -n 's/^ *image_uri *= *"\(.*\)".*/\1/p' | head -1)
+  IMAGE_VAR_ARGS=()
+  if [[ -n "${IMAGE_URI}" ]]; then
+    IMAGE_VAR_ARGS+=("-var=image_uri_start_file_upload=${IMAGE_URI}")
+    echo -e "${GREEN}ok${NC} Pinned container image: ${IMAGE_URI##*/}"
   fi
-  echo -e "${GREEN}✓${NC} Workspace: ${WORKSPACE}"
-  echo ""
 
   # Run tofu plan with detailed exit code
   echo -e "${YELLOW}Running tofu plan with ${TFVARS_FILE}...${NC}"
 
   # Capture plan output and exit code
   set +e
-  PLAN_OUTPUT=$(tofu plan -var-file="${TFVARS_FILE}" -detailed-exitcode -input=false -no-color 2>&1)
+  PLAN_OUTPUT=$(tofu plan -var-file="${TFVARS_FILE}" "${IMAGE_VAR_ARGS[@]}" -detailed-exitcode -input=false -no-color 2>&1)
   PLAN_EXIT=$?
   set -e
 
@@ -216,7 +205,7 @@ main() {
         echo "  $0 --env ${ENVIRONMENT} --force"
         echo ""
         echo "Or to investigate the drift:"
-        echo "  cd infra && tofu workspace select ${WORKSPACE} && tofu plan -var-file=${TFVARS_FILE}"
+        echo "  cd infra && tofu plan -var-file=${TFVARS_FILE}"
         exit 2
       fi
       ;;

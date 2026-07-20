@@ -262,11 +262,11 @@ pnpm run generate:openapi            # mantle generate openapi → docs/api/open
 ### Deployment Commands
 
 ```bash
+pnpm run bootstrap:state       # One-time: create/harden the remote tfstate bucket
 pnpm run deploy:staging        # Deploy to staging (local agents)
-pnpm run deploy:production     # Deploy to production (manual, or auto via GitHub Actions)
 ```
 
-**Note**: Production deployments auto-trigger on merge to main via GitHub Actions.
+**Note**: Staging is the only deployable stage — Terraform state is remote (S3, `infra-staging.tfstate`, native lockfile) and `allowedStages: ['staging']` hard-refuses anything else until stage-scoped state keys land (mantle Phase 2d). CI does not deploy (`ci.deploy: false`).
 
 Before running migrations against a live stage, use these validation commands:
 
@@ -278,14 +278,10 @@ mantle db clone --stage staging   # clones remote Aurora DSQL to local Docker Po
 ### Infrastructure Verification
 
 ```bash
-pnpm run deploy:check:staging    # Check staging for drift
-pnpm run deploy:check:production # Check production for drift
-pnpm run state:verify:staging    # Verify staging state
-pnpm run state:verify:production # Verify production state
+pnpm run deploy:check:staging    # Check staging for drift (read-only tofu plan)
+pnpm run state:verify:staging    # Verify remote staging state
 pnpm run audit:aws:staging       # Audit staging resources
-pnpm run audit:aws:production    # Audit production resources
-pnpm run plan:staging            # Preview staging changes
-pnpm run plan:production         # Preview production changes
+pnpm run plan:staging            # Preview staging changes (raw tofu plan)
 ```
 
 ### Pre-Commit Checklist
