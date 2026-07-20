@@ -5,7 +5,6 @@
 #
 # Usage:
 #   ./bin/verify-state.sh --env staging              # Quick verification for staging
-#   ./bin/verify-state.sh --env production           # Quick verification for production
 #   ./bin/verify-state.sh --env staging --refresh    # Refresh state and verify (slower)
 #
 # Arguments:
@@ -13,7 +12,7 @@
 #   --refresh            Optional. Refresh state before verification (slower but more accurate)
 #
 # This script:
-#   1. Selects the appropriate workspace
+#   1. Verifies the remote state (default workspace; stage-scoped key)
 #   2. Counts resources in state
 #   3. Optionally refreshes state to sync with AWS reality
 #   4. Runs tofu plan to check for drift
@@ -49,7 +48,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo -e "${RED}Unknown argument: $1${NC}"
-      echo "Usage: $0 --env <staging|production> [--refresh]"
+      echo "Usage: $0 --env staging [--refresh]"
       exit 1
       ;;
   esac
@@ -58,24 +57,19 @@ done
 # Validate environment
 if [[ -z "$ENVIRONMENT" ]]; then
   echo -e "${RED}ERROR: --env parameter is required${NC}"
-  echo "Usage: $0 --env <staging|production> [--refresh]"
+  echo "Usage: $0 --env staging [--refresh]"
   exit 1
 fi
 
-if [[ "$ENVIRONMENT" != "staging" && "$ENVIRONMENT" != "production" ]]; then
-  echo -e "${RED}ERROR: Environment must be 'staging' or 'production', got: ${ENVIRONMENT}${NC}"
+if [[ "$ENVIRONMENT" != "staging" ]]; then
+  echo -e "${RED}ERROR: Only 'staging' exists (stage-scoped state pending mantle Phase 2d), got: ${ENVIRONMENT}${NC}"
   exit 1
 fi
 
-# Map environment to workspace and tfvars
+# Map environment to tfvars
 case $ENVIRONMENT in
   staging)
-    WORKSPACE="staging"
     TFVARS_FILE="environments/staging.tfvars"
-    ;;
-  production)
-    WORKSPACE="production"
-    TFVARS_FILE="environments/production.tfvars"
     ;;
 esac
 
@@ -101,28 +95,15 @@ main() {
 
   cd "${TERRAFORM_DIR}"
 
-  # =============================================================================
-  # Select Workspace
-  # =============================================================================
-  echo -e "${BLUE}Selecting workspace: ${WORKSPACE}${NC}"
-
-  CURRENT_WS=$(tofu workspace show 2>/dev/null || echo "")
-  if [[ "$CURRENT_WS" != "$WORKSPACE" ]]; then
-    if ! tofu workspace select "$WORKSPACE" > /dev/null 2>&1; then
-      echo -e "${RED}ERROR: Failed to select workspace '${WORKSPACE}'${NC}"
-      echo "  Run './bin/init-workspaces.sh' to create workspaces"
-      exit 1
-    fi
-  fi
-  echo -e "${GREEN}✓${NC} Workspace: ${WORKSPACE}"
-  echo ""
+  # Mantle uses NO terraform workspaces: the default workspace's state key is
+  # already stage-scoped (infra-staging.tfstate).
 
   # Count resources in state
   echo -e "${YELLOW}[1/3] Analyzing state file...${NC}"
 
-  AWS_RESOURCES=$(tofu state list 2> /dev/null | grep -cE "^aws_" || echo 0)
-  DATA_SOURCES=$(tofu state list 2> /dev/null | grep -cE "^data\." || echo 0)
-  LOCAL_RESOURCES=$(tofu state list 2> /dev/null | grep -cE "^local_" || echo 0)
+  AWS_RESOURCES=$(tofu state list 2> /dev/null | grep -cE "^aws_" || true)
+  DATA_SOURCES=$(tofu state list 2> /dev/null | grep -cE "^data\." || true)
+  LOCAL_RESOURCES=$(tofu state list 2> /dev/null | grep -cE "^local_" || true)
 
   echo "  AWS resources:   ${AWS_RESOURCES}"
   echo "  Data sources:    ${DATA_SOURCES}"
@@ -151,7 +132,14 @@ main() {
   trap 'rm -f "$PLAN_OUTPUT"' EXIT
 
   set +e
-  tofu plan -var-file="${TFVARS_FILE}" -detailed-exitcode -input=false -no-color > "$PLAN_OUTPUT" 2>&1
+  # Pin the container image var from live state so an unchanged image does not
+  # read as drift (mantle deploy injects it at deploy time).
+  IMAGE_URI=$(tofu state show module.lambda_start_file_upload.aws_lambda_function.function 2>/dev/null | sed -n 's/^ *image_uri *= *"\(.*\)".*/\1/p' | head -1)
+  IMAGE_VAR_ARGS=()
+  if [[ -n "${IMAGE_URI}" ]]; then
+    IMAGE_VAR_ARGS+=("-var=image_uri_start_file_upload=${IMAGE_URI}")
+  fi
+  tofu plan -var-file="${TFVARS_FILE}" "${IMAGE_VAR_ARGS[@]}" -detailed-exitcode -input=false -no-color > "$PLAN_OUTPUT" 2>&1
   PLAN_EXIT=$?
   set -e
 
@@ -183,7 +171,7 @@ main() {
       echo ""
 
       echo "Run the following for details:"
-      echo "  cd infra && tofu workspace select ${WORKSPACE} && tofu plan -var-file=${TFVARS_FILE}"
+      echo "  cd infra && tofu plan -var-file=${TFVARS_FILE}"
       echo ""
       echo "Or deploy to reconcile:"
       echo "  pnpm run deploy:${ENVIRONMENT}"
@@ -195,8 +183,8 @@ main() {
   echo "Summary"
   echo "-------"
   echo "  Environment:             ${ENVIRONMENT}"
-  echo "  Workspace:               ${WORKSPACE}"
-  echo "  Total managed resources: $((AWS_RESOURCES + DATA_SOURCES + LOCAL_RESOURCES))"
+  echo "  State key:               infra-staging.tfstate"
+  echo "  Root-level state entries: $((AWS_RESOURCES + DATA_SOURCES + LOCAL_RESOURCES)) (module resources not counted; tofu state list | wc -l for the full count)"
   echo "  State backend:           S3 (remote)"
   echo ""
 }
