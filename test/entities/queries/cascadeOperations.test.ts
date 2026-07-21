@@ -109,11 +109,29 @@ describe('Cascade Operations', () => {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockReturnValue({
-                then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+                then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+                  try {
+                    resolve(await Promise.resolve(result))
+                  } catch (error) {
+                    reject?.(error)
+                  }
+                }
               }),
-              then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+              then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+                try {
+                  resolve(await Promise.resolve(result))
+                } catch (error) {
+                  reject?.(error)
+                }
+              }
             }),
-            then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+            then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+              try {
+                resolve(await Promise.resolve(result))
+              } catch (error) {
+                reject?.(error)
+              }
+            }
           })
         }
       })
@@ -138,11 +156,29 @@ describe('Cascade Operations', () => {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockReturnValue({
-                then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+                then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+                  try {
+                    resolve(await Promise.resolve(result))
+                  } catch (error) {
+                    reject?.(error)
+                  }
+                }
               }),
-              then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+              then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+                try {
+                  resolve(await Promise.resolve(result))
+                } catch (error) {
+                  reject?.(error)
+                }
+              }
             }),
-            then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+            then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+              try {
+                resolve(await Promise.resolve(result))
+              } catch (error) {
+                reject?.(error)
+              }
+            }
           })
         }
       })
@@ -164,11 +200,29 @@ describe('Cascade Operations', () => {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockReturnValue({
-                then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+                then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+                  try {
+                    resolve(await Promise.resolve(result))
+                  } catch (error) {
+                    reject?.(error)
+                  }
+                }
               }),
-              then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+              then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+                try {
+                  resolve(await Promise.resolve(result))
+                } catch (error) {
+                  reject?.(error)
+                }
+              }
             }),
-            then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject)
+            then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+              try {
+                resolve(await Promise.resolve(result))
+              } catch (error) {
+                reject?.(error)
+              }
+            }
           })
         }
       })

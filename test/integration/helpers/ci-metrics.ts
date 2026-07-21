@@ -69,7 +69,7 @@ export function createMetrics(
     retriedTests: data.retriedTests,
     durationMs: data.durationMs,
     timestamp: new Date().toISOString(),
-    ciAttempt: data.ciAttempt ?? (process.env.CI_ATTEMPT ? parseInt(process.env.CI_ATTEMPT, 10) : 1),
+    ciAttempt: data.ciAttempt ?? (process.env.CI_ATTEMPT ? Number(process.env.CI_ATTEMPT) : 1),
     environment: {ci: !!process.env.CI, nodeVersion: process.version, platform: process.platform}
   }
 }

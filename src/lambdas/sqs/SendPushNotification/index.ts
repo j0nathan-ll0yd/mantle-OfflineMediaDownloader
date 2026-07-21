@@ -60,7 +60,7 @@ export const handler = sqs(async (record) => {
       metrics.addMetric('DisabledEndpointsDetected', MetricUnit.Count, disabledEndpoints.length)
       const disabledDeviceIds = disabledEndpoints.flatMap((r) => isErr(r) ? [r.error.deviceId] : [])
       logInfo('Cleaning up disabled endpoints', {userId, deviceIds: disabledDeviceIds})
-      cleanupDisabledEndpoints(disabledDeviceIds).catch((err: unknown) => {
+      void cleanupDisabledEndpoints(disabledDeviceIds).catch((err: unknown) => {
         logError('Async endpoint cleanup failed', {error: err instanceof Error ? err.message : String(err)})
       })
     }

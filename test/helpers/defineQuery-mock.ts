@@ -16,7 +16,13 @@ export function createTerminalMock(defaultValue: unknown = []) {
   const mock = vi.fn().mockResolvedValue(defaultValue)
   // Make it thenable so `await db.select().from(table).where(cond)` works
   const thenableMock = Object.assign(mock, {
-    then: (resolve: (v: unknown) => void, reject: (e: unknown) => void) => mock().then(resolve, reject),
+    then: async (resolve: (v: unknown) => void, reject: (e: unknown) => void) => {
+      try {
+        resolve(await mock())
+      } catch (error) {
+        reject(error)
+      }
+    },
     limit: vi.fn().mockImplementation(() => thenableMock),
     returning: vi.fn().mockImplementation(() => thenableMock),
     where: vi.fn().mockImplementation(() => thenableMock)
@@ -63,7 +69,13 @@ export function createMockDrizzleDb(): MockDrizzleDb {
   // Also: select() -> from() -> innerJoin() -> where() -> [resolves]
   const selectChain = () => {
     const terminal = {
-      then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(selectResult).then(resolve, reject),
+      then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+        try {
+          resolve(await Promise.resolve(selectResult))
+        } catch (error) {
+          reject?.(error)
+        }
+      },
       limit: vi.fn().mockImplementation(() => terminal),
       where: vi.fn().mockImplementation(() => terminal)
     }
@@ -71,7 +83,13 @@ export function createMockDrizzleDb(): MockDrizzleDb {
       where: vi.fn().mockImplementation(() => terminal),
       innerJoin: vi.fn().mockImplementation(() => fromResult),
       limit: vi.fn().mockImplementation(() => terminal),
-      then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(selectResult).then(resolve, reject)
+      then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+        try {
+          resolve(await Promise.resolve(selectResult))
+        } catch (error) {
+          reject?.(error)
+        }
+      }
     }
     return {from: vi.fn().mockImplementation(() => fromResult)}
   }
@@ -100,7 +118,13 @@ export function createMockDrizzleDb(): MockDrizzleDb {
   // `returning()` for queries that need the deleted rows (await db.delete().where(cond).returning({...})).
   const deleteChain = () => {
     const whereResult = {
-      then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise.resolve(deleteResult).then(resolve, reject),
+      then: async (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => {
+        try {
+          resolve(await Promise.resolve(deleteResult))
+        } catch (error) {
+          reject?.(error)
+        }
+      },
       returning: vi.fn().mockImplementation(() => Promise.resolve(deleteResult))
     }
     return {where: vi.fn().mockImplementation(() => whereResult)}
