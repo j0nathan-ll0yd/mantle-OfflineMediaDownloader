@@ -353,5 +353,5 @@ async function main() {
 
 // Run if executed directly
 if (import.meta.url === `file://${__filename}`) {
-  main().catch(console.error)
+  void main().catch(console.error)
 }

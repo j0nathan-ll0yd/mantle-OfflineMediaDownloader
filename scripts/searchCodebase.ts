@@ -142,4 +142,4 @@ Results for query: "${query}"
 }
 
 const query = process.argv.slice(2).join(' ') || 'How is DynamoDB initialized?'
-cliSearch(query).catch(console.error)
+void cliSearch(query).catch(console.error)

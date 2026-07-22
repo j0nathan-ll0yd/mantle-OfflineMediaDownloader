@@ -98,7 +98,7 @@ export async function processDownloadRequest(message: ValidatedDownloadQueueMess
       }
       lastDispatchedPercent = percent
       // mantle-ignore: C58 — fire-and-forget; Lambda has 900s timeout, progress notifications are advisory
-      dispatchDownloadProgressNotifications(fileId, percent, notifyUserIds).catch((err) => {
+      void dispatchDownloadProgressNotifications(fileId, percent, notifyUserIds).catch((err) => {
         logDebug('DownloadProgressNotification dispatch failed (non-critical)', {fileId, percent, error: err instanceof Error ? err.message : String(err)})
       })
     })

@@ -40,7 +40,7 @@ defineLambda({
 const sqs = defineSqsHandler({operationName: 'StartFileUpload', parseBody: true, timeout: 900, memorySize: 2048, queue: 'DownloadQueue'})
 
 export const handler = sqs(async (record) => {
-  const receiveCount = parseInt(record.attributes?.ApproximateReceiveCount ?? '1', 10)
+  const receiveCount = Number(record.attributes?.ApproximateReceiveCount ?? '1')
 
   const validationResult = validateSchema(downloadQueueMessageSchema, record.body)
   if (!validationResult.success) {

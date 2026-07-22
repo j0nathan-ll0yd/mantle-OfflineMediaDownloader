@@ -120,7 +120,7 @@ export async function handleDownloadFailure(
  * Best-effort, non-blocking operation.
  */
 export function tryCloseCookieExpirationIssue(): void {
-  closeCookieExpirationIssueIfResolved().catch(() => {
+  void closeCookieExpirationIssueIfResolved().catch(() => {
     // Ignore errors - this is non-critical
   })
 }

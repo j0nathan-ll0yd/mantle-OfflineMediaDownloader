@@ -381,4 +381,4 @@ async function indexKnowledgeGraph(projectRoot: string): Promise<CodeChunk[]> {
 }
 
 // Run when executed directly
-indexCodebase().catch(console.error)
+void indexCodebase().catch(console.error)

@@ -46,7 +46,7 @@ export function getWorkerSchema(): string {
   // In threads mode, it's 0-indexed, so we add 1 to get 1-indexed worker IDs
   const vitestPoolId = process.env.VITEST_POOL_ID
   if (vitestPoolId !== undefined) {
-    const workerId = parseInt(vitestPoolId, 10) + 1
+    const workerId = Number(vitestPoolId) + 1
     return `${prefix}worker_${workerId}`
   }
   // Falls back to JEST_WORKER_ID for Jest, or '1' for single-threaded

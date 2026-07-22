@@ -122,7 +122,13 @@ async function cleanupStaleTempFiles(): Promise<void> {
     const staleFiles = files.filter((f) => VIDEO_FILE_EXTENSIONS.some((ext) => f.endsWith(ext)))
     if (staleFiles.length > 0) {
       logDebug('Cleaning up stale temp files', {count: staleFiles.length, files: staleFiles})
-      await Promise.all(staleFiles.map((f) => unlink(`/tmp/${f}`).catch(() => {})))
+      await Promise.all(staleFiles.map(async (f) => {
+        try {
+          await unlink(`/tmp/${f}`)
+        } catch {
+          // File may already be gone or unremovable; cleanup is best-effort
+        }
+      }))
     }
   } catch {
     // /tmp may not be listable in some environments
@@ -383,7 +389,7 @@ function parseProgressLine(line: string): {percent?: number; size?: string; spee
   // Match download progress line
   const progressMatch = line.match(/\[download\]\s+(\d+\.?\d*)%\s+of\s+~?(\S+)\s+at\s+(\S+)\s+ETA\s+(\S+)/)
   if (progressMatch) {
-    return {percent: parseFloat(progressMatch[1]!), size: progressMatch[2], speed: progressMatch[3], eta: progressMatch[4]}
+    return {percent: Number(progressMatch[1]!), size: progressMatch[2], speed: progressMatch[3], eta: progressMatch[4]}
   }
 
   // Match merger line
