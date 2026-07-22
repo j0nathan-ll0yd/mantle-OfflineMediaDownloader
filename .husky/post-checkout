@@ -3,11 +3,16 @@
 # post-checkout hook: Setup worktrees for development and deployment
 # Runs after: git checkout, git switch, git worktree add
 #
-# Symlinks from main repo:
-#   - .claude/               (Claude Code settings)
-#   - secrets.yaml           (Decrypted secrets - gitignored)
-#   - .sops.yaml             (SOPS configuration)
-#   - .env                   (Environment variables for SOPS)
+# Symlinks the gitignored-but-required local files from the main repo:
+#   - .claude/settings.local.json  (holds DEVTOOLS_OMD_TOKEN — the MCP bearer)
+#   - .sops.yaml / .env / .envrc   (SOPS config + environment)
+#   - secrets/secrets.{prod,staging}.yaml  (decrypted secrets — gitignored)
+#   - infra/terraform.tfvars       (local tfvars)
+#
+# NOTE: seed SPECIFIC files, never whole dirs. `.claude/` and `secrets/` also
+# contain TRACKED files, so those dirs already exist in a fresh worktree — a
+# whole-dir symlink is silently skipped by the "already exists" guard below,
+# and the gitignored token/secrets never land (this was the DevTools 401 bug).
 #
 # Auto-setup for fresh worktrees:
 #   - pnpm install
@@ -22,20 +27,21 @@ CURRENT_DIR=$(pwd)
 [ -z "$MAIN_REPO" ] && exit 0
 [ "$CURRENT_DIR" = "$MAIN_REPO" ] && exit 0
 
-# --- Symlink shared files ---
-SHARED_ITEMS=".claude secrets.yaml .sops.yaml .env"
+# --- Symlink shared, gitignored-but-required files (specific files, not dirs) ---
+SHARED_ITEMS=".claude/settings.local.json .sops.yaml .env .envrc secrets/secrets.prod.yaml secrets/secrets.staging.yaml infra/terraform.tfvars"
 LINKED=""
 
 for item in $SHARED_ITEMS; do
-  # Skip if already exists (file, dir, or symlink)
+  # Skip if already present (file or symlink)
   if [ -e "$item" ] || [ -L "$item" ]; then
     continue
   fi
 
-  # Check if item exists in main repo
+  # Only link if it exists in the main repo; create the parent dir first so
+  # nested targets (secrets/, .claude/, infra/) work even if absent.
   if [ -e "$MAIN_REPO/$item" ]; then
-    ln -s "$MAIN_REPO/$item" "$item"
-    if [ $? -eq 0 ]; then
+    mkdir -p "$(dirname "$item")"
+    if ln -s "$MAIN_REPO/$item" "$item"; then
       LINKED="$LINKED $item"
     fi
   fi
@@ -47,7 +53,8 @@ if [ -n "$LINKED" ]; then
 fi
 
 # --- Auto-setup: Only run for fresh worktrees (no node_modules) ---
-if [ ! -d "node_modules" ]; then
+# Escape hatch: WORKTREE_SKIP_INSTALL=1 skips the heavy install/init steps.
+if [ "${WORKTREE_SKIP_INSTALL:-0}" != "1" ] && [ ! -d "node_modules" ]; then
   echo ""
   echo "Setting up worktree..."
 
