@@ -105,18 +105,20 @@ jobs:
       - name: Post mutation score to job summary
         if: always() && hashFiles('reports/mutation/mutation.json') != ''
         run: |
-          echo "## Mutation Testing Results" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
           SCORE=$(jq '.mutationScore' reports/mutation/mutation.json)
-          echo "**Mutation Score:** ${SCORE}%" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Metric | Count |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
           KILLED=$(jq '.killed' reports/mutation/mutation.json)
           SURVIVED=$(jq '.survived' reports/mutation/mutation.json)
           TIMEOUT=$(jq '.timeout' reports/mutation/mutation.json)
           NO_COVERAGE=$(jq '.noCoverage' reports/mutation/mutation.json)
-          echo "| Killed | ${KILLED} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Survived | ${SURVIVED} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Timeout | ${TIMEOUT} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| No Coverage | ${NO_COVERAGE} |" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Mutation Testing Results"
+            echo ""
+            echo "**Mutation Score:** ${SCORE}%"
+            echo ""
+            echo "| Metric | Count |"
+            echo "|--------|-------|"
+            echo "| Killed | ${KILLED} |"
+            echo "| Survived | ${SURVIVED} |"
+            echo "| Timeout | ${TIMEOUT} |"
+            echo "| No Coverage | ${NO_COVERAGE} |"
+          } >> "$GITHUB_STEP_SUMMARY"

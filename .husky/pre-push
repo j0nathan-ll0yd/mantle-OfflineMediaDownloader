@@ -23,4 +23,4 @@ echo "Running pre-push checks (mantle ci --mode pre-push)..."
 echo "Use 'git push --no-verify' to bypass in emergencies."
 echo ""
 
-npx mantle ci --mode pre-push
+pnpm exec mantle ci --mode pre-push

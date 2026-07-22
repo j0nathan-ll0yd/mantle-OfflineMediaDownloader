@@ -97,7 +97,7 @@ jobs:
   # ==========================================================================
   deploy-production:
     # TEMPORARILY DISABLED: Re-enable after repo rename and CI stabilization
-    if: false
+    if: vars.ENABLE_PRODUCTION_DEPLOY == 'true'
     name: Deploy Production
     needs: build
     runs-on: [self-hosted, linux, arm64, node]

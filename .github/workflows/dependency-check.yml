@@ -29,17 +29,19 @@ jobs:
         # Overrides fix known transitive vulns; new findings are informational until triaged.
         continue-on-error: true
         run: |
-          echo "## Security Audit" >> "$GITHUB_STEP_SUMMARY"
-          if pnpm audit --audit-level=high 2>&1 | tee /tmp/audit-output.txt; then
-            echo "No high-severity vulnerabilities found." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            cat /tmp/audit-output.txt >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "> **Note:** This is informational. Review findings and add pnpm overrides or dependency updates as needed." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          {
+            echo "## Security Audit"
+            if pnpm audit --audit-level=high 2>&1 | tee /tmp/audit-output.txt; then
+              echo "No high-severity vulnerabilities found."
+            else
+              echo '```'
+              cat /tmp/audit-output.txt
+              echo '```'
+              echo ""
+              echo "> **Note:** This is informational. Review findings and add pnpm overrides or dependency updates as needed."
+              exit 1
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check stale pnpm overrides
         run: node .github/scripts/check-upstream-issues.mjs

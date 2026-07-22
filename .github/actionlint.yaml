@@ -1,0 +1,4 @@
+self-hosted-runner:
+  # These are assigned by the repository's self-hosted runner fleet and are
+  # used throughout the checked-in workflows.
+  labels: [base, node, node-integration]

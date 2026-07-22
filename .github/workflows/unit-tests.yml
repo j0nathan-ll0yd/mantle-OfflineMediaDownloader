@@ -347,12 +347,14 @@ jobs:
       - name: Post timing summary
         if: always()
         run: |
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "## CI Job Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Job | Status |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Validate | ${{ needs.validate.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Lint & Types | ${{ needs.lint-and-types.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Build | ${{ needs.build-and-validate.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Tests | ${{ job.status }} |" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo ""
+            echo "## CI Job Summary"
+            echo ""
+            echo "| Job | Status |"
+            echo "|-----|--------|"
+            echo "| Validate | ${{ needs.validate.result }} |"
+            echo "| Lint & Types | ${{ needs.lint-and-types.result }} |"
+            echo "| Build | ${{ needs.build-and-validate.result }} |"
+            echo "| Tests | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

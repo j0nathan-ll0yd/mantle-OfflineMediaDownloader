@@ -82,6 +82,10 @@ allowBuilds:
   "sharp": true                 # Image processing native binary
 
 overrides:
+  # Security updates for transitive dev tools; see pnpm audit advisories.
+  'adm-zip': '0.6.0'
+  'fast-uri': '3.1.4'
+  'sharp': '0.35.3'
   'qs': '>=6.14.1'
   'drizzle-zod>zod': '^4.3.4'
   'undici-types': '7.16.0'

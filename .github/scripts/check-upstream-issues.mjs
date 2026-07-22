@@ -22,19 +22,20 @@
  *   1 — at least one STALE or DEAD override detected
  */
 
+import {execFileSync} from 'node:child_process'
 import {readFileSync} from 'node:fs'
 import {join} from 'node:path'
 
 const cwd = process.cwd()
 
-// --- Read package.json overrides ---
-const pkgPath = join(cwd, 'package.json')
+// --- Read effective pnpm overrides ---
+// pnpm 11 reads workspace settings from pnpm-workspace.yaml, not package.json.
+// Ask pnpm for the effective configuration so this check follows either layout.
 let overrides
 try {
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
-  overrides = pkg.pnpm?.overrides ?? {}
+  overrides = JSON.parse(execFileSync('pnpm', ['config', 'get', 'overrides', '--json'], {cwd, encoding: 'utf-8'}))
 } catch (err) {
-  console.error(`Failed to read package.json: ${err.message}`)
+  console.error(`Failed to read pnpm overrides: ${err.message}`)
   process.exit(1)
 }
 
@@ -213,7 +214,7 @@ if (dead.length > 0) {
 console.log(summary.join(', '))
 
 if (stale.length > 0 || dead.length > 0) {
-  console.log('\nStale/dead overrides can be safely removed from package.json pnpm.overrides.')
+  console.log('\nStale/dead overrides can be safely removed from the pnpm workspace configuration.')
   if (stale.length > 0) {
     console.log('\nStale (condition range no longer matches any resolved version):')
     for (const r of stale) {
