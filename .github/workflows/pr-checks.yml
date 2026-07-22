@@ -87,10 +87,12 @@ jobs:
 
       - name: Post summary
         run: |
-          echo "## PR Check Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Check | Status |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Quick Checks | ${{ needs.quick-checks.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Unit Tests | ${{ needs.full-ci.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Integration Tests | ${{ needs.integration.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## PR Check Summary"
+            echo ""
+            echo "| Check | Status |"
+            echo "|-------|--------|"
+            echo "| Quick Checks | ${{ needs.quick-checks.result }} |"
+            echo "| Unit Tests | ${{ needs.full-ci.result }} |"
+            echo "| Integration Tests | ${{ needs.integration.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

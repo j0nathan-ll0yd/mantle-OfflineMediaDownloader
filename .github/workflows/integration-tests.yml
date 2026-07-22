@@ -117,42 +117,48 @@ jobs:
           # JUnit format: <testcase name="..." classname="..." time="...">
           # Retried tests will show in the report with "retry #N" in their output
 
-          echo "## Integration Test Results" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-
           # Count total tests, failures, and errors from JUnit
           if command -v xmllint &> /dev/null; then
             TESTS=$(xmllint --xpath "string(//testsuite/@tests)" test-results/integration-results.xml 2>/dev/null || echo "0")
             FAILURES=$(xmllint --xpath "string(//testsuite/@failures)" test-results/integration-results.xml 2>/dev/null || echo "0")
             ERRORS=$(xmllint --xpath "string(//testsuite/@errors)" test-results/integration-results.xml 2>/dev/null || echo "0")
             TIME=$(xmllint --xpath "string(//testsuite/@time)" test-results/integration-results.xml 2>/dev/null || echo "0")
-
-            echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
-            echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Total Tests | $TESTS |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Failures | $FAILURES |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Errors | $ERRORS |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Test Duration | ${TIME}s |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Total Run Duration | ${{ steps.integration-tests.outputs.duration }}s |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| CI Attempt | ${{ steps.integration-tests.outputs.attempt }} |" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "JUnit report generated at test-results/integration-results.xml" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
-            echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Total Run Duration | ${{ steps.integration-tests.outputs.duration }}s |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| CI Attempt | ${{ steps.integration-tests.outputs.attempt }} |" >> "$GITHUB_STEP_SUMMARY"
+            TESTS=0
+            FAILURES=0
+            ERRORS=0
+            TIME=0
           fi
 
-          # Check for flaky test warnings in the test output
-          if grep -q "\[FLAKY\]" test-results/integration-results.xml 2>/dev/null; then
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "### Flaky Tests Detected" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "The following tests required retries to pass:" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            grep -o '\[FLAKY\][^<]*' test-results/integration-results.xml | head -20 >> "$GITHUB_STEP_SUMMARY" || true
-          fi
+          {
+            echo "## Integration Test Results"
+            echo ""
+            if command -v xmllint &> /dev/null; then
+              echo "| Metric | Value |"
+              echo "|--------|-------|"
+              echo "| Total Tests | $TESTS |"
+              echo "| Failures | $FAILURES |"
+              echo "| Errors | $ERRORS |"
+              echo "| Test Duration | ${TIME}s |"
+            else
+              echo "JUnit report generated at test-results/integration-results.xml"
+              echo ""
+              echo "| Metric | Value |"
+              echo "|--------|-------|"
+            fi
+            echo "| Total Run Duration | ${{ steps.integration-tests.outputs.duration }}s |"
+            echo "| CI Attempt | ${{ steps.integration-tests.outputs.attempt }} |"
+
+            # Check for flaky test warnings in the test output
+            if grep -q "\[FLAKY\]" test-results/integration-results.xml 2>/dev/null; then
+              echo ""
+              echo "### Flaky Tests Detected"
+              echo ""
+              echo "The following tests required retries to pass:"
+              echo ""
+              grep -o '\[FLAKY\][^<]*' test-results/integration-results.xml | head -20 || true
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
           # Write metrics JSON for artifact
           cat > test-results/metrics.json << EOF
@@ -170,9 +176,11 @@ jobs:
       - name: Post coverage to job summary
         if: always() && hashFiles('coverage/integration/coverage-summary.md') != ''
         run: |
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "## Integration Test Coverage" >> "$GITHUB_STEP_SUMMARY"
-          cat coverage/integration/coverage-summary.md >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo ""
+            echo "## Integration Test Coverage"
+            cat coverage/integration/coverage-summary.md
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload test results
         if: always()
@@ -194,25 +202,25 @@ jobs:
           ENDPOINT="http://${LOCALSTACK_HOST:-localhost}:4566"
 
           echo "=== PostgreSQL Active Connections ==="
-          PGPASSWORD=${POSTGRES_PASSWORD:-test} psql -h ${POSTGRES_HOST:-localhost} -U ${POSTGRES_USER:-test} -d ${POSTGRES_DB:-media_downloader_test} -c "SELECT pid, usename, state, query_start, left(query, 80) as query FROM pg_stat_activity WHERE datname = '${POSTGRES_DB:-media_downloader_test}'" 2>/dev/null || echo "Could not query pg_stat_activity"
+          PGPASSWORD="${POSTGRES_PASSWORD:-test}" psql -h "${POSTGRES_HOST:-localhost}" -U "${POSTGRES_USER:-test}" -d "${POSTGRES_DB:-media_downloader_test}" -c "SELECT pid, usename, state, query_start, left(query, 80) as query FROM pg_stat_activity WHERE datname = '${POSTGRES_DB:-media_downloader_test}'" 2>/dev/null || echo "Could not query pg_stat_activity"
           echo ""
 
           echo "=== PostgreSQL Schemas ==="
-          PGPASSWORD=${POSTGRES_PASSWORD:-test} psql -h ${POSTGRES_HOST:-localhost} -U ${POSTGRES_USER:-test} -d ${POSTGRES_DB:-media_downloader_test} -c "\dn" 2>/dev/null || echo "Could not list schemas"
+          PGPASSWORD="${POSTGRES_PASSWORD:-test}" psql -h "${POSTGRES_HOST:-localhost}" -U "${POSTGRES_USER:-test}" -d "${POSTGRES_DB:-media_downloader_test}" -c "\dn" 2>/dev/null || echo "Could not list schemas"
           echo ""
 
           echo "=== SQS Queues ==="
-          aws --endpoint-url=$ENDPOINT sqs list-queues 2>/dev/null || echo "Could not list SQS queues"
+          aws --endpoint-url="$ENDPOINT" sqs list-queues 2>/dev/null || echo "Could not list SQS queues"
           echo ""
 
           echo "=== EventBridge Event Buses ==="
-          aws --endpoint-url=$ENDPOINT events list-event-buses 2>/dev/null || echo "Could not list EventBridge buses"
+          aws --endpoint-url="$ENDPOINT" events list-event-buses 2>/dev/null || echo "Could not list EventBridge buses"
           echo ""
 
           echo "=== EventBridge Rules ==="
-          aws --endpoint-url=$ENDPOINT events list-rules 2>/dev/null || echo "Could not list EventBridge rules"
+          aws --endpoint-url="$ENDPOINT" events list-rules 2>/dev/null || echo "Could not list EventBridge rules"
           echo ""
 
           echo "=== LocalStack Service Status ==="
-          curl -s http://${LOCALSTACK_HOST:-localhost}:4566/_localstack/health | jq 2>/dev/null || echo "Could not fetch LocalStack health"
+          curl -s "http://${LOCALSTACK_HOST:-localhost}:4566/_localstack/health" | jq 2>/dev/null || echo "Could not fetch LocalStack health"
           echo ""

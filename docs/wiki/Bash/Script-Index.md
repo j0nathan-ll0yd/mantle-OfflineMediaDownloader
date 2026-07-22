@@ -9,9 +9,6 @@ Complete reference for all shell scripts in the project.
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `bin/cleanup.sh` | Full cleanup cycle (build, format, lint, test, docs) | `./bin/cleanup.sh [--fast\|--check]` |
-| `bin/ci-local.sh` | Fast local CI checks | `./bin/ci-local.sh` |
-| `bin/ci-local-full.sh` | Full CI with integration tests | `./bin/ci-local-full.sh` |
-| `bin/build-dependencies.sh` | Build Lambda layer dependencies | `./bin/build-dependencies.sh` |
 | `bin/pre-deploy-check.sh` | Pre-deployment validation | `./bin/pre-deploy-check.sh` |
 
 ### Validation
@@ -23,13 +20,6 @@ Complete reference for all shell scripts in the project.
 | `bin/validate-graphrag.sh` | Check GraphRAG synchronization | `./bin/validate-graphrag.sh` |
 | `bin/verify-state.sh` | Verify Terraform state health | `./bin/verify-state.sh` |
 
-### Documentation
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `bin/document-api.sh` | Generate OpenAPI docs from TypeSpec | `./bin/document-api.sh` |
-| `bin/document-source.sh` | Generate TSDoc documentation | `./bin/document-source.sh` |
-
 ### Testing
 
 | Script | Purpose | Usage |
@@ -38,8 +28,6 @@ Complete reference for all shell scripts in the project.
 | `bin/test-hook.sh` | Test Feedly webhook endpoint | `./bin/test-hook.sh` |
 | `bin/test-registerDevice.sh` | Test device registration | `./bin/test-registerDevice.sh` |
 | `bin/test-integration.sh` | Run integration test suite | `./bin/test-integration.sh` |
-| `bin/extract-fixtures.sh` | Extract test fixtures | `./bin/extract-fixtures.sh` |
-| `bin/extract-production-fixtures.sh` | Extract production-like fixtures | `./bin/extract-production-fixtures.sh` |
 
 ### Dependency Management
 
@@ -53,7 +41,6 @@ Complete reference for all shell scripts in the project.
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `bin/aws-audit.sh` | Comprehensive AWS infrastructure audit | `./bin/aws-audit.sh` |
-| `bin/auto-update-graphrag.sh` | Auto-update knowledge graph | `./bin/auto-update-graphrag.sh` |
 
 ## Script Details
 
@@ -78,22 +65,6 @@ Full cleanup cycle with multiple modes:
 8. Generate documentation
 
 ---
-
-### ci-local.sh
-
-Fast local CI for pre-commit validation:
-
-```bash
-./bin/ci-local.sh
-```
-
-**Approximate Time**: 2-3 minutes
-
-**Checks**:
-- Type checking
-- Lint
-- Format check
-- Unit tests
 
 ---
 

@@ -456,13 +456,22 @@ main() {
   # These don't have TypeSpec operationIds because they're not API endpoints
   NON_HTTP_LAMBDAS="ApiGatewayAuthorizer"
 
-  # Lambdas with non-standard TypeSpec operationId naming
-  # These have semantic method names that differ from Lambda names:
-  #   DeviceEvent → Devices_logClientEvent
-  #   UserDelete → Authentication_deleteUser
-  #   UserSubscribe → Authentication_subscribeUser
-  #   WebhookFeedly → Webhooks_processFeedlyWebhook
-  NON_STANDARD_NAMING="DeviceEvent|UserDelete|UserSubscribe|WebhookFeedly"
+  # Generated OpenAPI uses HTTP method/path operationIds rather than Lambda
+  # names. Keep this mapping explicit so real endpoint coverage gaps remain
+  # visible while documented router naming stays warning-free.
+  declare -A API_OPERATION_IDS=(
+    [DeviceEvent]=postDeviceEvent
+    [DeleteFile]=deleteFilesByFileId
+    [ListFiles]=getFiles
+    [LoginUser]=postUserLogin
+    [RefreshToken]=postUserRefresh
+    [LogoutUser]=postUserLogout
+    [RegisterDevice]=postDeviceRegister
+    [RegisterUser]=postUserRegister
+    [UserDelete]=deleteUser
+    [UserSubscribe]=postUserSubscribe
+    [WebhookFeedly]=postFeedlyWebhook
+  )
 
   # Get API Lambda names from System-Diagrams.md trigger table (API Gateway triggered)
   API_LAMBDAS=$(awk '/## Lambda Trigger Patterns/,/## Data Access/' docs/wiki/Architecture/System-Diagrams.md 2> /dev/null |
@@ -480,20 +489,12 @@ main() {
         continue
       fi
 
-      # Skip Lambdas with non-standard TypeSpec naming (verified manually)
-      if echo "$lambda" | grep -qE "^($NON_STANDARD_NAMING)$"; then
-        continue
-      fi
-
-      # Convert Lambda name to camelCase for method name matching
-      # e.g., ListFiles → listFiles, LoginUser → loginUser
-      # TypeSpec operationIds use format Interface_methodName (e.g., Files_listFiles)
-      # Use awk for portable lowercase conversion (BSD sed doesn't support \l)
-      method_name=$(echo "$lambda" | awk '{print tolower(substr($0,1,1)) substr($0,2)}')
-
-      # Search for operationId ending with _methodName (case insensitive)
-      if ! echo "$TYPESPEC_OPS" | grep -qi "_${method_name}$"; then
-        WARNINGS="$WARNINGS\n  - Lambda '$lambda' may not have a TypeSpec operationId (expected: *_$method_name)"
+      expected_operation_id="${API_OPERATION_IDS[$lambda]:-}"
+      if [ -z "$expected_operation_id" ]; then
+        WARNINGS="$WARNINGS\n  - Lambda '$lambda' has no documented OpenAPI operationId mapping"
+        COVERAGE_OK=false
+      elif ! echo "$TYPESPEC_OPS" | grep -qx "$expected_operation_id"; then
+        WARNINGS="$WARNINGS\n  - Lambda '$lambda' is missing OpenAPI operationId '$expected_operation_id'"
         COVERAGE_OK=false
       fi
     done

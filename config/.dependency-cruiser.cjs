@@ -69,6 +69,10 @@ module.exports = {
         pathNot: [
           '\\.(test|spec)\\.(ts|js)$',
           '^src/lambdas/[^/]+/src/index\\.ts$',
+          // These Lambda entry points use non-route directory layouts but are
+          // referenced by generated OpenTofu resources under infra/.
+          '^src/lambdas/standalone/(MigrateDSQL|LogNotifier)/index\\.ts$',
+          '^src/lambdas/mcp/DevTools/index\\.ts$',
           '^src/lambdas/.+\\.(get|post|put|delete|patch)\\.ts$',
           '^src/index\\.ts$',
           '^src/util/vitest-setup\\.ts$',

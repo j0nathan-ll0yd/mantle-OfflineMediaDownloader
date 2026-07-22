@@ -23,7 +23,7 @@ env:
 jobs:
   rollback:
     # TEMPORARILY DISABLED: Re-enable after AWS environment setup is complete
-    if: false
+    if: vars.ENABLE_ROLLBACK == 'true'
     name: Rollback ${{ inputs.environment }}
     runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 30
@@ -49,9 +49,9 @@ jobs:
         id: target
         run: |
           if [ -n "${{ inputs.commit_sha }}" ]; then
-            echo "sha=${{ inputs.commit_sha }}" >> $GITHUB_OUTPUT
+            echo "sha=${{ inputs.commit_sha }}" >> "$GITHUB_OUTPUT"
           else
-            echo "sha=${{ github.event.before }}" >> $GITHUB_OUTPUT
+            echo "sha=${{ github.event.before }}" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
