@@ -39,12 +39,31 @@ trustPolicyExclude:
 
 # Packages excluded from minimum release age (same-day security/compat patches)
 # ast-v8-to-istanbul: both 1.0.2 and 1.0.3 published 2026-05-31; needed by @vitest/coverage-v8
-# @j0nathan-ll0yd/config@1.1.0: first-party shared config (dprint + tsconfig base) on
+# @j0nathan-ll0yd/config: first-party shared config (dprint + tsconfig base) on
 #   GitHub Packages; our own package, gates format/typecheck adoption, so it is
 #   exempt from the release-age delay.
 minimumReleaseAgeExclude:
   - 'ast-v8-to-istanbul'
-  - '@j0nathan-ll0yd/config@1.1.0'
+  # Bare package names cover every later version; version-qualified exclusions
+  # silently reintroduce the first-publish failure on the next release.
+  - '@j0nathan-ll0yd/config'
+  # Mantle registry cutover (atlas 0016): the complete transitive closure of
+  # this consumer's 14 direct framework dependencies.
+  - '@j0nathan-ll0yd/auth'
+  - '@j0nathan-ll0yd/aws'
+  - '@j0nathan-ll0yd/cli'
+  - '@j0nathan-ll0yd/core'
+  - '@j0nathan-ll0yd/database'
+  - '@j0nathan-ll0yd/env'
+  - '@j0nathan-ll0yd/errors'
+  - '@j0nathan-ll0yd/eslint-config'
+  - '@j0nathan-ll0yd/mcp'
+  - '@j0nathan-ll0yd/observability'
+  - '@j0nathan-ll0yd/resilience'
+  - '@j0nathan-ll0yd/security'
+  - '@j0nathan-ll0yd/testing'
+  - '@j0nathan-ll0yd/types'
+  - '@j0nathan-ll0yd/validation'
 
 # Block exotic protocols in transitive dependencies
 # Direct deps can use git/tarball, subdeps cannot (common attack vector)
