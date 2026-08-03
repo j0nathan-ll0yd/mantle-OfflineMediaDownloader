@@ -16,6 +16,7 @@
     "build": "./bin/decrypt-cookies.sh && mantle build",
     "build:ci": "./bin/decrypt-cookies.sh && mantle build --skip-container",
     "cookies:encrypt": "sops encrypt --input-type binary --output-type binary --filename-override youtube-cookies.enc layers/yt-dlp/cookies/youtube-cookies.txt > layers/yt-dlp/cookies/youtube-cookies.enc",
+    "check:package-versions": "node scripts/check-package-versions.mjs",
     "check:secrets": "./bin/check-secrets.sh",
     "check:test:types": "node bin/tsc6.mjs --project ./tsconfig.test.json --noEmit",
     "check:types": "node bin/tsc6.mjs --project ./tsconfig.json",
