@@ -210,17 +210,37 @@ jobs:
   # never reaches consumers and nothing anywhere goes red. This job is the CI mirror of the
   # `package-version-drift` customStep in mantle.config.ts (which only runs in the skippable
   # local pre-push hook).
+  #
+  # That exit 0 is a REAL answer ("this repo publishes nothing"), not an "I could not tell"
+  # dressed up as a pass — and it is contingent, not vacuous: dropping a single non-private
+  # packages/*/package.json pointing at npm.pkg.github.com into the tree flips this job to
+  # exit 3 immediately, because the drift engine is not installed yet. Verified locally.
+  #
+  # `name:` is the literal job id rather than a prose title ON PURPOSE: the job name IS the
+  # status-check context, and the same context string is used in all four estate repos so a
+  # single set of `gh api ... /branches/main/protection` commands covers the estate.
   package-version-drift:
-    name: Published Package Drift
+    name: package-version-drift
     runs-on: ubuntu-latest
+    # Required by `mantle check ci-workflows` (runaway jobs exhaust Actions minutes). Generous
+    # relative to the work: with nothing publishable the script exits in under a second, and
+    # even once the engine engages the measured cost is a build plus a few seconds of registry
+    # I/O. A timeout here is a backstop against a hung network fetch, not a performance budget.
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # Needed the day this repo publishes something: the drift engine authenticates to
+      # npm.pkg.github.com to read the payload it compares against, and GitHub Packages
+      # returns 401 for anonymous GETs even on public packages.
+      packages: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          # MANDATORY once this repo publishes something. The check walks each manifest's own
-          # history to find the commit that last SET its declared version; under the default
-          # depth-1 checkout there is no manifest history at all, so every package would report
-          # 'shallow-history' and the check would exit 2. Set now so the gate is correct on the
-          # first day it has anything to inspect, rather than being debugged then.
+          # Full history, needed the day this repo publishes something: the engine may need
+          # each manifest's own history to resolve the commit that last SET its declared
+          # version, and a depth-1 checkout has none — which the engine reports as
+          # indeterminate rather than guessing. Set now so the gate is correct on the first
+          # day it has anything to inspect, rather than being debugged then.
           fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -240,9 +260,14 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Self-test the drift gate (A2b)
         # A gate that can never fail is as dangerous as one that never runs — and with no
-        # publishable packages here the check is EXPECTED to pass vacuously. The self-test is
-        # what keeps that vacuous pass honest: it proves the evaluator still answers the
-        # known-answer vectors, including the ones that must report drift.
+        # publishable packages here the check passes without exercising the delegation path
+        # at all. The self-test is what keeps that pass honest: it proves the evaluator still
+        # answers the known-answer vectors, and it enumerates every probe/spawn failure shape
+        # to assert that NONE of them can classify as a pass. Proven able to fail: mutating
+        # classifyDelegatedRun's killed-engine branch to exit 0 reds this step.
         run: node scripts/check-package-versions.mjs --self-test
       - name: Published-package version drift (blocking)
+        # Exit 0 = clean or nothing publishable. Exit 3 = the wrapper could not obtain a
+        # verdict (engine missing/unreachable/killed). Any other code is the engine's own
+        # verdict, forwarded verbatim.
         run: node scripts/check-package-versions.mjs

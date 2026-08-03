@@ -6,42 +6,50 @@
  * THE FAILURE THIS PREVENTS: an agent edits source inside a published package, merges, and
  * never bumps the `version`. Nothing goes red — typecheck, tests, lint and the PR all pass,
  * and `changeset publish` SILENTLY SKIPS a version that already exists in the registry and
- * exits 0. Consumers keep resolving the old tarball forever. The verdict itself is owned by
- * `mantle check package-versions`, which compares each publishable package's payload against
- * the commit that last SET its declared version.
+ * exits 0. Consumers keep resolving the old tarball forever.
  *
- * WHY A WRAPPER RATHER THAN CALLING THE CLI DIRECTLY (two reasons, both load-bearing):
+ * The verdict is owned by `mantle check package-versions` in @j0nathan-ll0yd/cli, which
+ * compares each publishable package's PUBLISHED PAYLOAD against the payload this checkout
+ * would publish. This file is a thin wrapper: it answers "is this repo in scope at all",
+ * then delegates. It deliberately does NOT reimplement the comparison — three parallel
+ * implementations of one algorithm diverge (that has already happened once in this estate),
+ * and a consumer repo carrying its own copy would drift from the engine silently.
  *
- *   1. EMPTY SET. The estate-wide check treats "zero publishable packages" as a hard error
- *      (the A2b anti-vacuous-pass guard: the Mantle framework repo knows it has 17 packages,
- *      so discovering none means discovery broke). That guard is correct there and WRONG in a
- *      consumer app repo, where publishing nothing is the normal steady state. A gate that
- *      errors on an empty set gets deleted the first week. This wrapper therefore owns the
- *      "is this repo even in scope" question — using the canonical four-part discovery
- *      predicate, byte-for-byte — and only delegates the verdict when there is something to
- *      verify. The moment this repo adds an entry under packages/ that is non-private and
- *      publishes to npm.pkg.github.com, the gate engages with no edit needed here.
+ * ── THE ONLY THING THIS WRAPPER MAY CONCLUDE ON ITS OWN ─────────────────────────────────
  *
- *   2. BOUNDED ROLLOUT. `mantle check package-versions` is landing in the j0nathan-ll0yd/cli
- *      package in a separate change. Until this repo's pinned CLI carries it, invoking it
- *      unconditionally would red-wall every PR on a command that does not exist. The wrapper
- *      probes for the subcommand and skips LOUDLY while it is absent — but the skip window is
- *      BOUNDED on two independent axes, because "a gate that can never fail is as dangerous
- *      as one that never runs" (A2b):
- *        a. If the installed CLI is at or past CLI_FLOOR_VERSION and the subcommand is STILL
- *           missing, that is a broken assumption (released without it, or renamed) and the
- *           check exits 1.
- *        b. On or after SKIP_WINDOW_ENDS_ON a missing subcommand is a hard failure regardless
- *           of the installed version.
- *      Bumping the CLI past the floor activates the real gate automatically; the deadline
- *      guarantees the shim cannot silently outlive the CLI release.
+ * "This repo publishes nothing, so nothing can drift." That is a real, verifiable answer
+ * and it exits 0.
  *
- * Every extra argument is forwarded verbatim to the CLI, e.g. `--base origin/main`, `--json`.
+ * EVERY OTHER outcome in which the wrapper did not obtain a verdict from the engine —
+ * the engine is not installed, the probe could not run, the engine crashed or was killed —
+ * exits 3 (INDETERMINATE). It is NEVER exit 0.
  *
- * Exit 0 = nothing publishable, or no drift, or the bounded pre-release skip.
- * Exit 1 = drift found, or the skip window has closed.
- * Exit 2 = the CLI could not determine an answer (e.g. shallow history — CI must use
- *          actions/checkout with `fetch-depth: 0`).
+ * That rule is the whole point of this rewrite. The previous revision "skipped loudly" with
+ * exit 0 while the installed CLI (1.0.0) lacked the subcommand — and in mantle-LifegamesPortal
+ * that exit 0 fed the REQUIRED "CI Gate" status context. A required gate that is green for a
+ * check which never ran is strictly worse than no gate at all: it manufactures the evidence of
+ * safety without the safety. There is no such thing as a warning that a merge queue reads. The
+ * only signal CI understands is the exit code, so "I could not tell" must be non-zero.
+ *
+ * The cost of that honesty is real and accepted: until @j0nathan-ll0yd/cli publishes a
+ * release carrying `mantle check package-versions`, this gate is RED in any repo that
+ * publishes something. That is the correct report of the true state, and it is why the PR
+ * wiring this gate must not merge before the CLI release lands. BLOCKING ORDERING:
+ * mantle#308 merges -> @j0nathan-ll0yd/cli publishes to GitHub Packages -> this repo bumps
+ * the CLI -> this gate can merge.
+ *
+ * ── EXIT CODES ──────────────────────────────────────────────────────────────────────────
+ *
+ *   0  Nothing publishable in this repo, or the engine ran and reported no drift.
+ *   3  INDETERMINATE — the wrapper could not obtain a verdict. Never a pass.
+ *   *  Anything else is the engine's own exit status, forwarded VERBATIM. The wrapper does
+ *      not translate it: the engine owns its exit-code contract and remapping here would
+ *      silently rewrite the severity of a verdict whenever that contract evolves.
+ *
+ * Exit 3 cannot collide with a forwarded status, because the wrapper only forwards once the
+ * engine has actually run to completion.
+ *
+ * Extra arguments are forwarded verbatim to the engine, e.g. `--json`, `--lane=pre-push`.
  *
  * Run `node scripts/check-package-versions.mjs --self-test` for the known-answer vectors.
  */
@@ -57,11 +65,16 @@ const GITHUB_PACKAGES_REGISTRY = 'https://npm.pkg.github.com'
 /** The `mantle check` subcommand that owns the drift verdict. */
 const SUBCOMMAND = 'package-versions'
 
-/** First CLI release expected to carry SUBCOMMAND. A new subcommand is a feature, so a minor bump off 1.2.0. */
-const CLI_FLOOR_VERSION = '1.3.0'
+/**
+ * First `@j0nathan-ll0yd/cli` release expected to carry SUBCOMMAND. DIAGNOSTIC ONLY — it is
+ * printed in the failure message so the fix is self-service. It is deliberately NOT a
+ * control-flow gate: a version floor used as a gate is just a skip window wearing a
+ * different hat, and every skip window eventually outlives the release it was waiting for.
+ */
+const CLI_FLOOR_VERSION_HINT = '1.3.0'
 
-/** Hard end of the pre-release skip window (ISO date, UTC). After this, a missing subcommand fails the build. */
-const SKIP_WINDOW_ENDS_ON = '2026-10-01'
+/** INDETERMINATE. Aligned with the engine's exit class for "could not tell". */
+const EXIT_INDETERMINATE = 3
 
 // ---------------------------------------------------------------------------
 // Pure functions (no fs, no spawn) — everything below is covered by --self-test.
@@ -69,54 +82,21 @@ const SKIP_WINDOW_ENDS_ON = '2026-10-01'
 
 /**
  * The canonical publishable-package predicate, applied to already-read manifests. Mirrors
- * mantle/scripts/check-public-packages.mjs lines 68-76 exactly: non-private AND
- * publishConfig.registry an exact match for GitHub Packages. An unreadable or unparseable
- * manifest arrives as null and is silently skipped, exactly as it is there.
+ * mantle/scripts/check-public-packages.mjs: non-private AND publishConfig.registry an exact
+ * match for GitHub Packages. An unreadable or unparseable manifest arrives as null and is
+ * skipped, exactly as it is there.
  *
  * Deliberately does NOT filter on the package name: a candidate outside the j0nathan-ll0yd
- * scope must reach the CLI so the CLI's scope assertion can fail loudly, rather than being
- * silently dropped here.
+ * scope must reach the engine so the engine's scope assertion can fail loudly, rather than
+ * being silently dropped here.
  *
  * Takes entries carrying `dir` and `manifest` (the parsed manifest, or null) and returns the
- * matching directory names, ASCII-ascending.
+ * matching directory labels, ASCII-ascending.
  */
 export function selectPublishableDirs(entries) {
   return entries.filter((entry) =>
     entry.manifest != null && entry.manifest.private !== true && entry.manifest.publishConfig?.registry === GITHUB_PACKAGES_REGISTRY
   ).map((entry) => entry.dir).sort()
-}
-
-/** Parse a semver core into a major/minor/patch triple, or null. Prerelease and build metadata are ignored. */
-export function parseSemverCore(version) {
-  const match = /^(\d+)\.(\d+)\.(\d+)/.exec(String(version ?? ''))
-  return match === null ? null : [Number(match[1]), Number(match[2]), Number(match[3])]
-}
-
-/** Compare two semver cores, returning -1, 0 or 1. Unparseable input sorts as lower. */
-export function compareSemver(a, b) {
-  const left = parseSemverCore(a)
-  const right = parseSemverCore(b)
-  if (left === null && right === null) {
-    return 0
-  }
-  if (left === null) {
-    return -1
-  }
-  if (right === null) {
-    return 1
-  }
-  const [leftMajor, leftMinor, leftPatch] = left
-  const [rightMajor, rightMinor, rightPatch] = right
-  if (leftMajor !== rightMajor) {
-    return leftMajor < rightMajor ? -1 : 1
-  }
-  if (leftMinor !== rightMinor) {
-    return leftMinor < rightMinor ? -1 : 1
-  }
-  if (leftPatch !== rightPatch) {
-    return leftPatch < rightPatch ? -1 : 1
-  }
-  return 0
 }
 
 /**
@@ -131,21 +111,63 @@ export function helpListsSubcommand(helpText, name) {
 }
 
 /**
- * What to do when the CLI does not (yet) expose the subcommand. Pure over the two bounding
- * axes of the skip window so both can be known-answer tested.
+ * Classify the result of probing the engine for SUBCOMMAND.
  *
- * Takes `installedCliVersion` (or null when unreadable), `floorVersion`, and the ISO dates
- * `today` and `skipWindowEndsOn` (ISO dates compare correctly as plain strings). Returns an
- * `action` of either 'skip' or 'fail' plus a stable `reason` slug.
+ * This exists because of a specific defect: the previous revision read only `stdout`/`stderr`
+ * and discarded spawnSync's `.error`, `.status` and `.signal`. "npx is not on PATH",
+ * "the registry returned 403 so the CLI was never installed", "the CLI crashed" and "the CLI
+ * ran fine but has no such subcommand" all collapsed into one indistinguishable outcome —
+ * and that outcome was a pass. They are four different failures with four different fixes,
+ * and none of them is "everything is fine".
+ *
+ * Takes the raw spawnSync fields plus the combined help text. Returns an `outcome` of
+ * 'available' | 'engine-unavailable' | 'subcommand-missing' and a stable `reason` slug.
+ * Only 'available' ever leads to exit 0.
  */
-export function decideMissingSubcommandAction({installedCliVersion, floorVersion, today, skipWindowEndsOn}) {
-  if (today >= skipWindowEndsOn) {
-    return {action: 'fail', reason: 'skip-window-closed'}
+export function classifyProbe({error, status, signal, helpText, subcommand}) {
+  if (error != null) {
+    return {outcome: 'engine-unavailable', reason: 'probe-spawn-failed'}
   }
-  if (installedCliVersion !== null && compareSemver(installedCliVersion, floorVersion) >= 0) {
-    return {action: 'fail', reason: 'cli-at-or-past-floor-without-subcommand'}
+  if (signal != null) {
+    return {outcome: 'engine-unavailable', reason: 'probe-killed-by-signal'}
   }
-  return {action: 'skip', reason: 'cli-below-floor'}
+  if (status !== 0) {
+    return {outcome: 'engine-unavailable', reason: 'probe-nonzero-exit'}
+  }
+  const text = String(helpText ?? '')
+  if (text.trim() === '') {
+    // `mantle check --help` exiting 0 with no output is not "no subcommands"; it is a broken
+    // or shimmed binary. Treating it as merely-missing would make an empty-output regression
+    // in the CLI look like a routine pre-release state.
+    return {outcome: 'engine-unavailable', reason: 'probe-empty-output'}
+  }
+  return helpListsSubcommand(text, subcommand)
+    ? {outcome: 'available', reason: 'subcommand-listed'}
+    : {outcome: 'subcommand-missing', reason: 'subcommand-not-listed'}
+}
+
+/**
+ * Classify the result of the delegated engine run into the wrapper's own exit code.
+ *
+ * `status` is null whenever the child never produced an exit status — it failed to spawn, or
+ * it was terminated by a signal (SIGKILL from an OOM killer, SIGTERM from a CI timeout).
+ * `status ?? 1` would have called an OOM-killed engine "drift found"; `status ?? 0` would
+ * have called it clean. Both are lies. It is INDETERMINATE.
+ *
+ * Returns `{exitCode, reason}`. `reason` is 'engine-verdict' exactly when the engine's own
+ * status is being forwarded.
+ */
+export function classifyDelegatedRun({error, status, signal}) {
+  if (error != null) {
+    return {exitCode: EXIT_INDETERMINATE, reason: 'engine-spawn-failed'}
+  }
+  if (signal != null) {
+    return {exitCode: EXIT_INDETERMINATE, reason: 'engine-killed-by-signal'}
+  }
+  if (typeof status !== 'number') {
+    return {exitCode: EXIT_INDETERMINATE, reason: 'engine-no-exit-status'}
+  }
+  return {exitCode: status, reason: 'engine-verdict'}
 }
 
 // ---------------------------------------------------------------------------
@@ -154,32 +176,48 @@ export function decideMissingSubcommandAction({installedCliVersion, floorVersion
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
-/** Read the manifest of every directory one level under packages/. A missing packages/ yields an empty list. */
-function readPackageEntries(root) {
-  const packagesDir = join(root, 'packages')
-  if (!existsSync(packagesDir)) {
-    return []
-  }
-  return readdirSync(packagesDir, {withFileTypes: true}).filter((entry) => entry.isDirectory()).map((entry) => {
-    try {
-      return {dir: entry.name, manifest: JSON.parse(readFileSync(join(packagesDir, entry.name, 'package.json'), 'utf8'))}
-    } catch {
-      return {dir: entry.name, manifest: null}
-    }
-  })
-}
-
-/** Installed CLI version, or null when it cannot be read. */
-function readInstalledCliVersion(root) {
+function readManifest(path) {
   try {
-    return JSON.parse(readFileSync(join(root, 'node_modules', '@j0nathan-ll0yd', 'cli', 'package.json'), 'utf8')).version ?? null
+    return JSON.parse(readFileSync(path, 'utf8'))
   } catch {
     return null
   }
 }
 
-function todayIsoUtc() {
-  return new Date().toISOString().slice(0, 10)
+/**
+ * Every manifest that could plausibly be published from this repo: the ROOT manifest plus one
+ * level under packages/.
+ *
+ * The root is included because omitting it is a silent-pass hole — a repo whose root manifest
+ * is non-private and points at GitHub Packages publishes on every release, and a packages/-only
+ * scan would report "this repo publishes no packages" and exit 0 forever.
+ *
+ * A `pnpm list -r --depth -1 --json` enumeration was evaluated and REJECTED, and the
+ * measurement is worth recording because it contradicts the obvious assumption. Measured in
+ * mantle-LifegamesPortal, which carries the sibling copy of this file: packages/portal-contract
+ * is NOT a pnpm workspace member. Its pnpm-workspace.yaml carries no `packages:` key (it is a
+ * settings-only file — "this repo is a single-package project"), so that same command returns
+ * the root alone, and `pnpm --filter` on the contract package prints
+ * "No projects matched the filters" AND EXITS 0. Discovering through pnpm would
+ * therefore have reported that repo as publishing nothing — reintroducing, through a more
+ * sophisticated mechanism, the exact silent pass this rewrite exists to remove.
+ */
+function readCandidateEntries(root) {
+  const entries = [{dir: '<root>', manifest: readManifest(join(root, 'package.json'))}]
+  const packagesDir = join(root, 'packages')
+  if (existsSync(packagesDir)) {
+    for (const entry of readdirSync(packagesDir, {withFileTypes: true})) {
+      if (entry.isDirectory()) {
+        entries.push({dir: `packages/${entry.name}`, manifest: readManifest(join(packagesDir, entry.name, 'package.json'))})
+      }
+    }
+  }
+  return entries
+}
+
+/** Installed CLI version, or null when it cannot be read. Diagnostics only. */
+function readInstalledCliVersion(root) {
+  return readManifest(join(root, 'node_modules', '@j0nathan-ll0yd', 'cli', 'package.json'))?.version ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -197,26 +235,23 @@ async function selfTest() {
 
   const publishableManifest = {name: '@j0nathan-ll0yd/sample-package', version: '1.0.0', private: false, publishConfig: {registry: GITHUB_PACKAGES_REGISTRY}}
 
-  // Discovery — the no-publishable-packages case and the one-publishable-package case.
-  eq(selectPublishableDirs([]), [], 'a repo with no packages directory yields no candidates')
-  eq(selectPublishableDirs([{dir: 'sample-package', manifest: publishableManifest}]), ['sample-package'])
-  eq(selectPublishableDirs([{dir: 'internal', manifest: {name: 'internal', private: true, publishConfig: {registry: GITHUB_PACKAGES_REGISTRY}}}]), [],
-    'private packages are not candidates')
-  eq(selectPublishableDirs([{dir: 'public-npm', manifest: {name: 'x', publishConfig: {registry: 'https://registry.npmjs.org'}}}]), [],
+  // Discovery.
+  eq(selectPublishableDirs([]), [], 'a repo with no manifests at all yields no candidates')
+  eq(selectPublishableDirs([{dir: 'packages/sample', manifest: publishableManifest}]), ['packages/sample'])
+  eq(selectPublishableDirs([{dir: '<root>', manifest: publishableManifest}]), ['<root>'],
+    'a publishable ROOT manifest is a candidate: a packages/-only scan would silently pass such a repo forever')
+  eq(selectPublishableDirs([{dir: 'packages/internal', manifest: {name: 'internal', private: true, publishConfig: {registry: GITHUB_PACKAGES_REGISTRY}}}]),
+    [], 'private packages are not candidates')
+  eq(selectPublishableDirs([{dir: 'packages/public-npm', manifest: {name: 'x', publishConfig: {registry: 'https://registry.npmjs.org'}}}]), [],
     'non-GitHub-Packages registries are not candidates')
-  eq(selectPublishableDirs([{dir: 'no-publish-config', manifest: {name: 'x'}}]), [], 'a manifest without publishConfig.registry is not a candidate')
-  eq(selectPublishableDirs([{dir: 'broken', manifest: null}]), [], 'an unparseable manifest is silently skipped')
-  // An out-of-scope name is still a candidate: the CLI must see it and fail loudly on the scope assertion.
-  eq(selectPublishableDirs([{dir: 'rogue', manifest: {name: 'rogue', publishConfig: {registry: GITHUB_PACKAGES_REGISTRY}}}]), ['rogue'])
-  eq(selectPublishableDirs([{dir: 'b', manifest: publishableManifest}, {dir: 'a', manifest: publishableManifest}]), ['a', 'b'], 'output is ASCII-sorted')
-
-  // Semver comparison.
-  eq(compareSemver('1.0.0', '1.3.0'), -1)
-  eq(compareSemver('1.3.0', '1.3.0'), 0)
-  eq(compareSemver('1.10.0', '1.3.0'), 1, 'minor versions compare numerically, not lexicographically')
-  eq(compareSemver('2.0.0', '1.3.0'), 1)
-  eq(compareSemver('1.3.0-rc.1', '1.3.0'), 0, 'prerelease metadata is ignored')
-  eq(compareSemver(null, '1.3.0'), -1, 'an unreadable version sorts below the floor')
+  eq(selectPublishableDirs([{dir: 'packages/none', manifest: {name: 'x'}}]), [], 'a manifest without publishConfig.registry is not a candidate')
+  eq(selectPublishableDirs([{dir: 'packages/broken', manifest: null}]), [], 'an unparseable manifest is skipped')
+  // An out-of-scope name is still a candidate: the engine must see it and fail loudly on the scope assertion.
+  eq(selectPublishableDirs([{dir: 'packages/rogue', manifest: {name: 'rogue', publishConfig: {registry: GITHUB_PACKAGES_REGISTRY}}}]), ['packages/rogue'])
+  eq(selectPublishableDirs([{dir: 'packages/b', manifest: publishableManifest}, {dir: 'packages/a', manifest: publishableManifest}]), [
+    'packages/a',
+    'packages/b'
+  ], 'output is ASCII-sorted')
 
   // Subcommand probe against a realistic Commander listing.
   const help = [
@@ -227,22 +262,66 @@ async function selfTest() {
     '  versions [options]           Compare instance dependency versions',
     '  openspec [options]           OpenSpec drift tether'
   ].join('\n')
+  const helpWithSubcommand = `${help}\n  package-versions [options]   Detect published-package version drift`
   eq(helpListsSubcommand(help, SUBCOMMAND), false, 'the bare `versions` entry must NOT satisfy the package-versions probe')
-  eq(helpListsSubcommand(`${help}\n  package-versions [options]   Detect published-package version drift`, SUBCOMMAND), true)
+  eq(helpListsSubcommand(helpWithSubcommand, SUBCOMMAND), true)
   eq(helpListsSubcommand(`${help}\n  package-versions`, SUBCOMMAND), true, 'a subcommand printed with no trailing description still matches')
   eq(helpListsSubcommand('', SUBCOMMAND), false)
   eq(helpListsSubcommand(help, 'versions'), true, 'the probe finds a subcommand that IS present')
 
-  // The two bounding axes of the pre-release skip window.
-  const within = {floorVersion: '1.3.0', today: '2026-08-03', skipWindowEndsOn: '2026-10-01'}
-  eq(decideMissingSubcommandAction({...within, installedCliVersion: '1.0.0'}), {action: 'skip', reason: 'cli-below-floor'})
-  eq(decideMissingSubcommandAction({...within, installedCliVersion: null}), {action: 'skip', reason: 'cli-below-floor'})
-  eq(decideMissingSubcommandAction({...within, installedCliVersion: '1.3.0'}), {action: 'fail', reason: 'cli-at-or-past-floor-without-subcommand'},
-    'a CLI at the floor without the subcommand is a broken assumption, not a skip')
-  eq(decideMissingSubcommandAction({...within, installedCliVersion: '2.0.0'}), {action: 'fail', reason: 'cli-at-or-past-floor-without-subcommand'})
-  eq(decideMissingSubcommandAction({...within, today: '2026-10-01', installedCliVersion: '1.0.0'}), {action: 'fail', reason: 'skip-window-closed'},
-    'the deadline closes the window regardless of the installed version')
-  eq(decideMissingSubcommandAction({...within, today: '2027-01-01', installedCliVersion: '1.0.0'}), {action: 'fail', reason: 'skip-window-closed'})
+  // Probe classification. These are the vectors the previous revision had no way to express,
+  // because it read only the probe's text and threw away .error/.status/.signal.
+  const probe = (overrides) => classifyProbe({error: null, status: 0, signal: null, helpText: help, subcommand: SUBCOMMAND, ...overrides})
+  eq(probe({helpText: helpWithSubcommand}), {outcome: 'available', reason: 'subcommand-listed'})
+  eq(probe({}), {outcome: 'subcommand-missing', reason: 'subcommand-not-listed'},
+    'the engine ran but has no such subcommand — a real, distinct, NON-PASSING state')
+  eq(probe({error: Object.assign(new Error('spawn npx ENOENT'), {code: 'ENOENT'})}), {outcome: 'engine-unavailable', reason: 'probe-spawn-failed'},
+    'npx missing from PATH must not read as "subcommand not yet released"')
+  eq(probe({status: 127, helpText: 'command not found: npx'}), {outcome: 'engine-unavailable', reason: 'probe-nonzero-exit'},
+    'a non-zero probe exit is engine-unavailable, not subcommand-missing')
+  eq(probe({status: 1, helpText: 'ERR_PNPM_FETCH_403  GET https://npm.pkg.github.com/@j0nathan-ll0yd%2Fcli: Forbidden'}), {
+    outcome: 'engine-unavailable',
+    reason: 'probe-nonzero-exit'
+  }, 'a 403 that prevented the CLI from installing is engine-unavailable')
+  eq(probe({status: null, signal: 'SIGKILL'}), {outcome: 'engine-unavailable', reason: 'probe-killed-by-signal'})
+  eq(probe({helpText: ''}), {outcome: 'engine-unavailable', reason: 'probe-empty-output'},
+    'a probe that exits 0 printing nothing is a broken binary, not a missing subcommand')
+  eq(probe({helpText: '   \n  '}), {outcome: 'engine-unavailable', reason: 'probe-empty-output'})
+
+  // Delegated-run classification.
+  const run = (overrides) => classifyDelegatedRun({error: null, status: 0, signal: null, ...overrides})
+  eq(run({}), {exitCode: 0, reason: 'engine-verdict'})
+  eq(run({status: 2}), {exitCode: 2, reason: 'engine-verdict'}, 'the engine exit status is forwarded verbatim, never remapped')
+  eq(run({status: 4}), {exitCode: 4, reason: 'engine-verdict'}, 'an exit class this wrapper has never heard of still forwards intact')
+  eq(run({error: Object.assign(new Error('spawn npx ENOENT'), {code: 'ENOENT'})}), {exitCode: EXIT_INDETERMINATE, reason: 'engine-spawn-failed'})
+  eq(run({status: null, signal: 'SIGKILL'}), {exitCode: EXIT_INDETERMINATE, reason: 'engine-killed-by-signal'},
+    'an OOM-killed engine is INDETERMINATE — `status ?? 1` would have called it drift, `status ?? 0` would have called it clean')
+  eq(run({status: null}), {exitCode: EXIT_INDETERMINATE, reason: 'engine-no-exit-status'})
+
+  // THE INVARIANT. Enumerated over every failure shape rather than asserted per case, so a
+  // future edit that reintroduces a silent pass fails here even if it also updates the case
+  // above it. This is the assertion that would have caught the defect being fixed.
+  const failureShapes = [
+    {error: new Error('ENOENT')},
+    {status: 1},
+    {status: 127},
+    {status: null, signal: 'SIGKILL'},
+    {status: null, signal: 'SIGTERM'},
+    {status: null},
+    {status: undefined},
+    {helpText: ''},
+    {helpText: help} // engine present, subcommand absent — the live state of this repo today
+  ]
+  for (const shape of failureShapes) {
+    const label = JSON.stringify(shape, (_key, value) => (value instanceof Error ? 'Error' : value))
+    assert.notEqual(probe(shape).outcome, 'available', `probe must not report 'available' for ${label}`)
+    checks++
+    if (!('helpText' in shape)) {
+      assert.notEqual(classifyDelegatedRun({error: null, status: 0, signal: null, ...shape}).exitCode, 0,
+        `a delegated run that produced no verdict must not exit 0 for ${label}`)
+      checks++
+    }
+  }
 
   console.log(`check-package-versions self-test: ${checks} known-answer assertions passed.`)
 }
@@ -251,6 +330,20 @@ async function selfTest() {
 // main
 // ---------------------------------------------------------------------------
 
+function failIndeterminate(headline, detail) {
+  // `::error::` surfaces the reason as an annotation on the PR itself rather than burying it
+  // in a log fold; outside Actions the prefix would just be noise.
+  const prefix = process.env.GITHUB_ACTIONS === 'true' ? '::error::' : ''
+  console.error('')
+  console.error(`${prefix}INDETERMINATE: ${headline}`)
+  for (const line of detail) {
+    console.error(`  ${line}`)
+  }
+  console.error('  This is NOT a pass. The published-package drift gate did not run, so nothing here')
+  console.error('  says the payload matches the registry. Exiting 3.')
+  process.exit(EXIT_INDETERMINATE)
+}
+
 async function main() {
   const argv = process.argv.slice(2)
   if (argv.includes('--self-test')) {
@@ -258,56 +351,61 @@ async function main() {
     return
   }
 
-  const publishableDirs = selectPublishableDirs(readPackageEntries(repoRoot))
+  const publishableDirs = selectPublishableDirs(readCandidateEntries(repoRoot))
   if (publishableDirs.length === 0) {
-    console.log('check-package-versions: this repo publishes no packages (no entry under packages/ is both non-private')
-    console.log(`  and targeted at ${GITHUB_PACKAGES_REGISTRY}). Nothing can drift, so nothing to check.`)
-    console.log('  The gate engages automatically as soon as such a package is added — no edit to this script needed.')
+    console.log('check-package-versions: this repo publishes no packages (neither the root manifest nor any entry')
+    console.log(`  under packages/ is both non-private and targeted at ${GITHUB_PACKAGES_REGISTRY}).`)
+    console.log('  Nothing can drift, so nothing to check. The gate engages automatically as soon as such a')
+    console.log('  package is added — no edit to this script needed.')
     process.exit(0)
   }
 
   console.log(`check-package-versions: ${publishableDirs.length} publishable package(s): ${publishableDirs.join(', ')}`)
 
   const help = spawnSync('npx', ['mantle', 'check', '--help'], {cwd: repoRoot, encoding: 'utf8'})
-  const helpText = `${help.stdout ?? ''}${help.stderr ?? ''}`
+  const probe = classifyProbe({
+    error: help.error,
+    status: help.status,
+    signal: help.signal,
+    helpText: `${help.stdout ?? ''}${help.stderr ?? ''}`,
+    subcommand: SUBCOMMAND
+  })
+  const installed = readInstalledCliVersion(repoRoot) ?? 'unreadable'
 
-  if (!helpListsSubcommand(helpText, SUBCOMMAND)) {
-    const installedCliVersion = readInstalledCliVersion(repoRoot)
-    const decision = decideMissingSubcommandAction({
-      installedCliVersion,
-      floorVersion: CLI_FLOOR_VERSION,
-      today: todayIsoUtc(),
-      skipWindowEndsOn: SKIP_WINDOW_ENDS_ON
-    })
-    const installed = installedCliVersion ?? 'unknown'
+  if (probe.outcome === 'engine-unavailable') {
+    failIndeterminate(`could not probe \`mantle check\` for the ${SUBCOMMAND} subcommand (${probe.reason}).`, [
+      `Installed @j0nathan-ll0yd/cli: ${installed}.`,
+      help.error === undefined ? `Probe exit status: ${help.status}, signal: ${help.signal}.` : `Probe spawn error: ${help.error.message}.`,
+      'The engine itself could not be reached — this is an environment failure (npx missing, dependencies',
+      'not installed, GitHub Packages returning 401/403), NOT a statement about package drift.',
+      'Fix: `pnpm install --frozen-lockfile` with a token that can read npm.pkg.github.com, then re-run.'
+    ])
+  }
 
-    if (decision.action === 'fail') {
-      console.error('')
-      console.error(`FAIL: \`mantle check ${SUBCOMMAND}\` is not available (installed CLI: ${installed}).`)
-      console.error(decision.reason === 'skip-window-closed'
-        ? `  The pre-release skip window closed on ${SKIP_WINDOW_ENDS_ON}. The published-package drift gate has not run since then.`
-        : `  The installed CLI is at or past ${CLI_FLOOR_VERSION}, which was expected to carry this subcommand.`)
-      console.error('  Fix: upgrade the CLI to a release that provides that subcommand, or correct SUBCOMMAND /')
-      console.error('  CLI_FLOOR_VERSION in this script if it shipped under a different name.')
-      process.exit(1)
-    }
-
-    // `::warning::` is a GitHub Actions annotation, so the skip is visible on the PR itself
-    // rather than buried in a log; outside Actions it would just be confusing noise.
-    const prefix = process.env.GITHUB_ACTIONS === 'true' ? '::warning::' : 'WARNING: '
-    console.log('')
-    console.log(`${prefix}mantle check ${SUBCOMMAND} is not in the installed CLI (${installed}) yet — published-package drift is NOT being checked.`)
-    console.log(`  Skipping until the pinned CLI reaches ${CLI_FLOOR_VERSION}. This skip becomes a hard failure on ${SKIP_WINDOW_ENDS_ON}.`)
-    process.exit(0)
+  if (probe.outcome === 'subcommand-missing') {
+    failIndeterminate(`\`mantle check ${SUBCOMMAND}\` does not exist in the installed CLI (${installed}).`, [
+      `The drift engine ships in @j0nathan-ll0yd/cli >= ${CLI_FLOOR_VERSION_HINT}.`,
+      'Fix: bump @j0nathan-ll0yd/cli in this repo to a release that carries the subcommand.',
+      'ORDERING (this is a hard dependency, not a preference): mantle#308 must MERGE and the',
+      '  @j0nathan-ll0yd/cli release must PUBLISH to GitHub Packages before that bump is possible.',
+      'If the subcommand shipped under a different name, correct SUBCOMMAND in this script.',
+      'Deliberately not skippable: this wrapper previously exited 0 here, and in mantle-LifegamesPortal',
+      '  that exit 0 fed the REQUIRED "CI Gate" context — a green required gate for a check that never ran.'
+    ])
   }
 
   const forwarded = argv.filter((arg) => arg !== '--self-test')
   const result = spawnSync('npx', ['mantle', 'check', SUBCOMMAND, ...forwarded], {cwd: repoRoot, stdio: 'inherit'})
-  if (result.error !== undefined) {
-    console.error(`FAIL: could not run \`mantle check ${SUBCOMMAND}\`: ${result.error.message}`)
-    process.exit(1)
+  const delegated = classifyDelegatedRun({error: result.error, status: result.status, signal: result.signal})
+
+  if (delegated.reason !== 'engine-verdict') {
+    failIndeterminate(`\`mantle check ${SUBCOMMAND}\` did not produce a verdict (${delegated.reason}).`, [
+      result.error === undefined ? `Exit status: ${result.status}, signal: ${result.signal}.` : `Spawn error: ${result.error.message}.`,
+      'A run that was killed or never started says nothing about whether the payload drifted.'
+    ])
   }
-  process.exit(result.status ?? 1)
+
+  process.exit(delegated.exitCode)
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

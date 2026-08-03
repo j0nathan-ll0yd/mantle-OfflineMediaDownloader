@@ -125,8 +125,12 @@ export default defineConfig({
       // day a packages/ entry appears, rather than being remembered (it would not be). The
       // failure it guards against is silent: `changeset publish` skips a version already in the
       // registry and exits 0, so a source edit without a version bump never reaches consumers
-      // and nothing goes red. See scripts/check-package-versions.mjs for the empty-set and
-      // pre-release-window rationale.
+      // and nothing goes red.
+      // That exit 0 is a real answer, not a skip. The wrapper exits 3 (INDETERMINATE, never 0)
+      // whenever it has something to check but could not obtain a verdict — so the first
+      // publishable package added here turns this step RED until @j0nathan-ll0yd/cli ships
+      // `mantle check package-versions` and this repo bumps to it. See the header of
+      // scripts/check-package-versions.mjs.
       {name: 'package-version-drift', phase: 'validate', command: 'node scripts/check-package-versions.mjs'}
     ]
   }
