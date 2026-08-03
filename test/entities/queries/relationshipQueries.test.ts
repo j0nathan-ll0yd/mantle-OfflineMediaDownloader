@@ -27,8 +27,8 @@ vi.mock('#db/fkEnforcement',
     assertFileExists: vi.fn().mockResolvedValue(undefined),
     assertDeviceExists: vi.fn().mockResolvedValue(undefined)
   }))
-vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm',
+vi.mock('@j0nathan-ll0yd/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
+vi.mock('@j0nathan-ll0yd/database/orm',
   () => ({
     and: vi.fn((...args: unknown[]) => args),
     eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'),

@@ -11,8 +11,8 @@
  * @see notification-schemas.ts for Zod schema definitions
  * @see {@link https://github.com/j0nathan-ll0yd/mantle-OfflineMediaDownloader/wiki/iOS/Push-Notifications | Push Notification Guide}
  */
-import type {Result} from '@mantleframework/core'
-import type {z} from '@mantleframework/validation'
+import type {Result} from '@j0nathan-ll0yd/core'
+import type {z} from '@j0nathan-ll0yd/validation'
 import type {
   downloadProgressPayloadSchema,
   downloadReadyPayloadSchema,

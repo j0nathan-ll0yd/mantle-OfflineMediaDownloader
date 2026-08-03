@@ -8,12 +8,12 @@
  * Input: S3Event with object creation records
  * Output: void (processes all records, logs errors)
  */
-import {sendMessage} from '@mantleframework/aws'
-import {defineLambda, defineS3Handler} from '@mantleframework/core'
-import {SqsQueueUrl} from '@mantleframework/core'
-import {getRequiredEnv} from '@mantleframework/env'
-import {NotFoundError} from '@mantleframework/errors'
-import {addAnnotation, addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
+import {sendMessage} from '@j0nathan-ll0yd/aws'
+import {defineLambda, defineS3Handler} from '@j0nathan-ll0yd/core'
+import {SqsQueueUrl} from '@j0nathan-ll0yd/core'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
+import {NotFoundError} from '@j0nathan-ll0yd/errors'
+import {addAnnotation, addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@j0nathan-ll0yd/observability'
 defineLambda({deadLetterQueue: true, bind: {SNS_QUEUE_URL: 'SendPushNotification'}})
 import {getFilesByKey, getUserFilesByFileId} from '#entities/queries'
 import {createDownloadReadyNotification} from '#services/notification/transformers'

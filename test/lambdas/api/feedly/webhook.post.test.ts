@@ -7,9 +7,9 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as WebhookMod from '#lambdas/api/feedly/webhook.post.js'
 
-vi.mock('@mantleframework/aws', () => ({sendMessage: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({sendMessage: vi.fn()}))
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     defineLambda: vi.fn(),
     buildValidatedResponse: vi.fn((_ctx, code, data) => ({statusCode: code, ...data})),
@@ -17,9 +17,9 @@ vi.mock('@mantleframework/core',
     SqsQueueUrl: (s: string) => s
   }))
 
-vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn(() => 'https://sqs.us-west-2.amazonaws.com/123/queue')}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getRequiredEnv: vi.fn(() => 'https://sqs.us-west-2.amazonaws.com/123/queue')}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnauthorizedError extends Error {
     statusCode = 401
     constructor(message: string) {
@@ -30,7 +30,7 @@ vi.mock('@mantleframework/errors', () => {
   return {UnauthorizedError}
 })
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     addAnnotation: vi.fn(),
     addMetadata: vi.fn(),
@@ -43,7 +43,7 @@ vi.mock('@mantleframework/observability',
     startSpan: vi.fn(() => 'mock-span')
   }))
 
-vi.mock('@mantleframework/resilience', () => {
+vi.mock('@j0nathan-ll0yd/resilience', () => {
   class MockIdempotencyConfig {
     registerLambdaContext = vi.fn()
     constructor() {}
@@ -55,7 +55,7 @@ vi.mock('@mantleframework/resilience', () => {
   }
 })
 
-vi.mock('@mantleframework/validation',
+vi.mock('@j0nathan-ll0yd/validation',
   () => ({
     defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({}))}
@@ -82,9 +82,9 @@ const {handler} = (await import('#lambdas/api/feedly/webhook.post.js')) as unkno
 import {getVideoID} from '#services/youtube/youtube'
 import {createFile, createFileDownload, getFile} from '#entities/queries'
 import {associateFileToUser} from '#domain/user/userFileService'
-import {emitEvent} from '@mantleframework/core'
-import {sendMessage} from '@mantleframework/aws'
-import {metrics} from '@mantleframework/observability'
+import {emitEvent} from '@j0nathan-ll0yd/core'
+import {sendMessage} from '@j0nathan-ll0yd/aws'
+import {metrics} from '@j0nathan-ll0yd/observability'
 
 describe('WebhookFeedly Lambda', () => {
   beforeEach(() => {

@@ -5,11 +5,11 @@
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 
-vi.mock('@mantleframework/env', () => ({getOptionalEnv: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getOptionalEnv: vi.fn()}))
 
-vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logDebug: vi.fn()}))
 
-vi.mock('@mantleframework/errors', () => ({
+vi.mock('@j0nathan-ll0yd/errors', () => ({
   ServiceUnavailableError: class ServiceUnavailableError extends Error {
     constructor(message: string) {
       super(message)
@@ -19,8 +19,8 @@ vi.mock('@mantleframework/errors', () => ({
 }))
 
 const {verifyPlatformConfiguration} = await import('#utils/platform-config.js')
-import {getOptionalEnv} from '@mantleframework/env'
-import {logDebug} from '@mantleframework/observability'
+import {getOptionalEnv} from '@j0nathan-ll0yd/env'
+import {logDebug} from '@j0nathan-ll0yd/observability'
 
 describe('verifyPlatformConfiguration', () => {
   beforeEach(() => {

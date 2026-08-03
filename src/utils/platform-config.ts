@@ -3,9 +3,9 @@
  *
  * Validates required APNS platform configuration is present at Lambda cold start.
  */
-import {getOptionalEnv} from '@mantleframework/env'
-import {logDebug} from '@mantleframework/observability'
-import {ServiceUnavailableError} from '@mantleframework/errors'
+import {getOptionalEnv} from '@j0nathan-ll0yd/env'
+import {logDebug} from '@j0nathan-ll0yd/observability'
+import {ServiceUnavailableError} from '@j0nathan-ll0yd/errors'
 
 /**
  * Verifies required APNS platform configuration is present.

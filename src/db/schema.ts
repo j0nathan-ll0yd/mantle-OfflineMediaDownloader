@@ -20,7 +20,7 @@ import {bigint, boolean, index, integer, pgTable, primaryKey, text, timestamp, u
  * Users table - Core user account management (Better Auth).
  *
  * Extends the framework auth user columns with instance-specific firstName/lastName fields.
- * Base columns match AUTH_USER_COLUMNS from \@mantleframework/auth/schema.
+ * Base columns match AUTH_USER_COLUMNS from \@j0nathan-ll0yd/auth/schema.
  *
  * Indexes:
  * - usersEmailIdx: Lookup by email (login flow)
@@ -144,21 +144,21 @@ export const deviceEvents = pgTable('device_events', {
  * Re-exported from framework (no instance extensions needed).
  * Includes: sessions_token_unique, sessions_user_idx, sessions_token_idx
  */
-export { authSessions as sessions } from '@mantleframework/auth/schema'
+export { authSessions as sessions } from '@j0nathan-ll0yd/auth/schema'
 
 /**
  * Accounts table - Better Auth OAuth account storage.
  * Re-exported from framework (no instance extensions needed).
  * Includes: accounts_user_idx, accounts_provider_idx
  */
-export { authAccounts as accounts } from '@mantleframework/auth/schema'
+export { authAccounts as accounts } from '@j0nathan-ll0yd/auth/schema'
 
 /**
  * Verification table - Better Auth verification tokens.
  * Re-exported from framework (no instance extensions needed).
  * Includes: verification_identifier_idx
  */
-export { authVerification as verification } from '@mantleframework/auth/schema'
+export { authVerification as verification } from '@j0nathan-ll0yd/auth/schema'
 
 /**
  * UserFiles table - Many-to-many relationship between users and files.

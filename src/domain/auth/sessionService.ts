@@ -6,13 +6,13 @@
  */
 
 import {getSessionByToken, updateSession} from '#entities/queries'
-import {logDebug, logError} from '@mantleframework/observability'
-import {UnauthorizedError} from '@mantleframework/errors'
+import {logDebug, logError} from '@j0nathan-ll0yd/observability'
+import {UnauthorizedError} from '@j0nathan-ll0yd/errors'
 import type {SessionPayload} from '#types/util'
 
 // NOTE: This module is intentionally kept for the API Gateway authorizer, which uses
 // direct DB queries by design for minimal cold-start latency. Other handlers (logout,
-// refresh) use @mantleframework/auth helpers instead. See the BetterAuth review plan.
+// refresh) use @j0nathan-ll0yd/auth helpers instead. See the BetterAuth review plan.
 
 /**
  * Validates a session token and returns the session payload.

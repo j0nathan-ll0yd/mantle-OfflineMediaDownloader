@@ -3,11 +3,11 @@ import type {SQSRecord} from 'aws-lambda'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as EndpointMod from '#lambdas/sqs/EndpointCleanupHelpers/index.js'
 
-vi.mock('@mantleframework/core', () => ({defineSqsHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
+vi.mock('@j0nathan-ll0yd/core', () => ({defineSqsHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
 
-vi.mock('@mantleframework/observability', () => ({logError: vi.fn(), logInfo: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logError: vi.fn(), logInfo: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
 
-vi.mock('@mantleframework/validation', async () => {
+vi.mock('@j0nathan-ll0yd/validation', async () => {
   const {z} = await import('zod')
   return {z}
 })
@@ -18,7 +18,7 @@ vi.mock('../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js
 const {handler} = (await import('#lambdas/sqs/EndpointCleanupHelpers/index.js')) as unknown as MockedModule<typeof EndpointMod>
 import {getDeviceByEndpointArn} from '#entities/queries'
 import {cleanupDisabledEndpoint} from '../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js'
-import {logError, logInfo} from '@mantleframework/observability'
+import {logError, logInfo} from '@j0nathan-ll0yd/observability'
 
 function makeSqsRecord(body: string): SQSRecord {
   return {

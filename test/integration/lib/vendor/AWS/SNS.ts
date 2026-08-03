@@ -19,7 +19,7 @@ import {
   UnsubscribeCommand
 } from '@aws-sdk/client-sns'
 import type {Endpoint, Subscription} from '@aws-sdk/client-sns'
-import {createSNSClient} from '@mantleframework/aws'
+import {createSNSClient} from '@j0nathan-ll0yd/aws'
 
 const snsClient = createSNSClient()
 

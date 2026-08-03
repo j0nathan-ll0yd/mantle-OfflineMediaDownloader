@@ -7,9 +7,9 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as SubscribeMod from '#lambdas/api/user/subscribe.post.js'
 
-vi.mock('@mantleframework/core', () => ({buildValidatedResponse: vi.fn((_ctx, code, data) => ({statusCode: code, ...data}))}))
+vi.mock('@j0nathan-ll0yd/core', () => ({buildValidatedResponse: vi.fn((_ctx, code, data) => ({statusCode: code, ...data}))}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnauthorizedError extends Error {
     statusCode = 401
     constructor(message: string) {
@@ -20,7 +20,7 @@ vi.mock('@mantleframework/errors', () => {
   return {UnauthorizedError}
 })
 
-vi.mock('@mantleframework/validation',
+vi.mock('@j0nathan-ll0yd/validation',
   () => ({
     defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({optional: vi.fn(() => ({}))}))}

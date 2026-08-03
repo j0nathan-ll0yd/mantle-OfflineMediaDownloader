@@ -7,13 +7,13 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as RegisterMod from '#lambdas/api/user/register.post.js'
 
-vi.mock('@mantleframework/auth', () => ({getAuth: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/auth', () => ({getAuth: vi.fn()}))
 
-vi.mock('@mantleframework/core', () => ({buildValidatedResponse: vi.fn((_ctx, _code, data) => data), defineLambda: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/core', () => ({buildValidatedResponse: vi.fn((_ctx, _code, data) => data), defineLambda: vi.fn()}))
 
-vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn(() => 'mock-value')}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getRequiredEnv: vi.fn(() => 'mock-value')}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnexpectedError extends Error {
     statusCode = 500
     constructor(message: string) {
@@ -24,9 +24,9 @@ vi.mock('@mantleframework/errors', () => {
   return {UnexpectedError}
 })
 
-vi.mock('@mantleframework/observability', () => ({logInfo: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logInfo: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
 
-vi.mock('@mantleframework/validation',
+vi.mock('@j0nathan-ll0yd/validation',
   () => ({
     defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({optional: vi.fn(() => ({}))}))}
@@ -41,9 +41,9 @@ vi.mock('#entities/queries', () => ({updateUser: vi.fn()}))
 vi.mock('#types/api-schema', () => ({userRegistrationResponseSchema: {}}))
 
 const {handler} = (await import('#lambdas/api/user/register.post.js')) as unknown as MockedModule<typeof RegisterMod>
-import {getAuth} from '@mantleframework/auth'
+import {getAuth} from '@j0nathan-ll0yd/auth'
 import {updateUser} from '#entities/queries'
-import {metrics} from '@mantleframework/observability'
+import {metrics} from '@j0nathan-ll0yd/observability'
 
 function createMockAuth(overrides: {signInSocialResult?: object; getSessionResult?: object | null} = {}) {
   const now = new Date()

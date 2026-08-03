@@ -10,16 +10,16 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as AuthorizerMod from '#lambdas/standalone/ApiGatewayAuthorizer/index.js'
 
-vi.mock('@mantleframework/aws', () => ({getApiKeys: vi.fn(), getUsage: vi.fn(), getUsagePlans: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({getApiKeys: vi.fn(), getUsage: vi.fn(), getUsagePlans: vi.fn()}))
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     defineAuthorizerHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     defineLambda: vi.fn(),
     UserStatus: {Authenticated: 'Authenticated', Anonymous: 'Anonymous'}
   }))
 
-vi.mock('@mantleframework/env', () => ({
+vi.mock('@j0nathan-ll0yd/env', () => ({
   getOptionalEnv: vi.fn((key: string, defaultVal: string) => {
     const envs: Record<string, string> = {RESERVED_CLIENT_IP: '104.1.88.244', NODE_ENV: 'staging'}
     return envs[key] ?? defaultVal
@@ -30,7 +30,7 @@ vi.mock('@mantleframework/env', () => ({
   })
 }))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnexpectedError extends Error {
     statusCode = 500
     constructor(message: string) {
@@ -41,7 +41,7 @@ vi.mock('@mantleframework/errors', () => {
   return {UnexpectedError}
 })
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     addAnnotation: vi.fn(),
     addMetadata: vi.fn(),
@@ -59,10 +59,10 @@ vi.mock('#domain/auth/sessionService', () => ({validateSessionToken: vi.fn()}))
 vi.mock('#errors/custom-errors', () => ({providerFailureErrorMessage: 'AWS request failed'}))
 
 const {handler, generateAllow} = (await import('#lambdas/standalone/ApiGatewayAuthorizer/index.js')) as unknown as MockedModule<typeof AuthorizerMod>
-import {getApiKeys, getUsage, getUsagePlans} from '@mantleframework/aws'
+import {getApiKeys, getUsage, getUsagePlans} from '@j0nathan-ll0yd/aws'
 import {validateSessionToken} from '#domain/auth/sessionService'
-import {getOptionalEnv} from '@mantleframework/env'
-import {metrics} from '@mantleframework/observability'
+import {getOptionalEnv} from '@j0nathan-ll0yd/env'
+import {metrics} from '@j0nathan-ll0yd/observability'
 
 describe('ApiGatewayAuthorizer Lambda', () => {
   const methodArn = 'arn:aws:execute-api:us-west-2:123456789012:api-id/stage/GET/resource'

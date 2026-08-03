@@ -233,7 +233,7 @@ Queued | Downloading | Downloaded | Failed;
 
 This instance can register framework MCP tools at `src/lambdas/mcp/DevTools/`. Access via Claude Code MCP integration with bearer token auth.
 
-**Framework tools (from `@mantleframework/mcp/tools`):** fetch_lambda_logs, query_database, describe_database_schema, verify_credentials, list_s3_objects, get_s3_object, list_eventbridge_rules, trace_lambda_invocations
+**Framework tools (from `@j0nathan-ll0yd/mcp/tools`):** fetch_lambda_logs, query_database, describe_database_schema, verify_credentials, list_s3_objects, get_s3_object, list_eventbridge_rules, trace_lambda_invocations
 
 **Usage:** These tools are read-only. Use them for debugging server-side errors, verifying deploys, and inspecting database state. Prefer these over manual `aws` CLI commands (C95).
 
@@ -379,7 +379,7 @@ This project passes all Mantle spec checks (C1–C143) with three documented exc
 
 ### C9: buildErrorResponse handled by defineApiHandler
 
-`buildErrorResponse()` is not called directly in application code. This is not a violation — `defineApiHandler` (from `@mantleframework/validation`) calls `buildErrorResponse` internally at its catch boundary. All API handlers use `defineApiHandler`, so errors are formatted through `buildErrorResponse` automatically.
+`buildErrorResponse()` is not called directly in application code. This is not a violation — `defineApiHandler` (from `@j0nathan-ll0yd/validation`) calls `buildErrorResponse` internally at its catch boundary. All API handlers use `defineApiHandler`, so errors are formatted through `buildErrorResponse` automatically.
 
 ### C20: x86_64 for StartFileUpload
 

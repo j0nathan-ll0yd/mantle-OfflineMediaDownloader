@@ -4,7 +4,7 @@
  * Internal utilities for file operations in StartFileUpload Lambda.
  */
 import {upsertFile as upsertFileRecord} from '#entities/queries'
-import {logDebug} from '@mantleframework/observability'
+import {logDebug} from '@j0nathan-ll0yd/observability'
 import type {File} from '#types/domainModels'
 
 /**

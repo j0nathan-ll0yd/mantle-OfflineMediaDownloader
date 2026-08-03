@@ -50,23 +50,19 @@ export default defineConfig({
         '#lambdas': resolve(__dirname, 'src/lambdas')
       },
       dedupe: [
-        '@mantleframework/core',
-        '@mantleframework/aws',
-        '@mantleframework/database',
-        '@mantleframework/errors',
-        '@mantleframework/env',
-        '@mantleframework/observability',
-        '@mantleframework/resilience',
-        '@mantleframework/validation',
-        '@mantleframework/auth',
-        '@mantleframework/security',
+        '@j0nathan-ll0yd/core',
+        '@j0nathan-ll0yd/aws',
+        '@j0nathan-ll0yd/database',
+        '@j0nathan-ll0yd/errors',
+        '@j0nathan-ll0yd/env',
+        '@j0nathan-ll0yd/observability',
+        '@j0nathan-ll0yd/resilience',
+        '@j0nathan-ll0yd/validation',
+        '@j0nathan-ll0yd/auth',
+        '@j0nathan-ll0yd/security',
         'drizzle-orm',
         'zod'
       ]
-    },
-    alias: {
-      'drizzle-orm': resolve(__dirname, 'node_modules/@mantleframework/database/node_modules/drizzle-orm'),
-      'zod': resolve(__dirname, 'node_modules/@mantleframework/validation/node_modules/zod')
     },
     setupFiles: ['./test/setup.ts'],
     silent: process.env.LOG_LEVEL === 'SILENT'

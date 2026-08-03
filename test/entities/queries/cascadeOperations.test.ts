@@ -26,8 +26,8 @@ vi.mock('#db/schema',
     files: {fileId: 'fileId'},
     fileDownloads: {fileId: 'fileId'}
   }))
-vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm', () => ({and: vi.fn((...args: unknown[]) => args), eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition')}))
+vi.mock('@j0nathan-ll0yd/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
+vi.mock('@j0nathan-ll0yd/database/orm', () => ({and: vi.fn((...args: unknown[]) => args), eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition')}))
 
 const {deleteUserCascade, deleteUserRelationships, deleteUserAuthRecords, deleteFileCascade} = await import('#entities/queries/cascadeOperations')
 

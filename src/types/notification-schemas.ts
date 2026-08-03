@@ -8,7 +8,7 @@
  * @see notificationTypes.ts for derived TypeScript types
  * @see src/services/notification/transformers.ts for pre-send validation usage
  */
-import {z} from '@mantleframework/validation'
+import {z} from '@j0nathan-ll0yd/validation'
 
 /**
  * Notification type string enum — single source of truth for all valid types.

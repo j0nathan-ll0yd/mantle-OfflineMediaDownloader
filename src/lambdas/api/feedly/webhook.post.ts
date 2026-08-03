@@ -8,10 +8,10 @@
  * Input: FeedlyWebhookRequest with articleURL
  * Output: APIGatewayProxyResult with file metadata
  */
-import {buildValidatedResponse, defineLambda, emitEvent} from '@mantleframework/core'
-import {addAnnotation, addMetadata, endSpan, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
-import {createIdempotencyStore, IdempotencyConfig, makeIdempotent} from '@mantleframework/resilience'
-import {defineApiHandler, z} from '@mantleframework/validation'
+import {buildValidatedResponse, defineLambda, emitEvent} from '@j0nathan-ll0yd/core'
+import {addAnnotation, addMetadata, endSpan, logInfo, metrics, MetricUnit, startSpan} from '@j0nathan-ll0yd/observability'
+import {createIdempotencyStore, IdempotencyConfig, makeIdempotent} from '@j0nathan-ll0yd/resilience'
+import {defineApiHandler, z} from '@j0nathan-ll0yd/validation'
 defineLambda({bind: {SNS_QUEUE_URL: 'SendPushNotification'}})
 import {associateFileToUser} from '#domain/user/userFileService'
 import {addFile, getFile, sendFileNotification} from '#services/file/fileInitService'

@@ -1,4 +1,4 @@
-import {defineConfig} from '@mantleframework/core'
+import {defineConfig} from '@j0nathan-ll0yd/core'
 
 export default defineConfig({
   name: 'media-downloader',
@@ -107,9 +107,6 @@ export default defineConfig({
     ]
   },
   ci: {
-    mantleRepo: 'j0nathan-ll0yd/mantle',
-    mantleRef: 'main',
-    mantleAuthSecret: 'MANTLE_DEPLOY_KEY',
     deploy: false,
     customSteps: [
       {

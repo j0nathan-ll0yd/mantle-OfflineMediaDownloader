@@ -7,16 +7,16 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as FileDeleteMod from '#lambdas/api/files/[fileId]/index.delete.js'
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     buildValidatedResponse: vi.fn((_ctx, code, data) => ({statusCode: code, ...data})),
     defineLambda: vi.fn(),
     S3BucketName: vi.fn((name: string) => name)
   }))
 
-vi.mock('@mantleframework/aws', () => ({deleteObject: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({deleteObject: vi.fn()}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class NotFoundError extends Error {
     statusCode = 404
     constructor(message: string) {
@@ -27,22 +27,22 @@ vi.mock('@mantleframework/errors', () => {
   return {NotFoundError}
 })
 
-vi.mock('@mantleframework/observability', () => ({logError: vi.fn(), logInfo: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logError: vi.fn(), logInfo: vi.fn()}))
 
-vi.mock('@mantleframework/validation',
+vi.mock('@j0nathan-ll0yd/validation',
   () => ({
     defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({})), boolean: vi.fn(() => ({}))}
   }))
 
-vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn(() => 'test-bucket')}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getRequiredEnv: vi.fn(() => 'test-bucket')}))
 
 vi.mock('#entities/queries', () => ({deleteFileCascade: vi.fn()}))
 
 const {handler} = (await import('#lambdas/api/files/[fileId]/index.delete.js')) as unknown as MockedModule<typeof FileDeleteMod>
 import {deleteFileCascade} from '#entities/queries'
-import {deleteObject} from '@mantleframework/aws'
-import {logError, logInfo} from '@mantleframework/observability'
+import {deleteObject} from '@j0nathan-ll0yd/aws'
+import {logError, logInfo} from '@j0nathan-ll0yd/observability'
 
 describe('FileDelete Lambda', () => {
   beforeEach(() => {

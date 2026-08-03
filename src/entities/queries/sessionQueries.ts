@@ -5,9 +5,9 @@
  * @see src/lib/vendor/Drizzle/schema.ts for table definitions
  * @see src/lib/vendor/Drizzle/instrumentation.ts for query metrics
  */
-import {DatabaseOperation} from '@mantleframework/database'
-import {eq, lt} from '@mantleframework/database/orm'
-import type {InferInsertModel, InferSelectModel} from '@mantleframework/database/orm'
+import {DatabaseOperation} from '@j0nathan-ll0yd/database'
+import {eq, lt} from '@j0nathan-ll0yd/database/orm'
+import type {InferInsertModel, InferSelectModel} from '@j0nathan-ll0yd/database/orm'
 import {defineQuery} from '#db/defineQuery'
 import {accounts, sessions, verification} from '#db/schema'
 import {accountInsertSchema, sessionInsertSchema, sessionUpdateSchema, verificationInsertSchema} from '#db/zodSchemas'

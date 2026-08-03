@@ -1,10 +1,10 @@
 import {beforeEach, describe, expect, type Mock, test, vi} from 'vitest'
 import {EventEmitter} from 'events'
 import {Readable} from 'stream'
-import type {S3BucketName as S3BucketNameType} from '@mantleframework/core'
+import type {S3BucketName as S3BucketNameType} from '@j0nathan-ll0yd/core'
 
-// Type-only import + local helper avoids triggering @mantleframework/core module load
-// at test-file eval time, which would fire the hoisted vi.mock('@mantleframework/aws')
+// Type-only import + local helper avoids triggering @j0nathan-ll0yd/core module load
+// at test-file eval time, which would fire the hoisted vi.mock('@j0nathan-ll0yd/aws')
 // factory before `const mockCreateUpload` is initialized (temporal dead zone error).
 const S3BucketName = (s: string): S3BucketNameType => s as S3BucketNameType
 
@@ -39,7 +39,7 @@ vi.mock('fs', () => ({createReadStream: mockCreateReadStream}))
 const mockUploadDone = vi.fn<() => Promise<{Location: string}>>()
 const mockCreateUpload = vi.fn(() => ({done: mockUploadDone}))
 
-vi.mock('@mantleframework/aws', () => ({
+vi.mock('@j0nathan-ll0yd/aws', () => ({
   createUpload: mockCreateUpload,
   // Stub other commonly imported AWS functions to avoid import errors
   putObject: vi.fn(),
@@ -58,7 +58,7 @@ vi.mock('@mantleframework/aws', () => ({
   setTestCloudWatchClient: vi.fn()
 }))
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     logDebug: vi.fn(),
     logInfo: vi.fn(),
@@ -73,7 +73,7 @@ vi.mock('@mantleframework/observability',
     MetricUnit: {Count: 'Count', Seconds: 'Seconds', Milliseconds: 'Milliseconds', Bytes: 'Bytes'}
   }))
 
-vi.mock('@mantleframework/env',
+vi.mock('@j0nathan-ll0yd/env',
   () => ({
     getRequiredEnv: vi.fn((key: string) => process.env[key] ?? `mock-${key}`),
     getOptionalEnv: vi.fn((key: string, defaultVal?: string) => process.env[key] ?? defaultVal)

@@ -9,11 +9,11 @@
  * Input: Authorization Bearer header
  * Output: APIGatewayProxyResult with refreshed session info
  */
-import {extractBearerToken, validateSession} from '@mantleframework/auth'
-import {buildValidatedResponse, defineLambda} from '@mantleframework/core'
-import {UnauthorizedError} from '@mantleframework/errors'
-import {logDebug, logInfo} from '@mantleframework/observability'
-import {defineApiHandler} from '@mantleframework/validation'
+import {extractBearerToken, validateSession} from '@j0nathan-ll0yd/auth'
+import {buildValidatedResponse, defineLambda} from '@j0nathan-ll0yd/core'
+import {UnauthorizedError} from '@j0nathan-ll0yd/errors'
+import {logDebug, logInfo} from '@j0nathan-ll0yd/observability'
+import {defineApiHandler} from '@j0nathan-ll0yd/validation'
 import {getAuthInstance} from '#domain/auth/authInstance'
 import {userLoginResponseSchema} from '#types/api-schema'
 

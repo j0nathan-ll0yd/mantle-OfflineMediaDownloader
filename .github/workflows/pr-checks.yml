@@ -23,28 +23,12 @@ jobs:
     timeout-minutes: 25
     permissions:
       contents: read
-      packages: read # read @j0nathan-ll0yd/config from GitHub Packages
+      packages: read # read @j0nathan-ll0yd/* (Mantle framework + shared config) from GitHub Packages
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-      - name: Setup SSH for mantle checkout
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.MANTLE_DEPLOY_KEY }}" > ~/.ssh/mantle_deploy_key
-          chmod 600 ~/.ssh/mantle_deploy_key
-          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-      - name: Checkout mantle framework
-        run: GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-main}}" git@github.com:j0nathan-ll0yd/mantle.git ../mantle || GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch main git@github.com:j0nathan-ll0yd/mantle.git ../mantle
-
       - uses: ./.github/actions/setup-node-pnpm
-
-      - name: Install mantle dependencies
-        working-directory: ../mantle
-        run: pnpm install --frozen-lockfile
-      - name: Build mantle packages
-        working-directory: ../mantle
-        run: pnpm build
 
       - name: Format Check
         run: pnpm run format:check
@@ -71,7 +55,7 @@ jobs:
     if: always()
     permissions:
       contents: read
-      packages: read # read @j0nathan-ll0yd/config from GitHub Packages
+      packages: read # read @j0nathan-ll0yd/* (Mantle framework + shared config) from GitHub Packages
     steps:
       - name: Check all jobs succeeded
         run: |

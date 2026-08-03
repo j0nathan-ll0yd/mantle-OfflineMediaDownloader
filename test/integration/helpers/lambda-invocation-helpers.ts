@@ -7,7 +7,7 @@
  */
 
 import {CreateFunctionCommand, DeleteFunctionCommand, GetFunctionCommand, InvokeCommand, ListFunctionsCommand} from '@aws-sdk/client-lambda'
-import {createLambdaClient} from '@mantleframework/aws'
+import {createLambdaClient} from '@j0nathan-ll0yd/aws'
 
 const lambdaClient = createLambdaClient()
 

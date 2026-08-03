@@ -10,11 +10,11 @@
  *
  * @see {@link file://../../../services/file/fileInitService.ts} for file transformation
  */
-import {buildValidatedResponse, defineLambda, UserStatus} from '@mantleframework/core'
+import {buildValidatedResponse, defineLambda, UserStatus} from '@j0nathan-ll0yd/core'
 
 defineLambda({staticAssets: ['videos/default-file.mp4'], bind: {SNS_QUEUE_URL: 'SendPushNotification'}})
-import {metrics, MetricUnit} from '@mantleframework/observability'
-import {defineApiHandler, z} from '@mantleframework/validation'
+import {metrics, MetricUnit} from '@j0nathan-ll0yd/observability'
+import {defineApiHandler, z} from '@j0nathan-ll0yd/validation'
 import {getDefaultFile} from '#config/constants'
 import {fileListResponseSchema} from '#types/api-schema'
 import {FileStatus} from '#types/enums'

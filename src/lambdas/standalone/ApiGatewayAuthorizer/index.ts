@@ -6,9 +6,9 @@
  *
  * Trigger: API Gateway (custom authorizer, REQUEST type)
  */
-import {defineAuthorizerHandler, defineLambda, UserStatus} from '@mantleframework/core'
-import {addAnnotation, addMetadata, endSpan, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
-import {getRequiredEnv} from '@mantleframework/env'
+import {defineAuthorizerHandler, defineLambda, UserStatus} from '@j0nathan-ll0yd/core'
+import {addAnnotation, addMetadata, endSpan, logError, logInfo, metrics, MetricUnit, startSpan} from '@j0nathan-ll0yd/observability'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
 import {validateSessionToken} from '#domain/auth/sessionService'
 import {fetchApiKeys, fetchUsageData, fetchUsagePlans} from './helpers.js'
 import {denyAuthorization, generateAllow, isRemoteTestRequest} from './helpers.js'

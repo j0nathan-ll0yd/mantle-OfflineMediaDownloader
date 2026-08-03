@@ -5,8 +5,8 @@
  * and determines whether to retry or permanently fail.
  */
 import {getFile, updateFile} from '#entities/queries'
-import {emitEvent, isOk} from '@mantleframework/core'
-import {logDebug, logInfo, metrics, MetricUnit} from '@mantleframework/observability'
+import {emitEvent, isOk} from '@j0nathan-ll0yd/core'
+import {logDebug, logInfo, metrics, MetricUnit} from '@j0nathan-ll0yd/observability'
 import type {DownloadFailedDetail} from '#types/events'
 import type {DownloadFailureResult} from '#types/lambda'
 import type {FetchVideoInfoResult} from '#types/video'

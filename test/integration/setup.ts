@@ -17,7 +17,7 @@ import {POLLING, TIMEOUTS} from './helpers/timeout-config'
 process.env.USE_LOCALSTACK = 'true'
 
 /**
- * Set TEST_DATABASE_SCHEMA for \@mantleframework/database
+ * Set TEST_DATABASE_SCHEMA for \@j0nathan-ll0yd/database
  * This ensures getDrizzleClient() uses the same worker-isolated schema
  * as the test's getTestDbAsync() connection
  */

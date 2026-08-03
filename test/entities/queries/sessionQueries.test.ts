@@ -24,8 +24,8 @@ vi.mock('#db/zodSchemas',
     accountInsertSchema: {parse: vi.fn((v: unknown) => v)},
     verificationInsertSchema: {parse: vi.fn((v: unknown) => v)}
   }))
-vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm',
+vi.mock('@j0nathan-ll0yd/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
+vi.mock('@j0nathan-ll0yd/database/orm',
   () => ({eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'), lt: vi.fn((_col: unknown, _val: unknown) => 'lt-condition')}))
 
 const {

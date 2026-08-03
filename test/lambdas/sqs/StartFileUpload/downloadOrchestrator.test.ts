@@ -26,7 +26,7 @@ import type {ValidatedDownloadQueueMessage} from '#types/schemas'
 import {createMockFileDownload} from '#test/helpers/entity-fixtures'
 import {DownloadStatus, FileStatus} from '#types/enums'
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     CloudFrontDistributionId: (s: string) => s,
     S3BucketName: (s: string) => s,
@@ -34,7 +34,7 @@ vi.mock('@mantleframework/core',
     isOk: vi.fn((r: {ok?: boolean}) => r?.ok === true)
   }))
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     logDebug: vi.fn(),
     logInfo: vi.fn(),
@@ -42,9 +42,9 @@ vi.mock('@mantleframework/observability',
     MetricUnit: {Count: 'Count'}
   }))
 
-vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn((name: string) => (name === 'CLOUDFRONT_DOMAIN' ? 'cdn.example.com' : 'test-bucket'))}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getRequiredEnv: vi.fn((name: string) => (name === 'CLOUDFRONT_DOMAIN' ? 'cdn.example.com' : 'test-bucket'))}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnexpectedError extends Error {
     constructor(message: string) {
       super(message)
@@ -74,7 +74,7 @@ vi.mock('#lambdas/sqs/StartFileUpload/failureHandler', () => ({handleDownloadFai
 vi.mock('#lambdas/sqs/StartFileUpload/fileHelpers', () => ({upsertFile: vi.fn(() => Promise.resolve())}))
 
 import {processDownloadRequest} from '#lambdas/sqs/StartFileUpload/downloadOrchestrator.js'
-import {emitEvent} from '@mantleframework/core'
+import {emitEvent} from '@j0nathan-ll0yd/core'
 import {getFileDownload, updateFile} from '#entities/queries'
 import {dispatchMetadataNotifications} from '#services/notification/dispatchService'
 import {updateDownloadState} from '#services/download/stateManager'

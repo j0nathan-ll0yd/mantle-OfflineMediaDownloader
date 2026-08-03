@@ -1,4 +1,4 @@
-import {z} from '@mantleframework/validation'
+import {z} from '@j0nathan-ll0yd/validation'
 import {notificationTypeSchema} from '#types/notification-schemas'
 
 export const clientEventTypeSchema = z.enum([

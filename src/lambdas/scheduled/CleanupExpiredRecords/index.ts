@@ -8,8 +8,8 @@
  * Input: ScheduledEvent
  * Output: CleanupResult with deletion counts
  */
-import {defineScheduledHandler} from '@mantleframework/core'
-import {addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
+import {defineScheduledHandler} from '@j0nathan-ll0yd/core'
+import {addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@j0nathan-ll0yd/observability'
 import {deleteExpiredDeviceEvents, deleteExpiredFileDownloads, deleteExpiredSessions, deleteExpiredVerifications} from '#entities/queries'
 import {DownloadStatus} from '#types/enums'
 import type {CleanupResult} from '#types/lambda'

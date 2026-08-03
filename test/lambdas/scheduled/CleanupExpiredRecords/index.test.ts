@@ -10,9 +10,9 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as CleanupMod from '#lambdas/scheduled/CleanupExpiredRecords/index.js'
 
-vi.mock('@mantleframework/core', () => ({defineScheduledHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
+vi.mock('@j0nathan-ll0yd/core', () => ({defineScheduledHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     addMetadata: vi.fn(),
     endSpan: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock('#utils/time', () => ({secondsAgo: vi.fn(() => new Date('2024-01-01T00:0
 
 const {handler} = (await import('#lambdas/scheduled/CleanupExpiredRecords/index.js')) as unknown as MockedModule<typeof CleanupMod>
 import {deleteExpiredDeviceEvents, deleteExpiredFileDownloads, deleteExpiredSessions, deleteExpiredVerifications} from '#entities/queries'
-import {metrics} from '@mantleframework/observability'
+import {metrics} from '@j0nathan-ll0yd/observability'
 
 describe('CleanupExpiredRecords Lambda', () => {
   beforeEach(() => {

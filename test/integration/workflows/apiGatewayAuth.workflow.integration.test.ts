@@ -12,7 +12,7 @@ process.env.MULTI_AUTHENTICATION_PATH_PARTS = 'files'
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi} from 'vitest'
 import type {APIGatewayRequestAuthorizerEvent} from 'aws-lambda'
 import {createMockContext} from '../../helpers/lambda-fixtures'
-import {createObservabilityMock} from '@mantleframework/testing/lambda-mocks'
+import {createObservabilityMock} from '@j0nathan-ll0yd/testing/lambda-mocks'
 
 // Test helpers
 import {closeTestDb, createAllTables, getTestDbAsync, insertSession, insertUser, truncateAllTables} from '../helpers/postgres-helpers'
@@ -22,12 +22,12 @@ import {createMockAPIGatewayRequestAuthorizerEvent} from '../helpers/test-data'
 // Note: API Gateway rate limiting must remain mocked due to LocalStack limitations
 const {mockGetApiKeys, mockGetUsagePlans, mockGetUsage} = vi.hoisted(() => ({mockGetApiKeys: vi.fn(), mockGetUsagePlans: vi.fn(), mockGetUsage: vi.fn()}))
 
-vi.mock('@mantleframework/aws', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mantleframework/aws')>()
+vi.mock('@j0nathan-ll0yd/aws', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@j0nathan-ll0yd/aws')>()
   return {...actual, getApiKeys: mockGetApiKeys, getUsagePlans: mockGetUsagePlans, getUsage: mockGetUsage}
 })
 
-vi.mock('@mantleframework/observability', () => createObservabilityMock())
+vi.mock('@j0nathan-ll0yd/observability', () => createObservabilityMock())
 
 const {handler} = await import('#lambdas/standalone/ApiGatewayAuthorizer/index')
 

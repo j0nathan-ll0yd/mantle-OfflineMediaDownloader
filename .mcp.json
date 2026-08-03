@@ -2,7 +2,7 @@
   "mcpServers": {
     "mantle": {
       "command": "node",
-      "args": ["../mantle/packages/cli/dist/mcp/mcp-entry.mjs"]
+      "args": ["node_modules/@j0nathan-ll0yd/cli/dist/mcp/mcp-entry.mjs"]
     },
     "devtools": {
       "type": "http",

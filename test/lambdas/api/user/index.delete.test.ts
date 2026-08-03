@@ -7,9 +7,9 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as UserDeleteMod from '#lambdas/api/user/index.delete.js'
 
-vi.mock('@mantleframework/core', () => ({buildValidatedResponse: vi.fn((_ctx, code, data) => ({statusCode: code, ...data})), defineLambda: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/core', () => ({buildValidatedResponse: vi.fn((_ctx, code, data) => ({statusCode: code, ...data})), defineLambda: vi.fn()}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnauthorizedError extends Error {
     statusCode = 401
     constructor(message: string) {
@@ -27,9 +27,9 @@ vi.mock('@mantleframework/errors', () => {
   return {UnauthorizedError, UnexpectedError}
 })
 
-vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), logError: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logDebug: vi.fn(), logError: vi.fn()}))
 
-vi.mock('@mantleframework/validation',
+vi.mock('@j0nathan-ll0yd/validation',
   () => ({
     defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({})), number: vi.fn(() => ({}))}
@@ -47,7 +47,7 @@ const {handler} = (await import('#lambdas/api/user/index.delete.js')) as unknown
 import {deleteUser, deleteUserDevicesByUserId, deleteUserFilesByUserId, getDevicesBatch} from '#entities/queries'
 import {createFailedUserDeletionIssue} from '#integrations/github/issueService'
 import {deleteDevice, getUserDevices} from '#services/device/deviceService'
-import {buildValidatedResponse} from '@mantleframework/core'
+import {buildValidatedResponse} from '@j0nathan-ll0yd/core'
 
 describe('UserDelete Lambda', () => {
   beforeEach(() => {

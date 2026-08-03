@@ -7,7 +7,7 @@
  * @see src/lib/vendor/YouTube.ts - YouTube/yt-dlp integration
  */
 
-import type {Result} from '@mantleframework/core'
+import type {Result} from '@j0nathan-ll0yd/core'
 import type {BaseErrorClassification} from './errorClassification'
 import type {YtDlpVideoInfo} from './youtube'
 

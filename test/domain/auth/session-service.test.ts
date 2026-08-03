@@ -5,7 +5,7 @@
  */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {UnauthorizedError} from '@mantleframework/errors'
+import {UnauthorizedError} from '@j0nathan-ll0yd/errors'
 
 // Mock native Drizzle query functions
 vi.mock('#entities/queries', () => ({getSessionByToken: vi.fn(), updateSession: vi.fn()}))

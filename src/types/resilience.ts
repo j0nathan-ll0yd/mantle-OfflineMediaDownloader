@@ -7,7 +7,7 @@
  * @see src/lib/system/circuitBreaker.ts for circuit breaker implementation
  * @see src/lib/system/retry.ts for retry utilities
  */
-import type {Result} from '@mantleframework/core'
+import type {Result} from '@j0nathan-ll0yd/core'
 
 /**
  * Circuit breaker states

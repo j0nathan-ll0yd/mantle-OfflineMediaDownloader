@@ -4,10 +4,10 @@ import type {SQSRecord} from 'aws-lambda'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as PushNotificationMod from '#lambdas/sqs/SendPushNotification/index.js'
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({defineSqsHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler), isErr: (r: {ok: boolean}) => !r.ok}))
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     addAnnotation: vi.fn(),
     addMetadata: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock('@mantleframework/observability',
     startSpan: vi.fn().mockReturnValue({})
   }))
 
-vi.mock('@mantleframework/validation', async () => {
+vi.mock('@j0nathan-ll0yd/validation', async () => {
   const {z} = await import('zod')
   return {validateSchema: vi.fn(), z}
 })
@@ -37,7 +37,7 @@ vi.mock('../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js
 
 const {handler} = (await import('#lambdas/sqs/SendPushNotification/index.js')) as unknown as MockedModule<typeof PushNotificationMod>
 
-import {validateSchema} from '@mantleframework/validation'
+import {validateSchema} from '@j0nathan-ll0yd/validation'
 import {cleanupDisabledEndpoints} from '../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js'
 import {getDeviceIdsForUser, mapSettledToDeviceResults, processNotificationResults} from '../../../src/lambdas/sqs/SendPushNotification/pushHelpers.js'
 

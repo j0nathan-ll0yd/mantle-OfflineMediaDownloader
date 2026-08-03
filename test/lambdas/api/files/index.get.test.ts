@@ -7,7 +7,7 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as ListFilesMod from '#lambdas/api/files/index.get.js'
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     buildValidatedResponse: vi.fn((_ctx, _code, data) => data),
     defineLambda: vi.fn(),
@@ -15,9 +15,9 @@ vi.mock('@mantleframework/core',
     getStaticAsset: vi.fn(() => ({size: 100, key: 'default.mp4', url: 'https://cdn.example.com/default.mp4', contentType: 'video/mp4'}))
   }))
 
-vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logDebug: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
 
-vi.mock('@mantleframework/validation', () => {
+vi.mock('@j0nathan-ll0yd/validation', () => {
   const chainable = (): Record<string, unknown> => new Proxy({}, {get: () => chainable})
   return {defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler), z: new Proxy({}, {get: () => chainable})}
 })
@@ -48,8 +48,8 @@ vi.mock('#types/enums', () => ({FileStatus: {Queued: 'Queued', Downloading: 'Dow
 const {handler} = (await import('#lambdas/api/files/index.get.js')) as unknown as MockedModule<typeof ListFilesMod>
 import {getFilesForUser} from '#entities/queries'
 import {getDefaultFile} from '#config/constants'
-import {buildValidatedResponse} from '@mantleframework/core'
-import {metrics} from '@mantleframework/observability'
+import {buildValidatedResponse} from '@j0nathan-ll0yd/core'
+import {metrics} from '@j0nathan-ll0yd/observability'
 
 describe('ListFiles Lambda', () => {
   beforeEach(() => {

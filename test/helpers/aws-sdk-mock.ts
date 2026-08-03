@@ -38,19 +38,12 @@ import {EventBridgeClient} from '@aws-sdk/client-eventbridge'
 import {S3Client} from '@aws-sdk/client-s3'
 import {DynamoDBClient} from '@aws-sdk/client-dynamodb'
 import {LambdaClient} from '@aws-sdk/client-lambda'
-import {
-  setTestDynamoDBClient,
-  setTestEventBridgeClient,
-  setTestLambdaClient,
-  setTestS3Client,
-  setTestSNSClient,
-  setTestSQSClient
-} from '@mantleframework/aws'
+import {setTestDynamoDBClient, setTestEventBridgeClient, setTestLambdaClient, setTestS3Client, setTestSNSClient, setTestSQSClient} from '@j0nathan-ll0yd/aws'
 
 /**
  * Version-safe wrapper around mockClient.
  *
- * The AWS SDK Client classes resolve through \@mantleframework/aws (linked package),
+ * The AWS SDK Client classes resolve through \@j0nathan-ll0yd/aws (linked package),
  * while aws-sdk-client-mock resolves \@smithy/types from pnpm store. This creates
  * a nominal type mismatch even though the types are structurally identical.
  * This wrapper bridges the gap by accepting any Client constructor.

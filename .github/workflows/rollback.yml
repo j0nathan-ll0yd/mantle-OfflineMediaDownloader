@@ -31,7 +31,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      packages: read # read @j0nathan-ll0yd/config from GitHub Packages
+      packages: read # read @j0nathan-ll0yd/* (Mantle framework + shared config) from GitHub Packages
     steps:
       - name: Check AWS credentials configuration
         id: check-creds

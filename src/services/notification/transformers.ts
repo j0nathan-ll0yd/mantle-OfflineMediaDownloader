@@ -15,7 +15,7 @@ import {
   metadataPayloadSchema
 } from '#types/notification-schemas'
 import type {YtDlpVideoInfo} from '#types/youtube'
-import {stringAttribute} from '@mantleframework/aws'
+import {stringAttribute} from '@j0nathan-ll0yd/aws'
 
 // PublishCommandInput is the SNS publish params shape
 type PublishCommandInput = {
@@ -24,7 +24,7 @@ type PublishCommandInput = {
   MessageStructure?: string
   TargetArn?: string
 }
-import type {MessageAttributeValue} from '@mantleframework/aws'
+import type {MessageAttributeValue} from '@j0nathan-ll0yd/aws'
 
 const MAX_DESCRIPTION_LENGTH = 500
 
