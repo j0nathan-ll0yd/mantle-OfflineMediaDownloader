@@ -195,12 +195,7 @@ async function selfTest() {
     checks++
   }
 
-  const publishableManifest = {
-    name: '@j0nathan-ll0yd/sample-package',
-    version: '1.0.0',
-    private: false,
-    publishConfig: {registry: GITHUB_PACKAGES_REGISTRY}
-  }
+  const publishableManifest = {name: '@j0nathan-ll0yd/sample-package', version: '1.0.0', private: false, publishConfig: {registry: GITHUB_PACKAGES_REGISTRY}}
 
   // Discovery — the no-publishable-packages case and the one-publishable-package case.
   eq(selectPublishableDirs([]), [], 'a repo with no packages directory yields no candidates')
