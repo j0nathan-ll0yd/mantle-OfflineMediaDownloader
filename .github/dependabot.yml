@@ -43,15 +43,14 @@ updates:
     # PRs would each red typecheck until the last one merged. One grouped PR
     # lands the set together.
     #
-    # MAJORS ARE **NOT** DELIVERED HERE, despite `major` being listed below. The
-    # pre-existing repo-wide `- dependency-name: "*"` / `version-update:
-    # semver-major` entry in `ignore` is applied AFTER grouping and Dependabot
-    # offers no negation syntax, so semver-major bumps of @j0nathan-ll0yd/* are
-    # filtered out along with every other major. `major` is listed so this group
-    # is already correct if that repo-wide ignore is ever narrowed. Until then a
-    # Mantle major must be adopted by hand, and the Atlas package-version-drift
-    # reconciliation runner is the backstop -- as it is anyway for source that
-    # changed without a version bump, which Dependabot cannot detect at all.
+    # MAJORS ARE NOW DELIVERED HERE. The repo-wide `- dependency-name: "*"` /
+    # `version-update:semver-major` ignore that used to filter every major out of
+    # this group -- it was applied AFTER grouping, and Dependabot offers no
+    # negation syntax -- has been REMOVED deliberately. A Mantle major arrives as
+    # part of this one grouped PR instead of having to be adopted by hand and
+    # noticed by the Atlas package-version-drift reconciliation runner after the
+    # fact. That runner remains the backstop for the case Dependabot cannot see
+    # at all: source that changed without any version bump.
     lifegames-internal:
       patterns:
       - "@j0nathan-ll0yd/*"
@@ -99,9 +98,12 @@ updates:
   - dependency-name: "dprint"
   - dependency-name: "eslint"
   - dependency-name: "@typescript-eslint/*"
-  - dependency-name: "*"
-    update-types:
-    - version-update:semver-major
+  # NOTE: there is deliberately no repo-wide `- dependency-name: "*"` /
+  # `version-update:semver-major` entry here. It was removed on purpose: this repo
+  # now receives ALL majors, third-party included, and the named entries above are
+  # the only exclusions. Every one of those is a full ignore (all update types) with
+  # a stated reason, so re-adding a blanket major ignore would silently re-suppress
+  # the @j0nathan-ll0yd/* group majors this change exists to deliver.
   labels:
   - dependencies
   - security
