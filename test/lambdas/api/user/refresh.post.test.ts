@@ -7,11 +7,11 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as RefreshMod from '#lambdas/api/user/refresh.post.js'
 
-vi.mock('@mantleframework/auth', () => ({extractBearerToken: vi.fn(), validateSession: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/auth', () => ({extractBearerToken: vi.fn(), validateSession: vi.fn()}))
 
-vi.mock('@mantleframework/core', () => ({buildValidatedResponse: vi.fn((_ctx, _code, data) => data), defineLambda: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/core', () => ({buildValidatedResponse: vi.fn((_ctx, _code, data) => data), defineLambda: vi.fn()}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnauthorizedError extends Error {
     statusCode = 401
     constructor(message: string) {
@@ -22,16 +22,16 @@ vi.mock('@mantleframework/errors', () => {
   return {UnauthorizedError}
 })
 
-vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), logInfo: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logDebug: vi.fn(), logInfo: vi.fn()}))
 
-vi.mock('@mantleframework/validation', () => ({defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
+vi.mock('@j0nathan-ll0yd/validation', () => ({defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
 
 vi.mock('#domain/auth/authInstance', () => ({getAuthInstance: vi.fn()}))
 
 vi.mock('#types/api-schema', () => ({userLoginResponseSchema: {}}))
 
 const {handler} = (await import('#lambdas/api/user/refresh.post.js')) as unknown as MockedModule<typeof RefreshMod>
-import {extractBearerToken, validateSession} from '@mantleframework/auth'
+import {extractBearerToken, validateSession} from '@j0nathan-ll0yd/auth'
 import {getAuthInstance} from '#domain/auth/authInstance'
 
 describe('RefreshToken Lambda', () => {

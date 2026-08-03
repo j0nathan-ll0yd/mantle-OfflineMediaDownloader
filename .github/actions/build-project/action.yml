@@ -29,7 +29,6 @@ runs:
       with:
         path: |
           .turbo
-          ../mantle/.turbo
         key: ${{ runner.os }}-turbo-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-turbo-${{ hashFiles('pnpm-lock.yaml') }}-
@@ -37,7 +36,7 @@ runs:
 
     - name: Generate dependency graph
       shell: bash
-      run: node ../mantle/packages/cli/dist/index.mjs generate graph
+      run: pnpm exec mantle generate graph
 
     - name: Build
       shell: bash

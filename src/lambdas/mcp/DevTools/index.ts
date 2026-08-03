@@ -1,10 +1,10 @@
 import {sql} from 'drizzle-orm'
-import {defineLambda} from '@mantleframework/core'
-import {DsqlClusterArn} from '@mantleframework/core'
-import {getDrizzleClient} from '@mantleframework/database'
-import {getRequiredEnv} from '@mantleframework/env'
-import {defineMcpHandler, frameworkTools, McpAuthMode} from '@mantleframework/mcp'
-import type {McpDatabaseConnection} from '@mantleframework/mcp'
+import {defineLambda} from '@j0nathan-ll0yd/core'
+import {DsqlClusterArn} from '@j0nathan-ll0yd/core'
+import {getDrizzleClient} from '@j0nathan-ll0yd/database'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
+import {defineMcpHandler, frameworkTools, McpAuthMode} from '@j0nathan-ll0yd/mcp'
+import type {McpDatabaseConnection} from '@j0nathan-ll0yd/mcp'
 
 defineLambda({timeout: 30, memorySize: 512, env: ['DATA_BUCKET', 'EVENT_BUS_NAME'], bind: {DATA_BUCKET: 'files'}})
 

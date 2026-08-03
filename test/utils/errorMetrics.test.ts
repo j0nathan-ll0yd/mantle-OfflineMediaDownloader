@@ -5,7 +5,7 @@ const mockAddDimension = vi.fn()
 const mockAddMetric = vi.fn()
 const mockSingleMetric = vi.fn(() => ({addDimension: mockAddDimension, addMetric: mockAddMetric}))
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     metrics: {singleMetric: mockSingleMetric},
     MetricUnit: {Count: 'Count', Milliseconds: 'Milliseconds', Seconds: 'Seconds', Bytes: 'Bytes'},

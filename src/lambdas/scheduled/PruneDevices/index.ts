@@ -8,10 +8,10 @@
  * Input: ScheduledEvent
  * Output: PruneDevicesResult with deletion counts
  */
-import {defineLambda, defineScheduledHandler} from '@mantleframework/core'
-import {getOptionalEnv, getRequiredEnv} from '@mantleframework/env'
-import {UnexpectedError} from '@mantleframework/errors'
-import {addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
+import {defineLambda, defineScheduledHandler} from '@j0nathan-ll0yd/core'
+import {getOptionalEnv, getRequiredEnv} from '@j0nathan-ll0yd/env'
+import {UnexpectedError} from '@j0nathan-ll0yd/errors'
+import {addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@j0nathan-ll0yd/observability'
 import {deleteUserDevicesByDeviceId, getAllDevices} from '#entities/queries'
 import type {Apns2Error} from '#errors/custom-errors'
 import {deleteDevice} from '#services/device/deviceService'

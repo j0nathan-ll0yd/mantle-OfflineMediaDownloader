@@ -13,7 +13,7 @@
  *    unavailable — a metadata miss or throw falls back to minimal metadata and
  *    still completes the recovery.
  *
- * headObject (@mantleframework/aws), the youtube tracer, dispatch service, and
+ * headObject (@j0nathan-ll0yd/aws), the youtube tracer, dispatch service, and
  * fileHelpers.upsertFile are mocked at their boundaries.
  */
 import {beforeEach, describe, expect, it, vi} from 'vitest'
@@ -22,9 +22,9 @@ import type {YtDlpVideoInfo} from '#types/youtube'
 import type {ValidatedDownloadQueueMessage} from '#types/schemas'
 import {DownloadStatus} from '#types/enums'
 
-vi.mock('@mantleframework/aws', () => ({headObject: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({headObject: vi.fn()}))
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     CloudFrontDistributionId: (s: string) => s,
     S3BucketName: (s: string) => s,
@@ -32,7 +32,7 @@ vi.mock('@mantleframework/core',
     isOk: vi.fn((r: {ok?: boolean}) => r?.ok === true)
   }))
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     logDebug: vi.fn(),
     logInfo: vi.fn(),
@@ -40,7 +40,7 @@ vi.mock('@mantleframework/observability',
     MetricUnit: {Count: 'Count'}
   }))
 
-vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn(() => 'cdn.example.com')}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getRequiredEnv: vi.fn(() => 'cdn.example.com')}))
 
 vi.mock('#services/notification/dispatchService', () => ({dispatchMetadataNotifications: vi.fn(() => Promise.resolve())}))
 
@@ -51,8 +51,8 @@ vi.mock('#services/download/youtubeTracing', () => ({fetchVideoInfoTraced: vi.fn
 vi.mock('#lambdas/sqs/StartFileUpload/fileHelpers', () => ({upsertFile: vi.fn(() => Promise.resolve())}))
 
 import {checkS3FileExists, recoverFromS3} from '#lambdas/sqs/StartFileUpload/s3Recovery.js'
-import {headObject} from '@mantleframework/aws'
-import {emitEvent, S3BucketName} from '@mantleframework/core'
+import {headObject} from '@j0nathan-ll0yd/aws'
+import {emitEvent, S3BucketName} from '@j0nathan-ll0yd/core'
 import {dispatchMetadataNotifications} from '#services/notification/dispatchService'
 import {updateDownloadState} from '#services/download/stateManager'
 import {fetchVideoInfoTraced} from '#services/download/youtubeTracing'

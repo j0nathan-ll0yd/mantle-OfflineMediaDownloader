@@ -1,6 +1,6 @@
-import {defineSqsHandler} from '@mantleframework/core'
-import {logError, logInfo, metrics, MetricUnit} from '@mantleframework/observability'
-import {z} from '@mantleframework/validation'
+import {defineSqsHandler} from '@j0nathan-ll0yd/core'
+import {logError, logInfo, metrics, MetricUnit} from '@j0nathan-ll0yd/observability'
+import {z} from '@j0nathan-ll0yd/validation'
 import {getDeviceByEndpointArn} from '#entities/queries'
 import {cleanupDisabledEndpoint} from '../SendPushNotification/endpointCleanupHelpers.js'
 

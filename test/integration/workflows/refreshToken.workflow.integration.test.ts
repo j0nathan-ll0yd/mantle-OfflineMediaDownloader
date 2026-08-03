@@ -11,9 +11,9 @@ process.env.TEST_DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgres://tes
 
 import {afterAll, afterEach, beforeAll, describe, expect, test, vi} from 'vitest'
 import type {Context} from 'aws-lambda'
-import {createObservabilityMock} from '@mantleframework/testing/lambda-mocks'
+import {createObservabilityMock} from '@j0nathan-ll0yd/testing/lambda-mocks'
 
-vi.mock('@mantleframework/observability', () => createObservabilityMock())
+vi.mock('@j0nathan-ll0yd/observability', () => createObservabilityMock())
 
 // Test helpers
 import {closeTestDb, createAllTables, getSessionById, getTestDbAsync, insertSession, insertUser, truncateAllTables} from '../helpers/postgres-helpers'

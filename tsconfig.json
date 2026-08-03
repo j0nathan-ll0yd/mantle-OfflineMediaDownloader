@@ -22,11 +22,7 @@
       "#services/*": ["./src/services/*"],
       "#integrations/*": ["./src/integrations/*"],
       "#errors/*": ["./src/errors/*"],
-      "#utils/*": ["./src/utils/*"],
-      "drizzle-orm": ["./node_modules/@mantleframework/database/node_modules/drizzle-orm"],
-      "drizzle-orm/*": ["./node_modules/@mantleframework/database/node_modules/drizzle-orm/*"],
-      "zod": ["./node_modules/@mantleframework/validation/node_modules/zod"],
-      "aws-lambda": ["./node_modules/@mantleframework/core/node_modules/@types/aws-lambda"]
+      "#utils/*": ["./src/utils/*"]
     },
     "noUnusedLocals": true,
     "noUnusedParameters": true,

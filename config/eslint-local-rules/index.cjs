@@ -2,7 +2,7 @@
  * ESLint Local Rules Plugin
  * Project-specific ESLint rules for in-editor convention enforcement
  *
- * Rules duplicated in @mantleframework/eslint-rules have been removed.
+ * Rules duplicated in @j0nathan-ll0yd/eslint-rules have been removed.
  * Only project-specific rules remain here.
  */
 

@@ -10,7 +10,7 @@ import type {PostgresJsDatabase} from 'drizzle-orm/postgres-js'
 import {getWorkerSchema} from './postgres-helpers'
 
 // Re-export generic utilities from framework
-export { logIsolationConfig, validateResourceIsolation } from '@mantleframework/testing/integration'
+export { logIsolationConfig, validateResourceIsolation } from '@j0nathan-ll0yd/testing/integration'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDrizzleDb = PostgresJsDatabase<any>

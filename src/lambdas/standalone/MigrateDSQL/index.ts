@@ -1,11 +1,11 @@
 import {dirname, join} from 'node:path'
 import {fileURLToPath} from 'node:url'
-import {defineLambda, withObservability} from '@mantleframework/core'
-import {logInfo} from '@mantleframework/observability'
-import {applyPermissions, runMigrations, validatePermissions} from '@mantleframework/database'
-import type {MigrateResult, PermissionsResult, ValidatePermissionsResult} from '@mantleframework/database'
-import {DsqlClusterArn} from '@mantleframework/core'
-import {getRequiredEnv} from '@mantleframework/env'
+import {defineLambda, withObservability} from '@j0nathan-ll0yd/core'
+import {logInfo} from '@j0nathan-ll0yd/observability'
+import {applyPermissions, runMigrations, validatePermissions} from '@j0nathan-ll0yd/database'
+import type {MigrateResult, PermissionsResult, ValidatePermissionsResult} from '@j0nathan-ll0yd/database'
+import {DsqlClusterArn} from '@j0nathan-ll0yd/core'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 

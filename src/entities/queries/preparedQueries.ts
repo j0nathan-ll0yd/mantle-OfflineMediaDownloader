@@ -6,8 +6,8 @@
  *
  * @see {@link https://orm.drizzle.team/docs/perf-queries | Drizzle Prepared Statements}
  */
-import {DatabaseOperation} from '@mantleframework/database'
-import {eq, sql} from '@mantleframework/database/orm'
+import {DatabaseOperation} from '@j0nathan-ll0yd/database'
+import {eq, sql} from '@j0nathan-ll0yd/database/orm'
 import {definePreparedQuery} from '#db/defineQuery'
 import {files, sessions, userFiles} from '#db/schema'
 import type {FileRow} from './fileQueries'

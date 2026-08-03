@@ -4,11 +4,11 @@
  * Wraps YouTube/yt-dlp operations with OpenTelemetry tracing and
  * circuit breaker protection against cascading failures.
  */
-import {isOk, S3BucketName} from '@mantleframework/core'
-import {addAnnotation, addMetadata, endSpan, startSpan} from '@mantleframework/observability'
+import {isOk, S3BucketName} from '@j0nathan-ll0yd/core'
+import {addAnnotation, addMetadata, endSpan, startSpan} from '@j0nathan-ll0yd/observability'
 import {downloadVideoToS3, fetchVideoInfo} from '#services/youtube/youtube'
 import type {FetchVideoInfoResult} from '#types/video'
-import {CircuitBreaker} from '@mantleframework/resilience'
+import {CircuitBreaker} from '@j0nathan-ll0yd/resilience'
 
 const youtubeCircuitBreaker = new CircuitBreaker({name: 'youtube'})
 

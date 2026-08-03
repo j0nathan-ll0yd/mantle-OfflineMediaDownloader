@@ -10,8 +10,8 @@
  *
  * @see https://docs.aws.amazon.com/aurora-dsql/latest/userguide/working-with-postgresql-compatibility-unsupported-features.html
  */
-import {eq} from '@mantleframework/database/orm'
-import {ForeignKeyViolationError} from '@mantleframework/errors'
+import {eq} from '@j0nathan-ll0yd/database/orm'
+import {ForeignKeyViolationError} from '@j0nathan-ll0yd/errors'
 import {getDrizzleClient} from './client.js'
 import {devices, files, users} from './schema.js'
 
@@ -75,7 +75,7 @@ export async function assertUsersExist(userIds: string[]): Promise<void> {
   }
 
   const db = await getDrizzleClient()
-  const {inArray} = await import('@mantleframework/database/orm')
+  const {inArray} = await import('@j0nathan-ll0yd/database/orm')
   const result = await db.select({id: users.id}).from(users).where(inArray(users.id, userIds))
 
   const foundIds = new Set(result.map((r) => r.id))
@@ -99,7 +99,7 @@ export async function assertFilesExist(fileIds: string[]): Promise<void> {
   }
 
   const db = await getDrizzleClient()
-  const {inArray} = await import('@mantleframework/database/orm')
+  const {inArray} = await import('@j0nathan-ll0yd/database/orm')
   const result = await db.select({fileId: files.fileId}).from(files).where(inArray(files.fileId, fileIds))
 
   const foundIds = new Set(result.map((r) => r.fileId))

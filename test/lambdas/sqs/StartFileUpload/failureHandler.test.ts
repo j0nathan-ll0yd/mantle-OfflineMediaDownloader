@@ -18,9 +18,9 @@ import type {YtDlpVideoInfo} from '#types/youtube'
 import {createMockFile} from '#test/helpers/entity-fixtures'
 import {DownloadStatus, FileStatus} from '#types/enums'
 
-vi.mock('@mantleframework/core', () => ({emitEvent: vi.fn(() => Promise.resolve()), isOk: vi.fn((r: {ok?: boolean}) => r?.ok === true)}))
+vi.mock('@j0nathan-ll0yd/core', () => ({emitEvent: vi.fn(() => Promise.resolve()), isOk: vi.fn((r: {ok?: boolean}) => r?.ok === true)}))
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     logDebug: vi.fn(),
     logInfo: vi.fn(),
@@ -48,7 +48,7 @@ vi.mock('#services/notification/dispatchService', () => ({dispatchFailureNotific
 vi.mock('#services/download/stateManager', () => ({updateDownloadState: vi.fn(() => Promise.resolve())}))
 
 import {handleDownloadFailure, tryCloseCookieExpirationIssue} from '#lambdas/sqs/StartFileUpload/failureHandler.js'
-import {emitEvent} from '@mantleframework/core'
+import {emitEvent} from '@j0nathan-ll0yd/core'
 import {getFile, updateFile} from '#entities/queries'
 import {classifyVideoError} from '#domain/video/errorClassifier'
 import {closeCookieExpirationIssueIfResolved, createCookieExpirationIssue, createVideoDownloadFailureIssue} from '#integrations/github/issueService'

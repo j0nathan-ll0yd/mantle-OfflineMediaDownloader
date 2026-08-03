@@ -8,7 +8,7 @@
  * Factory helpers (makeAuthorizedParams, etc.) provide defaults for required fields so tests
  * only specify the fields they care about.
  */
-import {createBoundEmitEvent} from '@mantleframework/core'
+import {createBoundEmitEvent} from '@j0nathan-ll0yd/core'
 import type {
   ApiHandlerParams,
   AuthorizedApiParams,
@@ -16,7 +16,7 @@ import type {
   SessionApiParams,
   ValidatedApiParams,
   WrapperMetadata
-} from '@mantleframework/core'
+} from '@j0nathan-ll0yd/core'
 import type {APIGatewayProxyEvent, Context} from 'aws-lambda'
 
 // ============================================================================

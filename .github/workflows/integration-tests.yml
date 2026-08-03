@@ -19,20 +19,11 @@ jobs:
     timeout-minutes: 25
     permissions:
       contents: read
-      packages: read # read @j0nathan-ll0yd/config from GitHub Packages
+      packages: read # read @j0nathan-ll0yd/* (Mantle framework + shared config) from GitHub Packages
 
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-
-      - name: Setup SSH for mantle checkout
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.MANTLE_DEPLOY_KEY }}" > ~/.ssh/mantle_deploy_key
-          chmod 600 ~/.ssh/mantle_deploy_key
-          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-      - name: Checkout mantle framework
-        run: GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch "${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-main}}" git@github.com:j0nathan-ll0yd/mantle.git ../mantle || GIT_SSH_COMMAND="ssh -i ~/.ssh/mantle_deploy_key -o StrictHostKeyChecking=no" git clone --depth 1 --branch main git@github.com:j0nathan-ll0yd/mantle.git ../mantle
 
       - name: Setup pnpm
         # Pinned to v5 — v6.x silently installs pnpm v11 which cannot parse v10
@@ -43,20 +34,14 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
-      # @j0nathan-ll0yd/config (shared dprint + tsconfig) is on GitHub Packages,
-      # which requires auth even for reads. Mantle also consumes it, so pnpm's
-      # supply-chain check fetches its metadata during the mantle install below —
-      # authenticate before any install. pnpm config set writes the global config,
-      # so the token covers both the ../mantle install and the project install.
+      # The @j0nathan-ll0yd scope (the Mantle framework packages and the shared
+      # dprint + tsconfig config) lives on GitHub Packages, which requires auth
+      # even for reads. pnpm ignores the token in the committed project .npmrc,
+      # so it must be written to a trusted config here, before the first install.
       - name: Authenticate to GitHub Packages
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
         run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
-      - name: Install and build mantle (before project install)
-        run: |
-          cd ../mantle
-          pnpm install --frozen-lockfile
-          pnpm build
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 

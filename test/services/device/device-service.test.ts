@@ -9,17 +9,17 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 // Mock dependencies BEFORE importing the module under test
 vi.mock('#entities/queries', () => ({deleteDevice: vi.fn(), deleteUserDevice: vi.fn(), getUserDevicesByUserId: vi.fn()}))
 
-vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), logInfo: vi.fn(), logWarn: vi.fn(), logError: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logDebug: vi.fn(), logInfo: vi.fn(), logWarn: vi.fn(), logError: vi.fn()}))
 
-vi.mock('@mantleframework/aws', () => ({deleteEndpoint: vi.fn(), subscribe: vi.fn(), unsubscribe: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({deleteEndpoint: vi.fn(), subscribe: vi.fn(), unsubscribe: vi.fn()}))
 
 // Import after mocking
 const {deleteUserDevice, deleteDevice, getUserDevices, subscribeEndpointToTopic, unsubscribeEndpointToTopic} = await import(
   '#services/device/deviceService.js'
 )
 import {deleteDevice as deleteDeviceQuery, deleteUserDevice as deleteUserDeviceQuery, getUserDevicesByUserId} from '#entities/queries'
-import {deleteEndpoint, subscribe, unsubscribe} from '@mantleframework/aws'
-import {logDebug} from '@mantleframework/observability'
+import {deleteEndpoint, subscribe, unsubscribe} from '@j0nathan-ll0yd/aws'
+import {logDebug} from '@j0nathan-ll0yd/observability'
 
 describe('Device Service', () => {
   beforeEach(() => {

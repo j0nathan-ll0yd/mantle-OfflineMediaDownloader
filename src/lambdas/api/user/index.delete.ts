@@ -8,10 +8,10 @@
  * Input: Authenticated user context (userId from authorizer)
  * Output: APIGatewayProxyResult confirming deletion
  */
-import {buildValidatedResponse, defineLambda} from '@mantleframework/core'
-import {UnexpectedError} from '@mantleframework/errors'
-import {logDebug, logError} from '@mantleframework/observability'
-import {defineApiHandler, z} from '@mantleframework/validation'
+import {buildValidatedResponse, defineLambda} from '@j0nathan-ll0yd/core'
+import {UnexpectedError} from '@j0nathan-ll0yd/errors'
+import {logDebug, logError} from '@j0nathan-ll0yd/observability'
+import {defineApiHandler, z} from '@j0nathan-ll0yd/validation'
 import {deleteUser as deleteUserRecord, deleteUserDevicesByUserId, deleteUserFilesByUserId, getDevicesBatch} from '#entities/queries'
 import {providerFailureErrorMessage} from '#errors/custom-errors'
 import {createFailedUserDeletionIssue} from '#integrations/github/issueService'

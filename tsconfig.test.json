@@ -21,21 +21,7 @@
       "#services/*": ["./src/services/*"],
       "#integrations/*": ["./src/integrations/*"],
       "#errors/*": ["./src/errors/*"],
-      "#utils/*": ["./src/utils/*"],
-      "drizzle-orm": ["./node_modules/@mantleframework/database/node_modules/drizzle-orm"],
-      "drizzle-orm/*": ["./node_modules/@mantleframework/database/node_modules/drizzle-orm/*"],
-      "zod": ["./node_modules/@mantleframework/validation/node_modules/zod"],
-      "aws-lambda": ["./node_modules/@mantleframework/core/node_modules/@types/aws-lambda"],
-      "@aws-sdk/client-s3": ["./node_modules/@mantleframework/aws/node_modules/@aws-sdk/client-s3"],
-      "@aws-sdk/client-sqs": ["./node_modules/@mantleframework/aws/node_modules/@aws-sdk/client-sqs"],
-      "@aws-sdk/client-sns": ["./node_modules/@mantleframework/aws/node_modules/@aws-sdk/client-sns"],
-      "@aws-sdk/client-eventbridge": ["./node_modules/@mantleframework/aws/node_modules/@aws-sdk/client-eventbridge"],
-      "@aws-sdk/client-dynamodb": ["./node_modules/@mantleframework/aws/node_modules/@aws-sdk/client-dynamodb"],
-      "@aws-sdk/client-lambda": ["./node_modules/@mantleframework/aws/node_modules/@aws-sdk/client-lambda"],
-      "@aws-sdk/client-cloudwatch": ["./node_modules/@mantleframework/aws/node_modules/@aws-sdk/client-cloudwatch"],
-      "@aws-sdk/client-cloudwatch-logs": ["./node_modules/@aws-sdk/client-cloudwatch-logs"],
-      "@aws-sdk/lib-dynamodb": ["./node_modules/@mantleframework/aws/node_modules/@aws-sdk/lib-dynamodb"],
-      "@aws-sdk/lib-storage": ["./node_modules/@mantleframework/aws/node_modules/@aws-sdk/lib-storage"]
+      "#utils/*": ["./src/utils/*"]
     }
   },
   "include": [

@@ -4,7 +4,7 @@
  * These types are extracted from Better Auth's API for use in tests and type-safe code.
  */
 
-import type {BetterAuthInstance} from '@mantleframework/auth'
+import type {BetterAuthInstance} from '@j0nathan-ll0yd/auth'
 
 /**
  * Parameters for Better Auth's signInSocial API method.

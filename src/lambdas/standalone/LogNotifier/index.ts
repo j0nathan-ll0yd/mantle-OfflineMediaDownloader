@@ -1,5 +1,5 @@
-import {defineLambda, withObservability} from '@mantleframework/core'
-import {createLogSubscriptionNotifier} from '@mantleframework/observability'
+import {defineLambda, withObservability} from '@j0nathan-ll0yd/core'
+import {createLogSubscriptionNotifier} from '@j0nathan-ll0yd/observability'
 
 defineLambda({timeout: 30, memorySize: 256})
 

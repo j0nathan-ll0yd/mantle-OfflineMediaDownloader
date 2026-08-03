@@ -8,14 +8,14 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as S3Mod from '#lambdas/s3/S3ObjectCreated/index.js'
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({defineLambda: vi.fn(), defineS3Handler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler), SqsQueueUrl: (s: string) => s}))
 
-vi.mock('@mantleframework/aws', () => ({sendMessage: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({sendMessage: vi.fn()}))
 
-vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn(() => 'https://sqs.us-west-2.amazonaws.com/123/queue')}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getRequiredEnv: vi.fn(() => 'https://sqs.us-west-2.amazonaws.com/123/queue')}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class NotFoundError extends Error {
     statusCode = 404
     constructor(message: string) {
@@ -26,7 +26,7 @@ vi.mock('@mantleframework/errors', () => {
   return {NotFoundError}
 })
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     addAnnotation: vi.fn(),
     addMetadata: vi.fn(),
@@ -53,10 +53,10 @@ vi.mock('#services/notification/transformers',
   }))
 
 const {handler} = (await import('#lambdas/s3/S3ObjectCreated/index.js')) as unknown as MockedModule<typeof S3Mod>
-import {sendMessage} from '@mantleframework/aws'
+import {sendMessage} from '@j0nathan-ll0yd/aws'
 import {getFilesByKey, getUserFilesByFileId} from '#entities/queries'
 import {createDownloadReadyNotification} from '#services/notification/transformers'
-import {metrics} from '@mantleframework/observability'
+import {metrics} from '@j0nathan-ll0yd/observability'
 
 describe('S3ObjectCreated Lambda', () => {
   const makeRecord = (key = 'dQw4w9WgXcQ.mp4') => ({key})
@@ -142,7 +142,7 @@ describe('S3ObjectCreated Lambda', () => {
   })
 
   it('should log all notifications dispatched successfully message', async () => {
-    const {logInfo} = await import('@mantleframework/observability')
+    const {logInfo} = await import('@j0nathan-ll0yd/observability')
 
     await handler(makeRecord())
 

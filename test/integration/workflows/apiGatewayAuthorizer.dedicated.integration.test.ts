@@ -17,7 +17,7 @@ process.env.MULTI_AUTHENTICATION_PATH_PARTS = 'auth/login,auth/register,webhooks
 
 import {afterAll, afterEach, beforeAll, describe, expect, test, vi} from 'vitest'
 import type {Context} from 'aws-lambda'
-import {createObservabilityMock} from '@mantleframework/testing/lambda-mocks'
+import {createObservabilityMock} from '@j0nathan-ll0yd/testing/lambda-mocks'
 
 // Test helpers
 import {closeTestDb, createAllTables, getTestDbAsync, insertSession, insertUser, truncateAllTables} from '../helpers/postgres-helpers'
@@ -29,12 +29,12 @@ import {createMockAPIGatewayRequestAuthorizerEvent} from '../helpers/test-data'
 // because LocalStack API Gateway emulation has limitations for these features
 const {getApiKeysMock, getUsagePlansMock, getUsageMock} = vi.hoisted(() => ({getApiKeysMock: vi.fn(), getUsagePlansMock: vi.fn(), getUsageMock: vi.fn()}))
 
-vi.mock('@mantleframework/aws', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mantleframework/aws')>()
+vi.mock('@j0nathan-ll0yd/aws', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@j0nathan-ll0yd/aws')>()
   return {...actual, getApiKeys: getApiKeysMock, getUsagePlans: getUsagePlansMock, getUsage: getUsageMock}
 })
 
-vi.mock('@mantleframework/observability', () => createObservabilityMock())
+vi.mock('@j0nathan-ll0yd/observability', () => createObservabilityMock())
 
 const {handler} = await import('#lambdas/standalone/ApiGatewayAuthorizer/index')
 

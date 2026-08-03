@@ -1,4 +1,4 @@
-import {metrics, MetricUnit} from '@mantleframework/observability'
+import {metrics, MetricUnit} from '@j0nathan-ll0yd/observability'
 import type {ErrorClassification} from '#types/errorClassification'
 
 /**

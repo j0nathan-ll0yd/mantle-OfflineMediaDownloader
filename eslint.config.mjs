@@ -1,4 +1,4 @@
-import {createMantleEslintConfig} from '@mantleframework/eslint-config'
+import {createMantleEslintConfig} from '@j0nathan-ll0yd/eslint-config'
 import {createRequire} from 'node:module'
 
 // Load local ESLint rules plugin (CommonJS module)

@@ -8,12 +8,12 @@
  * Input: Authenticated user context (userId from authorizer), fileId from path
  * Output: APIGatewayProxyResult confirming deletion
  */
-import {buildValidatedResponse, defineLambda, S3BucketName} from '@mantleframework/core'
-import {deleteObject} from '@mantleframework/aws'
-import {NotFoundError} from '@mantleframework/errors'
-import {logError, logInfo} from '@mantleframework/observability'
-import {defineApiHandler, z} from '@mantleframework/validation'
-import {getRequiredEnv} from '@mantleframework/env'
+import {buildValidatedResponse, defineLambda, S3BucketName} from '@j0nathan-ll0yd/core'
+import {deleteObject} from '@j0nathan-ll0yd/aws'
+import {NotFoundError} from '@j0nathan-ll0yd/errors'
+import {logError, logInfo} from '@j0nathan-ll0yd/observability'
+import {defineApiHandler, z} from '@j0nathan-ll0yd/validation'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
 import {deleteFileCascade} from '#entities/queries'
 
 defineLambda({})

@@ -8,12 +8,12 @@
  * Input: DeviceRegistrationRequest with device token
  * Output: APIGatewayProxyResult with device registration
  */
-import {createPlatformEndpoint, listSubscriptionsByTopic} from '@mantleframework/aws'
-import {buildValidatedResponse, UserStatus} from '@mantleframework/core'
-import {getRequiredEnv} from '@mantleframework/env'
-import {ServiceUnavailableError, UnexpectedError} from '@mantleframework/errors'
-import {logDebug} from '@mantleframework/observability'
-import {defineApiHandler, z} from '@mantleframework/validation'
+import {createPlatformEndpoint, listSubscriptionsByTopic} from '@j0nathan-ll0yd/aws'
+import {buildValidatedResponse, UserStatus} from '@j0nathan-ll0yd/core'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
+import {ServiceUnavailableError, UnexpectedError} from '@j0nathan-ll0yd/errors'
+import {logDebug} from '@j0nathan-ll0yd/observability'
+import {defineApiHandler, z} from '@j0nathan-ll0yd/validation'
 import {upsertDevice as upsertDeviceRecord, upsertUserDevice} from '#entities/queries'
 import {providerFailureErrorMessage} from '#errors/custom-errors'
 import {getUserDevices, subscribeEndpointToTopic, unsubscribeEndpointToTopic} from '#services/device/deviceService'

@@ -7,10 +7,10 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as PruneMod from '#lambdas/scheduled/PruneDevices/index.js'
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({defineLambda: vi.fn(), defineScheduledHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}))
 
-vi.mock('@mantleframework/env', () => ({
+vi.mock('@j0nathan-ll0yd/env', () => ({
   getRequiredEnv: vi.fn((key: string) => {
     const envs: Record<string, string> = {APNS_TEAM: 'TEAM123', APNS_KEY_ID: 'KEY123', APNS_SIGNING_KEY: 'signing-key', APNS_DEFAULT_TOPIC: 'com.app.test'}
     return envs[key] ?? 'mock-value'
@@ -18,7 +18,7 @@ vi.mock('@mantleframework/env', () => ({
   getOptionalEnv: vi.fn((_key: string, defaultVal: string) => defaultVal)
 }))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnexpectedError extends Error {
     statusCode = 500
     constructor(message: string) {
@@ -29,7 +29,7 @@ vi.mock('@mantleframework/errors', () => {
   return {UnexpectedError}
 })
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     addMetadata: vi.fn(),
     endSpan: vi.fn(),
@@ -73,7 +73,7 @@ vi.mock('apns2', () => {
 const {handler} = (await import('#lambdas/scheduled/PruneDevices/index.js')) as unknown as MockedModule<typeof PruneMod>
 import {deleteUserDevicesByDeviceId, getAllDevices} from '#entities/queries'
 import {deleteDevice} from '#services/device/deviceService'
-import {metrics} from '@mantleframework/observability'
+import {metrics} from '@j0nathan-ll0yd/observability'
 
 describe('PruneDevices Lambda', () => {
   const mockDevice = {

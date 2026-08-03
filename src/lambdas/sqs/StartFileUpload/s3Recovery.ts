@@ -4,10 +4,10 @@
  * Handles recovery of file state when S3 objects exist but database records are missing.
  * Used when a download completed but the database update failed.
  */
-import {headObject} from '@mantleframework/aws'
-import {CloudFrontDistributionId, emitEvent, isOk, S3BucketName} from '@mantleframework/core'
-import {logDebug, logInfo, metrics, MetricUnit} from '@mantleframework/observability'
-import {getRequiredEnv} from '@mantleframework/env'
+import {headObject} from '@j0nathan-ll0yd/aws'
+import {CloudFrontDistributionId, emitEvent, isOk, S3BucketName} from '@j0nathan-ll0yd/core'
+import {logDebug, logInfo, metrics, MetricUnit} from '@j0nathan-ll0yd/observability'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
 import type {File} from '#types/domainModels'
 import type {DownloadCompletedDetail} from '#types/events'
 import type {YtDlpVideoInfo} from '#types/youtube'

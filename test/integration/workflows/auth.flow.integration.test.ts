@@ -24,9 +24,9 @@ process.env.SIGN_IN_WITH_APPLE_CONFIG = JSON.stringify({client_id: 'com.example.
 import {afterAll, afterEach, beforeAll, describe, expect, test, vi} from 'vitest'
 import type {Context} from 'aws-lambda'
 import {sql} from 'drizzle-orm'
-import {createObservabilityMock} from '@mantleframework/testing/lambda-mocks'
+import {createObservabilityMock} from '@j0nathan-ll0yd/testing/lambda-mocks'
 
-vi.mock('@mantleframework/observability', () => createObservabilityMock())
+vi.mock('@j0nathan-ll0yd/observability', () => createObservabilityMock())
 
 // Test helpers
 import {closeTestDb, createAllTables, getTestDbAsync, truncateAllTables} from '../helpers/postgres-helpers'

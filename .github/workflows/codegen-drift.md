@@ -16,18 +16,21 @@ engine:
 
 permissions:
   contents: read
+  packages: read
 
 pre-agent-steps:
   - uses: actions/checkout@v6
-  - uses: actions/checkout@v6
-    with:
-      repository: j0nathan-ll0yd/mantle
-      path: ../mantle
-      token: ${{ secrets.GH_CROSS_REPO_PAT }}
   - uses: actions/setup-node@v6
     with:
       node-version-file: ".nvmrc"
   - uses: pnpm/action-setup@v6
+  # @j0nathan-ll0yd/* (the Mantle framework and the shared dprint/tsconfig
+  # config) live on GitHub Packages, which requires auth even for reads.
+  # pnpm ignores the token in the committed project .npmrc, so it must be
+  # written to a trusted config here, BEFORE the first install.
+  - run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
+    env:
+      NODE_AUTH_TOKEN: ${{ github.token }}
   - run: pnpm install --frozen-lockfile
   - run: npx mantle generate openapi --output /tmp/gh-aw/agent/openapi-check.yaml
 

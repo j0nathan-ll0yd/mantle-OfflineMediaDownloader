@@ -8,12 +8,12 @@
  * Input: UserRegistrationRequest with idToken and optional name fields
  * Output: APIGatewayProxyResult with session token
  */
-import {getAuth} from '@mantleframework/auth'
-import {buildValidatedResponse, defineLambda} from '@mantleframework/core'
-import {getRequiredEnv} from '@mantleframework/env'
-import {UnexpectedError} from '@mantleframework/errors'
-import {logInfo, metrics, MetricUnit} from '@mantleframework/observability'
-import {defineApiHandler, z} from '@mantleframework/validation'
+import {getAuth} from '@j0nathan-ll0yd/auth'
+import {buildValidatedResponse, defineLambda} from '@j0nathan-ll0yd/core'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
+import {UnexpectedError} from '@j0nathan-ll0yd/errors'
+import {logInfo, metrics, MetricUnit} from '@j0nathan-ll0yd/observability'
+import {defineApiHandler, z} from '@j0nathan-ll0yd/validation'
 import {getDrizzleClient} from '#db/client'
 import {accounts, sessions, users, verification} from '#db/schema'
 import {updateUser} from '#entities/queries'

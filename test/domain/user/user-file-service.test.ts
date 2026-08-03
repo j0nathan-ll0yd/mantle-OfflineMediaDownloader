@@ -8,12 +8,12 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 
 // Mock dependencies BEFORE importing the module under test
 vi.mock('#entities/queries', () => ({upsertUserFile: vi.fn()}))
-vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), logInfo: vi.fn(), logWarn: vi.fn(), logError: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logDebug: vi.fn(), logInfo: vi.fn(), logWarn: vi.fn(), logError: vi.fn()}))
 
 // Import after mocking
 const {associateFileToUser} = await import('#domain/user/userFileService.js')
 import {upsertUserFile} from '#entities/queries'
-import {logDebug} from '@mantleframework/observability'
+import {logDebug} from '@j0nathan-ll0yd/observability'
 
 describe('User-File Service', () => {
   beforeEach(() => {

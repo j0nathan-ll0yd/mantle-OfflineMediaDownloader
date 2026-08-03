@@ -4,7 +4,7 @@
  * Single source of truth for enums used in both Zod schemas and TypeScript code.
  * Derives Zod schemas from TypeScript enums to eliminate duplication.
  */
-import {z} from '@mantleframework/validation'
+import {z} from '@j0nathan-ll0yd/validation'
 import {DownloadStatus, FileStatus, ResponseStatus} from './enums'
 
 /**

@@ -7,11 +7,11 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as EventMod from '#lambdas/api/device/event.post.js'
 
-vi.mock('@mantleframework/core', () => ({buildValidatedResponse: vi.fn((_ctx, code) => ({statusCode: code}))}))
+vi.mock('@j0nathan-ll0yd/core', () => ({buildValidatedResponse: vi.fn((_ctx, code) => ({statusCode: code}))}))
 
-vi.mock('@mantleframework/observability', () => ({logInfo: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logInfo: vi.fn(), metrics: {addMetric: vi.fn()}, MetricUnit: {Count: 'Count'}}))
 
-vi.mock('@mantleframework/validation', async () => {
+vi.mock('@j0nathan-ll0yd/validation', async () => {
   const {z} = await import('zod')
   return {z, defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler)}
 })
@@ -24,7 +24,7 @@ vi.mock('#entities/queries',
   }))
 
 const {handler} = (await import('#lambdas/api/device/event.post.js')) as unknown as MockedModule<typeof EventMod>
-import {logInfo, metrics} from '@mantleframework/observability'
+import {logInfo, metrics} from '@j0nathan-ll0yd/observability'
 import {createDeviceEvents, updateDevice} from '#entities/queries'
 
 describe('DeviceEvent Lambda', () => {

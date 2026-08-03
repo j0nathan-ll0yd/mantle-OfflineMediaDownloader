@@ -3,14 +3,14 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as AuthorizerMod from '#lambdas/standalone/ApiGatewayAuthorizer/index.js'
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     defineAuthorizerHandler: vi.fn(() => (fn: (...args: unknown[]) => unknown) => fn),
     defineLambda: vi.fn(),
     UserStatus: {Anonymous: 'Anonymous', Authenticated: 'Authenticated'}
   }))
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     addAnnotation: vi.fn(),
     addMetadata: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('@mantleframework/observability',
     startSpan: vi.fn().mockReturnValue({})
   }))
 
-vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn().mockReturnValue('device/register,device/event,files')}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getRequiredEnv: vi.fn().mockReturnValue('device/register,device/event,files')}))
 
 vi.mock('#domain/auth/sessionService', () => ({validateSessionToken: vi.fn()}))
 

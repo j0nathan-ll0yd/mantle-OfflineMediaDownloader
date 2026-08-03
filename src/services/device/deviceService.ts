@@ -8,10 +8,10 @@
  * It lives outside the domain layer to maintain domain purity.
  */
 import {deleteDevice as deleteDeviceQuery, deleteUserDevice as deleteUserDeviceQuery, getUserDevicesByUserId} from '#entities/queries'
-import {logDebug} from '@mantleframework/observability'
+import {logDebug} from '@j0nathan-ll0yd/observability'
 import type {UserDevice} from '#types/persistenceTypes'
 import type {Device} from '#types/domainModels'
-import {deleteEndpoint, subscribe, unsubscribe} from '@mantleframework/aws'
+import {deleteEndpoint, subscribe, unsubscribe} from '@j0nathan-ll0yd/aws'
 
 /**
  * Disassociates a deviceId from a User by deleting the UserDevice record

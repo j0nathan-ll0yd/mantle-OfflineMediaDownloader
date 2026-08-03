@@ -2,11 +2,11 @@
  * Project-Specific Error Classes
  *
  * These errors are specific to the media-downloader and are not provided
- * by \@mantleframework/errors. They extend CustomLambdaError for consistent
+ * by \@j0nathan-ll0yd/errors. They extend CustomLambdaError for consistent
  * error handling across Lambda handlers.
  */
 import type {Notification} from 'apns2'
-import {CustomLambdaError} from '@mantleframework/errors'
+import {CustomLambdaError} from '@j0nathan-ll0yd/errors'
 
 /**
  * Cookie expiration or bot detection error from YouTube.

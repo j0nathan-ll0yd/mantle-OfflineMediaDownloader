@@ -1,6 +1,6 @@
 import type {File} from '#types/domainModels'
 import {FileStatus} from '#types/enums'
-import {getStaticAsset} from '@mantleframework/core'
+import {getStaticAsset} from '@j0nathan-ll0yd/core'
 
 /**
  * Cached default file to avoid repeated env var lookups

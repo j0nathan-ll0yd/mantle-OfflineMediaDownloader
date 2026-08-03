@@ -7,13 +7,13 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as LoginMod from '#lambdas/api/user/login.post.js'
 
-vi.mock('@mantleframework/auth', () => ({getAuth: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/auth', () => ({getAuth: vi.fn()}))
 
-vi.mock('@mantleframework/core', () => ({buildValidatedResponse: vi.fn((_ctx, _code, data) => data), defineLambda: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/core', () => ({buildValidatedResponse: vi.fn((_ctx, _code, data) => data), defineLambda: vi.fn()}))
 
-vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn(() => 'mock-value')}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getRequiredEnv: vi.fn(() => 'mock-value')}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnexpectedError extends Error {
     statusCode = 500
     constructor(message: string) {
@@ -24,9 +24,9 @@ vi.mock('@mantleframework/errors', () => {
   return {UnexpectedError}
 })
 
-vi.mock('@mantleframework/observability', () => ({logInfo: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logInfo: vi.fn()}))
 
-vi.mock('@mantleframework/validation',
+vi.mock('@j0nathan-ll0yd/validation',
   () => ({
     defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({}))}
@@ -39,7 +39,7 @@ vi.mock('#db/schema', () => ({accounts: {}, sessions: {}, users: {}, verificatio
 vi.mock('#types/api-schema', () => ({userLoginResponseSchema: {}}))
 
 const {handler} = (await import('#lambdas/api/user/login.post.js')) as unknown as MockedModule<typeof LoginMod>
-import {getAuth} from '@mantleframework/auth'
+import {getAuth} from '@j0nathan-ll0yd/auth'
 
 function createMockAuth(overrides: {signInSocialResult?: object; getSessionResult?: object | null} = {}) {
   const now = new Date()

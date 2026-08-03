@@ -15,7 +15,7 @@ import {
   SendMessageCommand
 } from '@aws-sdk/client-sqs'
 import type {Message, ReceiveMessageCommandOutput} from '@aws-sdk/client-sqs'
-import {createSQSClient} from '@mantleframework/aws'
+import {createSQSClient} from '@j0nathan-ll0yd/aws'
 
 const sqsClient = createSQSClient()
 

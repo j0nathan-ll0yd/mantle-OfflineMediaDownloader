@@ -17,7 +17,7 @@ import {
   RemoveTargetsCommand
 } from '@aws-sdk/client-eventbridge'
 import type {PutEventsCommandOutput, PutEventsRequestEntry} from '@aws-sdk/client-eventbridge'
-import {createEventBridgeClient} from '@mantleframework/aws'
+import {createEventBridgeClient} from '@j0nathan-ll0yd/aws'
 
 const eventBridgeClient = createEventBridgeClient()
 

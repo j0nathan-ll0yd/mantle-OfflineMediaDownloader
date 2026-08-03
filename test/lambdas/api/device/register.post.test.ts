@@ -7,17 +7,17 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as RegisterDeviceMod from '#lambdas/api/device/register.post.js'
 
-vi.mock('@mantleframework/aws', () => ({createPlatformEndpoint: vi.fn(), listSubscriptionsByTopic: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({createPlatformEndpoint: vi.fn(), listSubscriptionsByTopic: vi.fn()}))
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     buildValidatedResponse: vi.fn((_ctx, code, data) => ({statusCode: code, ...data})),
     UserStatus: {Authenticated: 'Authenticated', Anonymous: 'Anonymous'}
   }))
 
-vi.mock('@mantleframework/env', () => ({getRequiredEnv: vi.fn(() => 'arn:aws:sns:us-west-2:123456789012:app/APNS/MediaDownloader')}))
+vi.mock('@j0nathan-ll0yd/env', () => ({getRequiredEnv: vi.fn(() => 'arn:aws:sns:us-west-2:123456789012:app/APNS/MediaDownloader')}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class ServiceUnavailableError extends Error {
     statusCode = 503
     constructor(message: string) {
@@ -35,9 +35,9 @@ vi.mock('@mantleframework/errors', () => {
   return {ServiceUnavailableError, UnexpectedError}
 })
 
-vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logDebug: vi.fn()}))
 
-vi.mock('@mantleframework/validation',
+vi.mock('@j0nathan-ll0yd/validation',
   () => ({
     defineApiHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     z: {object: vi.fn(() => ({})), string: vi.fn(() => ({optional: vi.fn(() => ({}))}))}
@@ -54,7 +54,7 @@ vi.mock('#types/api-schema', () => ({deviceRegistrationResponseSchema: {}}))
 vi.mock('#utils/platform-config', () => ({verifyPlatformConfiguration: vi.fn()}))
 
 const {handler} = (await import('#lambdas/api/device/register.post.js')) as unknown as MockedModule<typeof RegisterDeviceMod>
-import {createPlatformEndpoint, listSubscriptionsByTopic} from '@mantleframework/aws'
+import {createPlatformEndpoint, listSubscriptionsByTopic} from '@j0nathan-ll0yd/aws'
 import {upsertDevice, upsertUserDevice} from '#entities/queries'
 import {getUserDevices, subscribeEndpointToTopic, unsubscribeEndpointToTopic} from '#services/device/deviceService'
 import {verifyPlatformConfiguration} from '#utils/platform-config'

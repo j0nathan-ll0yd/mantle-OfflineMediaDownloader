@@ -7,10 +7,10 @@
  * @see {@link file://../transformers.ts} for notification message construction
  */
 import {getUserFilesByFileId} from '#entities/queries'
-import {sendMessage} from '@mantleframework/aws'
-import {logDebug, logInfo} from '@mantleframework/observability'
-import {SqsQueueUrl} from '@mantleframework/core'
-import {getRequiredEnv} from '@mantleframework/env'
+import {sendMessage} from '@j0nathan-ll0yd/aws'
+import {logDebug, logInfo} from '@j0nathan-ll0yd/observability'
+import {SqsQueueUrl} from '@j0nathan-ll0yd/core'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
 import {
   createDownloadProgressNotification,
   createDownloadStartedNotification,

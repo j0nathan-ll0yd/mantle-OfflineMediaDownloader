@@ -9,11 +9,11 @@ import {createMockDevice} from '#test/helpers/entity-fixtures'
 
 vi.mock('#entities/queries', () => ({deleteDevice: vi.fn(), deleteUserDevicesByDeviceId: vi.fn(), getDevice: vi.fn()}))
 
-vi.mock('@mantleframework/aws', () => ({deleteEndpoint: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({deleteEndpoint: vi.fn()}))
 
-vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), logInfo: vi.fn(), logWarn: vi.fn(), logError: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logDebug: vi.fn(), logInfo: vi.fn(), logWarn: vi.fn(), logError: vi.fn()}))
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     ok: vi.fn((value: unknown) => ({success: true, value})),
     err: vi.fn((error: unknown) => ({success: false, error})),
@@ -24,8 +24,8 @@ const {cleanupDisabledEndpoint, cleanupDisabledEndpointByDeviceId, cleanupDisabl
   '#lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js'
 )
 import {deleteDevice as deleteDeviceRecord, deleteUserDevicesByDeviceId, getDevice} from '#entities/queries'
-import {deleteEndpoint} from '@mantleframework/aws'
-import {logError, logInfo} from '@mantleframework/observability'
+import {deleteEndpoint} from '@j0nathan-ll0yd/aws'
+import {logError, logInfo} from '@j0nathan-ll0yd/observability'
 
 describe('Endpoint Cleanup Service', () => {
   beforeEach(() => {

@@ -8,8 +8,8 @@
  * Input: UserSubscriptionRequest with endpointArn and topicArn
  * Output: APIGatewayProxyResult with subscription confirmation
  */
-import {buildValidatedResponse} from '@mantleframework/core'
-import {defineApiHandler, z} from '@mantleframework/validation'
+import {buildValidatedResponse} from '@j0nathan-ll0yd/core'
+import {defineApiHandler, z} from '@j0nathan-ll0yd/validation'
 import {subscribeEndpointToTopic} from '#services/device/deviceService'
 import {verifyPlatformConfiguration} from '#utils/platform-config'
 

@@ -7,7 +7,7 @@
 
 import {CreateBucketCommand, DeleteBucketCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command} from '@aws-sdk/client-s3'
 import type {GetObjectCommandOutput, HeadObjectCommandOutput} from '@aws-sdk/client-s3'
-import {createS3Client} from '@mantleframework/aws'
+import {createS3Client} from '@j0nathan-ll0yd/aws'
 
 const s3Client = createS3Client()
 

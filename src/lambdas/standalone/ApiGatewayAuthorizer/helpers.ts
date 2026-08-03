@@ -8,11 +8,11 @@
  * @see ADR-0012 for the three-tier handler decomposition policy
  */
 import type {APIGatewayAuthorizerResult} from 'aws-lambda'
-import {getApiKeys, getUsage, getUsagePlans} from '@mantleframework/aws'
-import {getOptionalEnv} from '@mantleframework/env'
-import {UnexpectedError} from '@mantleframework/errors'
-import {addMetadata, endSpan, logDebug, logInfo, metrics, MetricUnit} from '@mantleframework/observability'
-import type {startSpan} from '@mantleframework/observability'
+import {getApiKeys, getUsage, getUsagePlans} from '@j0nathan-ll0yd/aws'
+import {getOptionalEnv} from '@j0nathan-ll0yd/env'
+import {UnexpectedError} from '@j0nathan-ll0yd/errors'
+import {addMetadata, endSpan, logDebug, logInfo, metrics, MetricUnit} from '@j0nathan-ll0yd/observability'
+import type {startSpan} from '@j0nathan-ll0yd/observability'
 import {providerFailureErrorMessage} from '#errors/custom-errors'
 
 // --- Authorizer Service ---

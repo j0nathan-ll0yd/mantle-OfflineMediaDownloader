@@ -1,6 +1,6 @@
-import {DatabaseOperation} from '@mantleframework/database'
-import {lt} from '@mantleframework/database/orm'
-import type {InferInsertModel, InferSelectModel} from '@mantleframework/database/orm'
+import {DatabaseOperation} from '@j0nathan-ll0yd/database'
+import {lt} from '@j0nathan-ll0yd/database/orm'
+import type {InferInsertModel, InferSelectModel} from '@j0nathan-ll0yd/database/orm'
 import {defineQuery} from '#db/defineQuery'
 import {deviceEvents} from '#db/schema'
 

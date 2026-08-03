@@ -5,7 +5,7 @@
  * Tracks retry attempts, error classifications, and scheduling state.
  */
 import {createFileDownload, getFileDownload, updateFileDownload} from '#entities/queries'
-import {logDebug} from '@mantleframework/observability'
+import {logDebug} from '@j0nathan-ll0yd/observability'
 import {DownloadStatus} from '#types/enums'
 import type {VideoErrorClassification} from '#types/video'
 

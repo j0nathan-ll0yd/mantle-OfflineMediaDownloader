@@ -1,9 +1,9 @@
 import {Octokit} from '@octokit/rest'
-import {logDebug, logError, logInfo} from '@mantleframework/observability'
+import {logDebug, logError, logInfo} from '@j0nathan-ll0yd/observability'
 import type {Device} from '#types/domainModels'
 import type {IssueResult} from '#types/errorFingerprint'
 import {renderGithubIssueTemplate} from '#integrations/github/templates'
-import {getRequiredEnv} from '@mantleframework/env'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
 import {extractFingerprintFromError, generateErrorFingerprint} from './errorFingerprint.js'
 
 export type { IssueResult } from '#types/errorFingerprint'

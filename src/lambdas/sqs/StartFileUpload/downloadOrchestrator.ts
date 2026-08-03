@@ -6,14 +6,14 @@
  * S3 upload, metadata update, and event emission.
  */
 import {getFileDownload, updateFile} from '#entities/queries'
-import {CloudFrontDistributionId, emitEvent, isOk, S3BucketName} from '@mantleframework/core'
-import {logDebug, logInfo, metrics, MetricUnit} from '@mantleframework/observability'
+import {CloudFrontDistributionId, emitEvent, isOk, S3BucketName} from '@j0nathan-ll0yd/core'
+import {logDebug, logInfo, metrics, MetricUnit} from '@j0nathan-ll0yd/observability'
 import type {File} from '#types/domainModels'
 import type {DownloadCompletedDetail} from '#types/events'
 import type {ValidatedDownloadQueueMessage} from '#types/schemas'
 import {DownloadStatus, FileStatus} from '#types/enums'
-import {getRequiredEnv} from '@mantleframework/env'
-import {UnexpectedError} from '@mantleframework/errors'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
+import {UnexpectedError} from '@j0nathan-ll0yd/errors'
 import {
   dispatchDownloadProgressNotifications,
   dispatchDownloadStartedNotifications,

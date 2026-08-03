@@ -17,9 +17,9 @@
  * @see src/lambdas/PruneDevices for proactive cleanup
  */
 import {deleteDevice as deleteDeviceRecord, deleteUserDevicesByDeviceId, getDevice} from '#entities/queries'
-import {deleteEndpoint} from '@mantleframework/aws'
-import {err, isOk, ok} from '@mantleframework/core'
-import {logDebug, logError, logInfo} from '@mantleframework/observability'
+import {deleteEndpoint} from '@j0nathan-ll0yd/aws'
+import {err, isOk, ok} from '@j0nathan-ll0yd/core'
+import {logDebug, logError, logInfo} from '@j0nathan-ll0yd/observability'
 import type {EndpointCleanupResult} from '#types/resilience'
 
 export type { EndpointCleanupResult }

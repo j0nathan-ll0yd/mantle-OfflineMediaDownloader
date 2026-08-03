@@ -21,8 +21,8 @@ vi.mock('#db/zodSchemas',
     fileDownloadInsertSchema: {parse: vi.fn((v: unknown) => v)},
     fileDownloadUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))}
   }))
-vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm',
+vi.mock('@j0nathan-ll0yd/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
+vi.mock('@j0nathan-ll0yd/database/orm',
   () => ({
     and: vi.fn((...conds: unknown[]) => ({type: 'and', conds})),
     eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'),

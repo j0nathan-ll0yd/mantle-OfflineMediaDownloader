@@ -15,8 +15,8 @@ vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
 vi.mock('#db/schema', () => ({devices: {deviceId: 'deviceId'}}))
 vi.mock('#db/zodSchemas',
   () => ({deviceInsertSchema: {parse: vi.fn((v: unknown) => v)}, deviceUpdateSchema: {partial: vi.fn(() => ({parse: vi.fn((v: unknown) => v)}))}}))
-vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm',
+vi.mock('@j0nathan-ll0yd/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
+vi.mock('@j0nathan-ll0yd/database/orm',
   () => ({eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'), inArray: vi.fn((_col: unknown, _vals: unknown) => 'inArray-condition')}))
 
 const {getDevice, getDevicesBatch, createDevice, upsertDevice, updateDevice, deleteDevice, getAllDevices} = await import('#entities/queries/deviceQueries')

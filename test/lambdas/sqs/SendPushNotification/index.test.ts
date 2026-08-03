@@ -10,7 +10,7 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import type {MockedModule} from '#test/helpers/handler-test-types'
 import type * as PushMod from '#lambdas/sqs/SendPushNotification/index.js'
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     defineSqsHandler: vi.fn(() => (innerHandler: (...a: unknown[]) => unknown) => innerHandler),
     err: vi.fn((error) => ({ok: false, error})),
@@ -19,9 +19,9 @@ vi.mock('@mantleframework/core',
     ok: vi.fn((value) => ({ok: true, value}))
   }))
 
-vi.mock('@mantleframework/aws', () => ({publish: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({publish: vi.fn()}))
 
-vi.mock('@mantleframework/observability',
+vi.mock('@j0nathan-ll0yd/observability',
   () => ({
     addAnnotation: vi.fn(),
     addMetadata: vi.fn(),
@@ -34,9 +34,9 @@ vi.mock('@mantleframework/observability',
     startSpan: vi.fn(() => ({}))
   }))
 
-vi.mock('@mantleframework/validation', () => ({validateSchema: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/validation', () => ({validateSchema: vi.fn()}))
 
-vi.mock('@mantleframework/errors', () => {
+vi.mock('@j0nathan-ll0yd/errors', () => {
   class UnexpectedError extends Error {
     statusCode = 500
     constructor(message: string) {
@@ -62,12 +62,12 @@ vi.mock('#lambdas/sqs/SendPushNotification/endpointCleanupHelpers', () => ({clea
 vi.mock('#types/schemas', () => ({pushNotificationAttributesSchema: {}}))
 
 const {handler} = (await import('#lambdas/sqs/SendPushNotification/index.js')) as unknown as MockedModule<typeof PushMod>
-import {publish} from '@mantleframework/aws'
-import {validateSchema} from '@mantleframework/validation'
+import {publish} from '@j0nathan-ll0yd/aws'
+import {validateSchema} from '@j0nathan-ll0yd/validation'
 import {getDevice, getUserDevicesByUserId} from '#entities/queries'
 import {transformToAPNSAlertNotification, transformToAPNSNotification} from '#services/notification/transformers'
 import {cleanupDisabledEndpoints} from '#lambdas/sqs/SendPushNotification/endpointCleanupHelpers'
-import {metrics} from '@mantleframework/observability'
+import {metrics} from '@j0nathan-ll0yd/observability'
 
 describe('SendPushNotification Lambda', () => {
   const makeRecord = (notificationType = 'DownloadReadyNotification', userId = 'user-1') => ({

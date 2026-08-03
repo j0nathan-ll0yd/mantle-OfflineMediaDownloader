@@ -5,11 +5,11 @@
  *
  * Trigger: SQS Queue (from S3ObjectCreated)
  */
-import {defineSqsHandler, isErr} from '@mantleframework/core'
-import {addAnnotation, addMetadata, endSpan, logError, logInfo, metrics, MetricUnit, startSpan} from '@mantleframework/observability'
+import {defineSqsHandler, isErr} from '@j0nathan-ll0yd/core'
+import {addAnnotation, addMetadata, endSpan, logError, logInfo, metrics, MetricUnit, startSpan} from '@j0nathan-ll0yd/observability'
 import type {FileNotificationType} from '#types/notificationTypes'
 import {pushNotificationAttributesSchema} from '#types/schemas'
-import {validateSchema} from '@mantleframework/validation'
+import {validateSchema} from '@j0nathan-ll0yd/validation'
 import {cleanupDisabledEndpoints} from './endpointCleanupHelpers.js'
 import {getDevice, getDeviceIdsForUser, mapSettledToDeviceResults, processNotificationResults, sendNotificationToDevice} from './pushHelpers.js'
 

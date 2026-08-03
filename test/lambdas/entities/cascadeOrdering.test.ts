@@ -2,22 +2,22 @@
 // covers: cascade-deletion#batch-cleanup-isolates-partial-failures
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 
-vi.mock('@mantleframework/core',
+vi.mock('@j0nathan-ll0yd/core',
   () => ({
     err: (error: unknown) => ({error, ok: false as const}),
     isOk: (result: {ok: boolean}) => result.ok,
     ok: (value: unknown) => ({ok: true as const, value})
   }))
 
-vi.mock('@mantleframework/observability', () => ({logDebug: vi.fn(), logError: vi.fn(), logInfo: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/observability', () => ({logDebug: vi.fn(), logError: vi.fn(), logInfo: vi.fn()}))
 
 vi.mock('#entities/queries', () => ({deleteDevice: vi.fn(), deleteUserDevicesByDeviceId: vi.fn(), getDevice: vi.fn()}))
 
-vi.mock('@mantleframework/aws', () => ({deleteEndpoint: vi.fn()}))
+vi.mock('@j0nathan-ll0yd/aws', () => ({deleteEndpoint: vi.fn()}))
 
 import {cleanupDisabledEndpoint, cleanupDisabledEndpoints} from '#lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js'
 import {deleteDevice, deleteUserDevicesByDeviceId, getDevice} from '#entities/queries'
-import {deleteEndpoint} from '@mantleframework/aws'
+import {deleteEndpoint} from '@j0nathan-ll0yd/aws'
 
 const DEVICE_ID = 'device-abc-123'
 const ENDPOINT_ARN = 'arn:aws:sns:us-east-1:123456789012:endpoint/APNS/MyApp/device-abc-123'

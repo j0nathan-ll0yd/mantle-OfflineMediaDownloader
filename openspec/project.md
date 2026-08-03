@@ -22,7 +22,7 @@ When a spec and a Mantle convention appear to conflict, **the Mantle convention 
 - **Infrastructure is generated, never hand-written** — `mantle generate infra` emits all `.tf` from
   `mantle.config.ts` (C67). Never create `.tf` files by hand.
 - **Handlers are factory-defined** — every Lambda uses a `define*Handler` factory from
-  `@mantleframework/core` or `@mantleframework/validation`. No class handlers, no middy. The custom
+  `@j0nathan-ll0yd/core` or `@j0nathan-ll0yd/validation`. No class handlers, no middy. The custom
   authorizer is the sole entry point for API auth (C7/C75/C76).
 - **Events via `emitEvent`/`emitEvents`** (always awaited — C34/C58); **DB via `defineQuery`** with
   per-query table permissions (C10/C30/C39); **env via `getRequiredEnv`/`getOptionalEnv`** (C6;

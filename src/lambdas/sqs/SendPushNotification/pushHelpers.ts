@@ -7,12 +7,12 @@
  * @see {@link file://./transformers.ts} for APNS payload construction
  */
 import {getDevice as getDeviceRecord, getUserDevicesByUserId} from '#entities/queries'
-import {publish} from '@mantleframework/aws'
-import {err, isErr, isOk, ok} from '@mantleframework/core'
-import {logDebug, logError, logInfo} from '@mantleframework/observability'
+import {publish} from '@j0nathan-ll0yd/aws'
+import {err, isErr, isOk, ok} from '@j0nathan-ll0yd/core'
+import {logDebug, logError, logInfo} from '@j0nathan-ll0yd/observability'
 import type {Device} from '#types/domainModels'
 import type {DeviceNotificationResult, FileNotificationType} from '#types/notificationTypes'
-import {UnexpectedError} from '@mantleframework/errors'
+import {UnexpectedError} from '@j0nathan-ll0yd/errors'
 import {providerFailureErrorMessage} from '#errors/custom-errors'
 import {transformToAPNSAlertNotification, transformToAPNSNotification} from '#services/notification/transformers'
 

@@ -38,7 +38,7 @@ main() {
   # Generate build/graph.json if missing (required by graphrag:extract)
   if [[ ! -f "build/graph.json" ]]; then
     echo -e "${YELLOW}build/graph.json not found, generating...${NC}"
-    node ../mantle/packages/cli/dist/index.mjs generate graph
+    pnpm exec mantle generate graph
   fi
 
   # Generate fresh GraphRAG

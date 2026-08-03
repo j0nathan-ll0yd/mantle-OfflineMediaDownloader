@@ -12,8 +12,8 @@ const mockDb = createMockDrizzleDb()
 
 vi.mock('#db/defineQuery', () => createDefineQueryMock(mockDb))
 vi.mock('#db/schema', () => ({files: {fileId: 'fileId', key: 'key'}, sessions: {id: 'id', token: 'token'}, userFiles: {userId: 'userId', fileId: 'fileId'}}))
-vi.mock('@mantleframework/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
-vi.mock('@mantleframework/database/orm',
+vi.mock('@j0nathan-ll0yd/database', () => ({DatabaseOperation: {Select: 'Select', Insert: 'Insert', Update: 'Update', Delete: 'Delete'}}))
+vi.mock('@j0nathan-ll0yd/database/orm',
   () => ({eq: vi.fn((_col: unknown, _val: unknown) => 'eq-condition'), sql: {placeholder: vi.fn((name: string) => ({placeholder: name}))}}))
 
 const {getFileByKeyPrepared, getUserFilesPrepared, getSessionByTokenPrepared} = await import('#entities/queries/preparedQueries')

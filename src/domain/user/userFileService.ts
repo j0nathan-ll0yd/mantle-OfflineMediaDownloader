@@ -5,7 +5,7 @@
  * Handles file associations, ownership, and sharing operations.
  */
 import {upsertUserFile} from '#entities/queries'
-import {logDebug} from '@mantleframework/observability'
+import {logDebug} from '@j0nathan-ll0yd/observability'
 
 /**
  * Associates a File to a User by creating a UserFile record.

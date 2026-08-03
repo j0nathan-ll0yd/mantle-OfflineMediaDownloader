@@ -1,7 +1,7 @@
 {
   "_notes": [
     "Paseo worktree lifecycle. MAIN resolves the main checkout from the worktree's git-common-dir — no machine paths hardcoded.",
-    "../mantle symlink is required by link:../mantle/packages/* deps and by scripts that invoke ../mantle/packages/cli/dist/index.mjs directly; it must point at a BUILT mantle checkout.",
+    "../mantle symlink is required by Terraform ONLY: 31 infra/*.tf files use source = \"../../mantle/modules/*\", and `tofu init` fails without it. npm dependencies no longer need it — the framework installs from GitHub Packages as @j0nathan-ll0yd/* (atlas decision 0016), so the checkout does NOT need to be built and install/typecheck/lint/test/build all pass with the symlink absent.",
     ".env holds SOPS/TF_VAR secrets (gitignored, no .env.example) — copied from main checkout. The age key lives outside the repo (~/.config/sops/age/keys.txt) and is shared.",
     "pnpm build runs decrypt-cookies.sh and needs that age key; yt-dlp/ffmpeg binaries download on demand (pnpm update:ytdlp / update:ffmpeg).",
     "tfstate is remote (S3 + DynamoDB lock) — safe across worktrees; run `cd infra && terraform init` only for infra work.",

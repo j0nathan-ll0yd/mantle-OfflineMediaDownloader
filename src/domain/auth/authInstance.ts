@@ -5,8 +5,8 @@
  * Use this for session validation, expiry, and refresh — NOT for the API Gateway
  * authorizer, which uses direct DB queries by design for minimal cold-start latency.
  */
-import {getAuth} from '@mantleframework/auth'
-import {getRequiredEnv} from '@mantleframework/env'
+import {getAuth} from '@j0nathan-ll0yd/auth'
+import {getRequiredEnv} from '@j0nathan-ll0yd/env'
 import {getDrizzleClient} from '#db/client'
 import {accounts, sessions, users, verification} from '#db/schema'
 
