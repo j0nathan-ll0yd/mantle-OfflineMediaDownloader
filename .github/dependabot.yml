@@ -1,9 +1,63 @@
+# The fifteen @j0nathan-ll0yd/* dependencies (the Mantle runtime packages plus
+# cli/config/eslint-config/testing) resolve from GitHub Packages, which requires
+# authentication even though every one of them is public -- an unauthenticated
+# GET of https://npm.pkg.github.com/@j0nathan-ll0yd%2fconfig returns 401.
+# Without this block Dependabot cannot see the internal packages at all, so a
+# published Mantle bump never reaches this app and it silently keeps building
+# against a stale tarball.
+#
+# The token must live in the *Dependabot* secret store (Settings -> Secrets and
+# variables -> Dependabot), not the Actions one: Dependabot never sees the
+# workflow GITHUB_TOKEN that .github/actions/setup-node-pnpm uses, and GitHub
+# forbids Dependabot secret names beginning with `GITHUB_`, so
+# `${{secrets.GITHUB_TOKEN}}` is not expressible here. `read:packages` is the
+# only scope required.
+#
+# Deliberately NOT set:
+#   replaces-base -- would route *every* npm dependency through GitHub Packages,
+#     which does not proxy registry.npmjs.org.
+#   scope         -- would make Dependabot regenerate .npmrc purely from these
+#     credentials and discard the committed one, dropping the supply-chain
+#     hardening in .npmrc (enable-pre-post-scripts=false, minimum-release-age).
+#     The committed `@j0nathan-ll0yd:registry=` line already does the scope
+#     mapping and Dependabot appends the credential from here.
+registries:
+  github-packages:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.GH_PACKAGES_READ_TOKEN}}
 updates:
 - commit-message:
     include: scope
     prefix: chore(deps)
   directory: /
   groups:
+    # Intentionally NOT in alphabetical order with its siblings: a dependency
+    # lands in the first group it matches, and `dev-dependencies` below has no
+    # `patterns` filter, so it would otherwise swallow the four internal
+    # devDependencies (cli, config, eslint-config, testing) into the generic
+    # dev-patch PR and split them from the eleven runtime packages.
+    #
+    # The Mantle packages are released as an interdependent set (core/database/
+    # aws/observability/... are versioned together), so N racing single-package
+    # PRs would each red typecheck until the last one merged. One grouped PR
+    # lands the set together.
+    #
+    # MAJORS ARE NOW DELIVERED HERE. The repo-wide `- dependency-name: "*"` /
+    # `version-update:semver-major` ignore that used to filter every major out of
+    # this group -- it was applied AFTER grouping, and Dependabot offers no
+    # negation syntax -- has been REMOVED deliberately. A Mantle major arrives as
+    # part of this one grouped PR instead of having to be adopted by hand and
+    # noticed by the Atlas package-version-drift reconciliation runner after the
+    # fact. That runner remains the backstop for the case Dependabot cannot see
+    # at all: source that changed without any version bump.
+    lifegames-internal:
+      patterns:
+      - "@j0nathan-ll0yd/*"
+      update-types:
+      - major
+      - minor
+      - patch
     aws-sdk:
       patterns:
       - "@aws-sdk/*"
@@ -44,14 +98,19 @@ updates:
   - dependency-name: "dprint"
   - dependency-name: "eslint"
   - dependency-name: "@typescript-eslint/*"
-  - dependency-name: "*"
-    update-types:
-    - version-update:semver-major
+  # NOTE: there is deliberately no repo-wide `- dependency-name: "*"` /
+  # `version-update:semver-major` entry here. It was removed on purpose: this repo
+  # now receives ALL majors, third-party included, and the named entries above are
+  # the only exclusions. Every one of those is a full ignore (all update types) with
+  # a stated reason, so re-adding a blanket major ignore would silently re-suppress
+  # the @j0nathan-ll0yd/* group majors this change exists to deliver.
   labels:
   - dependencies
   - security
   open-pull-requests-limit: 10
   package-ecosystem: npm
+  registries:
+  - github-packages
   reviewers:
   - jlloyd
   schedule:
