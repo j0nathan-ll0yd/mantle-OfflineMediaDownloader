@@ -131,7 +131,14 @@ export default defineConfig({
       // publishable package added here turns this step RED until @j0nathan-ll0yd/cli ships
       // `mantle check package-versions` and this repo bumps to it. See the header of
       // scripts/check-package-versions.mjs.
-      {name: 'package-version-drift', phase: 'validate', command: 'node scripts/check-package-versions.mjs'}
+      {name: 'package-version-drift', phase: 'validate', command: 'node scripts/check-package-versions.mjs'},
+      // .mcp.json entry-point resolution. Sub-second, no network, no spawning. Guards a
+      // failure that is otherwise invisible: an MCP server wired into a dependency's dist/
+      // by filesystem path stops spawning the day that dependency reorganises, and nothing
+      // goes red -- an agent just quietly loses its tools. cli 2.0.0 retracted the `./mcp`
+      // subpath from its exports map and this repo survived only because the file kept
+      // shipping. See the header of scripts/check-mcp-entry.mjs.
+      {name: 'mcp-entry-point', phase: 'validate', command: 'node scripts/check-mcp-entry.mjs'}
     ]
   }
 })
