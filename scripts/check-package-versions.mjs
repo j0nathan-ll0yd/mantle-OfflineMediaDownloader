@@ -75,6 +75,11 @@
  * The coverage audit only ever UPGRADES a zero to a 3. A non-zero engine status is already
  * failing loudly and is forwarded intact, with any coverage problems printed as context.
  *
+ * Every one of those codes is delivered by assigning `process.exitCode` and RETURNING, never by
+ * calling `process.exit()`. `process.exit()` discards buffered stdout, and in CI stdout is always
+ * a pipe, so the truncation is not hypothetical — measured, it silently ate the DRIFT row that
+ * explained the failure. See the note on `main`.
+ *
  * Extra arguments are forwarded verbatim to the engine, e.g. `--lane=pre-push`. `--json` is
  * always passed (the wrapper needs the machine-readable report to audit coverage); pass
  * `--json` yourself to get the engine's document on stdout instead of the rendered table.
@@ -91,6 +96,13 @@ import {fileURLToPath} from 'node:url'
 
 /** Exact registry string from the canonical discovery predicate in mantle's check-public-packages.mjs. */
 const GITHUB_PACKAGES_REGISTRY = 'https://npm.pkg.github.com'
+
+/**
+ * Package-name scope that marks a manifest as ours. Mirrors `PACKAGE_SCOPE` in the engine
+ * (mantle packages/cli/src/commands/check/package-versions/pipeline.ts). See
+ * `selectPublishablePackages` for why the wrapper has to honour the NAME as well as the registry.
+ */
+const PACKAGE_SCOPE = '@j0nathan-ll0yd/'
 
 /** The `mantle check` subcommand that owns the drift verdict. */
 const SUBCOMMAND = 'package-versions'
@@ -121,14 +133,39 @@ const SKIPPED = 'SKIPPED'
 // ---------------------------------------------------------------------------
 
 /**
- * The canonical publishable-package predicate, applied to already-read manifests. Mirrors
- * mantle/scripts/check-public-packages.mjs: non-private AND publishConfig.registry an exact
- * match for GitHub Packages. An unreadable or unparseable manifest arrives as null and is
- * skipped, exactly as it is there.
+ * The publishable-package predicate, applied to already-read manifests. It is a DELIBERATE
+ * MIRROR of the engine's own rule, and it has to stay one.
  *
- * Deliberately does NOT filter on the package name: a candidate outside the j0nathan-ll0yd
- * scope must reach the engine so the engine's scope assertion can fail loudly, rather than
- * being silently dropped here.
+ * The engine's rule (mantle packages/cli/src/commands/check/package-versions/pipeline.ts, the
+ * `isPrivate`/`inScope`/`skipReason` block) is:
+ *
+ *     publishable = !private AND (name starts with PACKAGE_SCOPE OR publishConfig.registry is GitHub Packages)
+ *
+ * — two INDEPENDENT in-scope signals, either of which suffices. This wrapper previously required
+ * the registry signal ALONE, which made it strictly NARROWER than the engine it audits. That is
+ * not harmless conservatism, because of what this predicate is FOR: it is the independent second
+ * opinion that decides whether the engine's exit 0 covered everything. A package the wrapper
+ * cannot see is a package the coverage audit never asks about.
+ *
+ * The divergent shape is an ordinary one — a manifest whose name is in PACKAGE_SCOPE declaring no
+ * `publishConfig.registry`, inheriting it from `.npmrc`, which is how much of this estate is
+ * actually written. Under the old rule the engine would call such a package publishable and try
+ * to verify it, while the wrapper called it invisible; if the engine's enumeration then missed it
+ * (the measured X1 defect) the report would carry NO ROW for it, the audit would have nothing to
+ * compare, and the pair would agree on a pass while NEITHER had examined the package. Two blind
+ * spots lining up is exactly the silent pass this file exists to prevent, so the two rules must
+ * be the same rule.
+ *
+ * Being at least as wide as the engine is the safe direction: a package the wrapper claims and
+ * the engine skips surfaces as a loud SKIPPED coverage problem — a real contradiction worth
+ * reporting, not a false alarm.
+ *
+ * The engine's third signal, `registryOverride !== undefined`, is intentionally NOT mirrored: it
+ * is a `--registry` test hook for the engine's own self-test, not a property of a manifest.
+ *
+ * An unreadable or unparseable manifest arrives as null and is skipped. A candidate whose NAME is
+ * outside the scope but whose registry points at GitHub Packages is still returned, so the
+ * engine's scope assertion can fail loudly rather than being silently dropped here.
  *
  * Takes entries carrying `dir` and `manifest` (the parsed manifest, or null) and returns
  * `{dir, name}` for the matches, ASCII-ascending by dir. `name` is carried because it is how
@@ -136,9 +173,13 @@ const SKIPPED = 'SKIPPED'
  * authoritative, whereas the two sides could spell a path differently.
  */
 export function selectPublishablePackages(entries) {
-  return entries.filter((entry) =>
-    entry.manifest != null && entry.manifest.private !== true && entry.manifest.publishConfig?.registry === GITHUB_PACKAGES_REGISTRY
-  ).map((entry) => ({dir: entry.dir, name: typeof entry.manifest.name === 'string' ? entry.manifest.name : null})).sort((left, right) =>
+  return entries.filter((entry) => {
+    if (entry.manifest == null || entry.manifest.private === true) {
+      return false
+    }
+    const name = typeof entry.manifest.name === 'string' ? entry.manifest.name : ''
+    return name.startsWith(PACKAGE_SCOPE) || entry.manifest.publishConfig?.registry === GITHUB_PACKAGES_REGISTRY
+  }).map((entry) => ({dir: entry.dir, name: typeof entry.manifest.name === 'string' ? entry.manifest.name : null})).sort((left, right) =>
     left.dir < right.dir ? -1 : (left.dir > right.dir ? 1 : 0)
   )
 }
@@ -432,8 +473,29 @@ async function selfTest() {
   )
   eq(selectPublishablePackages([{dir: 'packages/public-npm', manifest: {name: 'x', publishConfig: {registry: 'https://registry.npmjs.org'}}}]), [],
     'non-GitHub-Packages registries are not candidates')
-  eq(selectPublishablePackages([{dir: 'packages/none', manifest: {name: 'x'}}]), [], 'a manifest without publishConfig.registry is not a candidate')
+  eq(selectPublishablePackages([{dir: 'packages/none', manifest: {name: 'x'}}]), [],
+    'an out-of-scope manifest with no publishConfig.registry is not a candidate')
   eq(selectPublishablePackages([{dir: 'packages/broken', manifest: null}]), [], 'an unparseable manifest is skipped')
+
+  // D10 — THE ENGINE-ALIGNMENT VECTORS. Each of these is a manifest the ENGINE calls publishable
+  // (name in scope) that the old registry-only predicate called invisible. The wrapper is the
+  // engine's independent second opinion on coverage, so a package the wrapper cannot see is a
+  // package the coverage audit never asks about; if the engine's enumeration also misses it, both
+  // sides agree on a pass having examined nothing. These are the vectors that diverged.
+  eq(selectPublishablePackages([{dir: 'packages/scoped', manifest: {name: '@j0nathan-ll0yd/scoped-no-registry', version: '1.0.0'}}]), [{
+    dir: 'packages/scoped',
+    name: '@j0nathan-ll0yd/scoped-no-registry'
+  }], 'IN-SCOPE NAME WITH NO publishConfig.registry: the engine calls this publishable, so the wrapper must too')
+  eq(
+    selectPublishablePackages([{
+      dir: 'packages/scoped-npmjs',
+      manifest: {name: '@j0nathan-ll0yd/scoped-elsewhere', publishConfig: {registry: 'https://registry.npmjs.org'}}
+    }]),
+    [{dir: 'packages/scoped-npmjs', name: '@j0nathan-ll0yd/scoped-elsewhere'}],
+    'the engine treats the in-scope NAME as sufficient on its own, so a different declared registry does not remove the package from coverage'
+  )
+  eq(selectPublishablePackages([{dir: 'packages/scoped-private', manifest: {name: '@j0nathan-ll0yd/scoped-private', private: true}}]), [],
+    'private still wins over the scope signal, exactly as `isPrivate` short-circuits `inScope` in the engine')
   // An out-of-scope name is still a candidate: the engine must see it and fail loudly on the scope assertion.
   eq(selectPublishablePackages([{dir: 'packages/rogue', manifest: {name: 'rogue', publishConfig: {registry: GITHUB_PACKAGES_REGISTRY}}}]), [{
     dir: 'packages/rogue',
@@ -583,6 +645,13 @@ async function selfTest() {
 // main
 // ---------------------------------------------------------------------------
 
+/**
+ * Record the INDETERMINATE verdict and print why.
+ *
+ * SETS `process.exitCode` AND RETURNS — it does NOT call `process.exit()`, and every caller must
+ * therefore `return` immediately after calling it. See the note on `main` for the measurement
+ * behind that rule.
+ */
 function failIndeterminate(headline, detail) {
   // `::error::` surfaces the reason as an annotation on the PR itself rather than burying it
   // in a log fold; outside Actions the prefix would just be noise.
@@ -594,9 +663,35 @@ function failIndeterminate(headline, detail) {
   }
   console.error('  This is NOT a pass. The published-package drift gate did not produce a verdict this repo can')
   console.error('  trust, so nothing here says the payload matches the registry. Exiting 3.')
-  process.exit(EXIT_INDETERMINATE)
+  process.exitCode = EXIT_INDETERMINATE
 }
 
+/**
+ * ── WHY THIS FUNCTION NEVER CALLS `process.exit()` ──────────────────────────────────────
+ *
+ * `process.exit()` terminates without draining pending stdout/stderr writes. On POSIX, a pipe
+ * destination makes those writes ASYNCHRONOUS — and in CI stdout is ALWAYS a pipe. So every byte
+ * still queued when `process.exit()` runs is discarded.
+ *
+ * MEASURED on this exact file, before the fix, with a fake engine returning 1801 rows and a log
+ * reader that pauses 300ms (a CI log collector under load). The engine exited 2, reporting DRIFT
+ * on the one package this repo publishes:
+ *
+ *   wrapper exit code ............ 2      correct, the merge is blocked
+ *   bytes the reader received .... 65507  exactly one pipe buffer
+ *   DRIFT row present in output .. false  THE REASON THE BUILD FAILED WAS DISCARDED
+ *
+ * A red gate whose output stops mid-table is worse than useless: the only actionable line — which
+ * package drifted and which files differ — is the one most likely to be truncated, because the
+ * engine prints it after the rows it already verified. The reported symptom becomes "CI is broken"
+ * rather than "portal-contract drifted", and the fix for THAT is always "make the gate stop
+ * complaining", which is how a gate gets deleted.
+ *
+ * Setting `process.exitCode` and RETURNING instead lets node exit naturally once the event loop
+ * drains, which flushes the queued writes first. It costs nothing and it is the only spelling that
+ * survives a pipe. Consequently every `failIndeterminate(...)` call below is immediately followed
+ * by `return`, because `failIndeterminate` no longer terminates the process on the caller's behalf.
+ */
 async function main() {
   const argv = process.argv.slice(2)
   if (argv.includes('--self-test')) {
@@ -611,15 +706,16 @@ async function main() {
       'It deliberately does NOT fall back to a partial directory scan: a partial scan that misses a',
       '  published package reports "this repo publishes nothing" and exits 0 — a silent pass.'
     ])
+    return
   }
 
   const discovered = selectPublishablePackages(entries)
   if (discovered.length === 0) {
     console.log(`check-package-versions: this repo publishes no packages (none of the ${String(entries.length)} package.json file(s) tracked by git is`)
-    console.log(`  both non-private and targeted at ${GITHUB_PACKAGES_REGISTRY}).`)
+    console.log(`  non-private and either named ${PACKAGE_SCOPE}* or targeted at ${GITHUB_PACKAGES_REGISTRY}).`)
     console.log('  Nothing can drift, so nothing to check. The gate engages automatically as soon as such a')
     console.log('  package is added — no edit to this script needed.')
-    process.exit(0)
+    return
   }
 
   console.log(
@@ -644,6 +740,7 @@ async function main() {
       'not installed, GitHub Packages returning 401/403), NOT a statement about package drift.',
       'Fix: `pnpm install --frozen-lockfile` with a token that can read npm.pkg.github.com, then re-run.'
     ])
+    return
   }
 
   if (probe.outcome === 'subcommand-missing') {
@@ -656,6 +753,7 @@ async function main() {
       'Deliberately not skippable: an earlier revision exited 0 here, and in mantle-LifegamesPortal that',
       '  exit 0 fed the REQUIRED "CI Gate" context — a green required gate for a check that never ran.'
     ])
+    return
   }
 
   // `--json` is not optional for the wrapper: the coverage audit needs the machine-readable
@@ -664,7 +762,19 @@ async function main() {
   const forwarded = argv.filter((arg) => arg !== '--self-test')
   const passthroughJson = forwarded.includes('--json')
   const engineArgs = passthroughJson ? forwarded : [...forwarded, '--json']
-  const result = spawnSync('npx', ['mantle', 'check', SUBCOMMAND, ...engineArgs], {cwd: repoRoot, encoding: 'utf8', stdio: ['inherit', 'pipe', 'inherit']})
+  //
+  // `maxBuffer` is set explicitly and generously. spawnSync defaults to 1MB, and exceeding it
+  // kills the child with ENOBUFS — which this wrapper correctly classifies as INDETERMINATE, but
+  // for a reason that has nothing to do with package drift. That ceiling is reachable in normal
+  // operation: the report carries a row per workspace package (21 in this estate today) and the
+  // header note above records a sibling gate that prefixes ~33KB of build output to stdout. A
+  // gate that turns red because its own capture buffer was too small trains readers to ignore it.
+  const result = spawnSync('npx', ['mantle', 'check', SUBCOMMAND, ...engineArgs], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['inherit', 'pipe', 'inherit'],
+    maxBuffer: 64 * 1024 * 1024
+  })
   const delegated = classifyDelegatedRun({error: result.error, status: result.status, signal: result.signal})
 
   if (delegated.reason !== 'engine-verdict') {
@@ -672,6 +782,7 @@ async function main() {
       result.error === undefined ? `Exit status: ${result.status}, signal: ${result.signal}.` : `Spawn error: ${result.error.message}.`,
       'A run that was killed or never started says nothing about whether the payload drifted.'
     ])
+    return
   }
 
   const {report, reason} = parseEngineReport(result.stdout)
@@ -697,7 +808,8 @@ async function main() {
     for (const problem of problems) {
       console.error(`coverage problem (in addition to the engine's own non-zero verdict): ${problem}`)
     }
-    process.exit(delegated.exitCode)
+    process.exitCode = delegated.exitCode
+    return
   }
 
   // From here the engine says "nothing wrong". That claim is only worth as much as its coverage.
@@ -707,6 +819,7 @@ async function main() {
       ...discovered.map((pkg) => `  - ${pkg.name} (${pkg.dir})`),
       'An exit 0 the wrapper cannot corroborate is indistinguishable from an exit 0 for work never done.'
     ])
+    return
   }
 
   if (problems.length > 0) {
@@ -720,9 +833,8 @@ async function main() {
       `  @j0nathan-ll0yd/cli here. Do NOT "fix" this by deleting the audit — an exit 0 from a check that`,
       '  inspected nothing is the failure this gate was built to prevent.'
     ])
+    return
   }
-
-  process.exit(0)
 }
 
 /**

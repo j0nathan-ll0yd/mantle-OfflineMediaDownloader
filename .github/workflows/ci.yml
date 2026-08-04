@@ -275,8 +275,16 @@ jobs:
         # publishable, the live run below never reaches the delegation path, so these tests are
         # the only exercise the forwarding and coverage-audit code gets in this repo's CI.
         # Proven able to fail, and to fail SPECIFICALLY: changing the wrapper's final
-        # `process.exit(delegated.exitCode)` to `process.exit(0)` leaves the self-test above
-        # green at 67/67 and turns exactly one test here red.
+        # `process.exitCode = delegated.exitCode` to `0` leaves the self-test above green at
+        # 70/70 and turns exactly one test here red.
+        #
+        # These also cover D7, the output-truncation defect: `process.exit()` does not drain
+        # buffered stdout, and stdout is a pipe here, so a real DRIFT verdict blocks the merge
+        # while printing nothing that says WHY. Measured by reintroducing `process.exit()` and
+        # running this file on node 24: on darwin/arm64 the fixture's output falls from 1160430
+        # bytes to 131147 with the DRIFT row gone; on THIS runner's arch, linux/arm64, it falls
+        # to ZERO BYTES — the gate exits 1 having printed nothing at all. All three D7 rungs go
+        # red on every run, on both platforms.
         run: node --test scripts/__tests__/check-package-versions.spawn.test.mjs
       - name: Published-package version drift (blocking)
         # Exit 0 = clean or nothing publishable. Exit 3 = the wrapper could not obtain a
