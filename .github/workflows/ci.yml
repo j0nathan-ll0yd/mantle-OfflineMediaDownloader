@@ -291,3 +291,11 @@ jobs:
         # verdict (engine missing/unreachable/killed). Any other code is the engine's own
         # verdict, forwarded verbatim.
         run: node scripts/check-package-versions.mjs
+        env:
+          # Latent here rather than live: this repo publishes nothing today, so the run stops
+          # at NO_PUBLISHABLE_PACKAGES and never reaches the registry. The moment OMD publishes
+          # its first package the missing credential would turn this gate permanently red with
+          # INDETERMINATE, exactly as it did in mantle-LifegamesPortal. A job-level
+          # `packages: read` permission scopes the workflow token but does NOT place it in a
+          # run step's environment. Mirrors mantle ci.yml and design-system ci.yml.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
