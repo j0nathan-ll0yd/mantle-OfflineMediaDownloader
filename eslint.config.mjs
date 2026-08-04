@@ -33,6 +33,23 @@ export default createMantleEslintConfig({
     'local-rules/aws-sdk-mock-pattern': 'warn'
   },
   overrides: [
+    // Plain-node .mjs scripts run outside tsx and outside the bundler — give them node globals.
+    // Mirrors the same override in mantle-LifegamesPortal so the drift-gate wrapper the two repos
+    // share can stay byte-identical instead of each copy carrying its own `/* global */` pragma.
+    {
+      files: ['scripts/**/*.mjs'],
+      languageOptions: {
+        globals: {
+          console: 'readonly',
+          process: 'readonly',
+          URL: 'readonly',
+          Buffer: 'readonly',
+          fetch: 'readonly',
+          setTimeout: 'readonly',
+          clearTimeout: 'readonly'
+        }
+      }
+    },
     // Relaxed JSDoc requirements for scripts and tooling (self-documenting per Code-Comments.md)
     {
       files: ['scripts/**/*.ts', 'graphrag/**/*.ts', 'config/**/*.ts'],
