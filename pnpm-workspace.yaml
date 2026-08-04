@@ -49,6 +49,14 @@ minimumReleaseAgeExclude:
   - '@j0nathan-ll0yd/config'
   # Mantle registry cutover (atlas 0016): the complete transitive closure of
   # this consumer's 14 direct framework dependencies.
+  #
+  # The closure is a MOVING target, not a one-time census: a framework package can
+  # grow a new first-party dependency in a minor release, and that dependency lands
+  # here as a transitive the day it ships. @j0nathan-ll0yd/eslint-rules arrived
+  # exactly that way — eslint-config 1.0.0 did not depend on it, 1.1.0 pins it at
+  # 2.0.0 — and blocked the upgrade until it was listed. When a framework bump fails
+  # with ERR_PNPM_NO_MATURE_MATCHING_VERSION on an @j0nathan-ll0yd package, the fix
+  # is to add it here, not to weaken minimumReleaseAge for third-party code.
   - '@j0nathan-ll0yd/auth'
   - '@j0nathan-ll0yd/aws'
   - '@j0nathan-ll0yd/cli'
@@ -57,6 +65,7 @@ minimumReleaseAgeExclude:
   - '@j0nathan-ll0yd/env'
   - '@j0nathan-ll0yd/errors'
   - '@j0nathan-ll0yd/eslint-config'
+  - '@j0nathan-ll0yd/eslint-rules'
   - '@j0nathan-ll0yd/mcp'
   - '@j0nathan-ll0yd/observability'
   - '@j0nathan-ll0yd/resilience'
