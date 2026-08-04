@@ -119,7 +119,19 @@ export default defineConfig({
       // (Issue #567). Routed through the tsc6 wrapper: a bare `tsc` here would resolve to the
       // @typescript/native (TS7) alias during the hybrid window (mantle#257), silently running the
       // wrong compiler on the pre-push gate. Mirrors the `check:test:types` package.json script.
-      {name: 'typecheck-test', phase: 'validate', command: 'node bin/tsc6.mjs --noEmit -p tsconfig.test.json'}
+      {name: 'typecheck-test', phase: 'validate', command: 'node bin/tsc6.mjs --noEmit -p tsconfig.test.json'},
+      // Published-package version drift. This repo publishes NOTHING today, so the check is a
+      // sub-second no-op that exits 0 — it is wired now precisely so it is already in place the
+      // day a packages/ entry appears, rather than being remembered (it would not be). The
+      // failure it guards against is silent: `changeset publish` skips a version already in the
+      // registry and exits 0, so a source edit without a version bump never reaches consumers
+      // and nothing goes red.
+      // That exit 0 is a real answer, not a skip. The wrapper exits 3 (INDETERMINATE, never 0)
+      // whenever it has something to check but could not obtain a verdict — so the first
+      // publishable package added here turns this step RED until @j0nathan-ll0yd/cli ships
+      // `mantle check package-versions` and this repo bumps to it. See the header of
+      // scripts/check-package-versions.mjs.
+      {name: 'package-version-drift', phase: 'validate', command: 'node scripts/check-package-versions.mjs'}
     ]
   }
 })
