@@ -100,7 +100,6 @@
     "@j0nathan-ll0yd/mcp": "^1.0.0",
     "@j0nathan-ll0yd/observability": "^1.0.0",
     "@j0nathan-ll0yd/resilience": "^1.0.0",
-    "@j0nathan-ll0yd/security": "^1.0.0",
     "@j0nathan-ll0yd/validation": "^1.0.0",
     "@octokit/rest": "^22.0.1",
     "apns2": "12.2.0",

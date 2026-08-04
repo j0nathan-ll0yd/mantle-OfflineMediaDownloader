@@ -59,7 +59,6 @@ export default defineConfig({
         '@j0nathan-ll0yd/resilience',
         '@j0nathan-ll0yd/validation',
         '@j0nathan-ll0yd/auth',
-        '@j0nathan-ll0yd/security',
         'drizzle-orm',
         'zod'
       ]

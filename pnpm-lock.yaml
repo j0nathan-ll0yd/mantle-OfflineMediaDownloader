@@ -48,9 +48,6 @@ importers:
       '@j0nathan-ll0yd/resilience':
         specifier: ^1.0.0
         version: 1.0.0(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/client-dynamodb@3.1101.0)(@aws-sdk/lib-dynamodb@3.1101.0(@aws-sdk/client-dynamodb@3.1101.0))(@middy/core@7.7.2)
-      '@j0nathan-ll0yd/security':
-        specifier: ^1.0.0
-        version: 1.0.0
       '@j0nathan-ll0yd/validation':
         specifier: ^1.0.0
         version: 1.0.0(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)
@@ -1412,9 +1409,6 @@ packages:
       '@aws-sdk/client-dynamodb': ^3.0.0
       '@aws-sdk/lib-dynamodb': ^3.0.0
 
-  '@j0nathan-ll0yd/security@1.0.0':
-    resolution: {integrity: sha512-RZSv7NYQzYm1PSmoIT56aphAbWZ6yI1gYkg1e5qVzt0KK38CT+2hse2lYOlYVIBHogKuNyC0GkZ5GPXwnw9MhQ==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/security/1.0.0/239fd63a3008be66087f147f33e89d9a0023cbff}
-
   '@j0nathan-ll0yd/testing@1.0.0':
     resolution: {integrity: sha512-IlZtSbl/3g5NTzf0il+0R+stA736ozp84bAvw+j2LuogvCueyv0RXIObeyYts7duDBHksZVT+udUuIOBulOTpw==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/testing/1.0.0/9eef8de6d863133cc62f47a77b81798ea2488dab}
     peerDependencies:
@@ -1555,19 +1549,23 @@ packages:
 
   '@modelcontextprotocol/inspector-cli@0.22.0':
     resolution: {integrity: sha512-Z3NHqa1zTjZyfcd3qJcpIwqiSG7QlR3YkYPFAIoMsPw3hId0AoHtlG4SRueJzymCsF9Rqein3NzUn3qT+aqUBw==}
+    deprecated: 'v1 is deprecated. Upgrade to v2: npm i @modelcontextprotocol/inspector@latest. v1 gets security fixes only, published under the v1-latest tag.'
     hasBin: true
 
   '@modelcontextprotocol/inspector-client@0.22.0':
     resolution: {integrity: sha512-LAFijdt2L4xxjqA16dkqVPjB85VeyHAa32M+nAZyMe4to8s35cW9sZVPnBEFjXGFN4A2WsZ07ViiG+wM6SKS4w==}
+    deprecated: 'v1 is deprecated. Upgrade to v2: npm i @modelcontextprotocol/inspector@latest. v1 gets security fixes only, published under the v1-latest tag.'
     hasBin: true
 
   '@modelcontextprotocol/inspector-server@0.22.0':
     resolution: {integrity: sha512-hOrExnp8wOlSEWVU+t9UD/POHFZy09Xx8LZqX7P9R7mzcDdrwTVB96tbPD8cIi9mVYWFQDKGNVUsF6I7u7fPGA==}
+    deprecated: 'v1 is deprecated. Upgrade to v2: npm i @modelcontextprotocol/inspector@latest. v1 gets security fixes only, published under the v1-latest tag.'
     hasBin: true
 
   '@modelcontextprotocol/inspector@0.22.0':
     resolution: {integrity: sha512-HUyvF+6C3e/sL3wZSc71Li1SkuWysixblFpVdm8csJKBOlT2kNG5kWP0AAgdXRiRWRZ27ZajNtagYgwoJ+QBpQ==}
     engines: {node: '>=22.7.5'}
+    deprecated: 'v1 is deprecated. Upgrade to v2: npm i @modelcontextprotocol/inspector@latest. v1 gets security fixes only, published under the v1-latest tag.'
     hasBin: true
 
   '@modelcontextprotocol/sdk@1.29.0':
@@ -7778,14 +7776,6 @@ snapshots:
       - '@redis/client'
       - '@valkey/valkey-glide'
 
-  '@j0nathan-ll0yd/security@1.0.0':
-    dependencies:
-      '@j0nathan-ll0yd/errors': 1.0.0
-      '@middy/core': 7.7.2
-      '@types/aws-lambda': 8.10.162
-    transitivePeerDependencies:
-      - '@aws/durable-execution-sdk-js'
-
   '@j0nathan-ll0yd/testing@1.0.0(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/client-api-gateway@3.1101.0)(@aws-sdk/client-cloudwatch@3.1101.0)(@aws-sdk/client-dynamodb@3.1101.0)(@aws-sdk/client-eventbridge@3.1101.0)(@aws-sdk/client-lambda@3.1101.0)(@aws-sdk/client-s3@3.1101.0)(@aws-sdk/client-sns@3.1101.0)(@aws-sdk/client-sqs@3.1101.0)(@aws-sdk/dsql-signer@3.1101.0)(@aws-sdk/lib-dynamodb@3.1101.0(@aws-sdk/client-dynamodb@3.1101.0))(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(kysely@0.29.4)(postgres@3.4.9))(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)':
     dependencies:
       '@aws-sdk/client-api-gateway': 3.1101.0
@@ -8004,8 +7994,10 @@ snapshots:
   '@middy/core@7.7.2':
     dependencies:
       '@middy/util': 7.7.2
+    optional: true
 
-  '@middy/util@7.7.2': {}
+  '@middy/util@7.7.2':
+    optional: true
 
   '@modelcontextprotocol/ext-apps@1.7.4(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)':
     dependencies:

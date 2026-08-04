@@ -60,7 +60,6 @@ minimumReleaseAgeExclude:
   - '@j0nathan-ll0yd/mcp'
   - '@j0nathan-ll0yd/observability'
   - '@j0nathan-ll0yd/resilience'
-  - '@j0nathan-ll0yd/security'
   - '@j0nathan-ll0yd/testing'
   - '@j0nathan-ll0yd/types'
   - '@j0nathan-ll0yd/validation'
