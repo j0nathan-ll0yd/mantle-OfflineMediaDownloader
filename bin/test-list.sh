@@ -1,26 +1,22 @@
 #!/usr/bin/env bash
 # Script: test-list.sh
-# Purpose: Test the ListFiles API endpoint
-# Usage: ./bin/test-list.sh --env <staging|production>
+# Purpose: Smoke-test the FilesGet API endpoint (GET /files) against staging
+# Usage: ./bin/test-list.sh --env staging
+#
+# Read-only: GET /files mutates nothing, so this script is safe to run
+# repeatedly. `/files` is one of MULTI_AUTHENTICATION_PATH_PARTS, so it is
+# authorized without an Authorization header (ApiKey query param only).
 
 set -euo pipefail
 
-# Color definitions
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-# Error handler
-error() {
-  echo -e "${RED}✗${NC} Error: $1" >&2
-  exit "${2:-1}"
-}
-
-# Directory resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Parse arguments
+# shellcheck source=bin/remote-api.sh
+. "${SCRIPT_DIR}/remote-api.sh"
+
+USAGE="Usage: ./bin/test-list.sh --env staging"
+
 ENVIRONMENT=""
 
 while [[ $# -gt 0 ]]; do
@@ -30,44 +26,21 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     *)
-      echo "Unknown option: $1"
-      echo "Usage: ./bin/test-list.sh --env <staging|production>"
+      echo "Unknown option: $1" >&2
+      echo "${USAGE}" >&2
       exit 1
       ;;
   esac
 done
 
-# Validate environment
-if [[ -z "$ENVIRONMENT" ]]; then
-  echo "ERROR: --env parameter is required"
-  echo "Usage: ./bin/test-list.sh --env <staging|production>"
-  exit 1
-fi
-
-if [[ "$ENVIRONMENT" != "staging" && "$ENVIRONMENT" != "production" ]]; then
-  echo "ERROR: Environment must be 'staging' or 'production', got: ${ENVIRONMENT}"
-  exit 1
-fi
+remote_api_validate_env "${ENVIRONMENT}" "${USAGE}"
 
 main() {
-  cd "${PROJECT_ROOT}/infra"
+  remote_api_resolve "${PROJECT_ROOT}/infra"
 
-  echo -e "${GREEN}▶${NC} Selecting ${ENVIRONMENT} workspace..."
-  tofu workspace select "${ENVIRONMENT}" > /dev/null
-
-  local subdomain
-  local stage
-  local api_key
-  subdomain=$(tofu output -raw api_gateway_subdomain)
-  stage=$(tofu output -raw api_gateway_stage)
-  api_key=$(tofu output -raw api_gateway_api_key)
-
-  local REQUEST_URL="https://${subdomain}.execute-api.us-west-2.amazonaws.com/${stage}/files?ApiKey=${api_key}"
-  echo -e "${GREEN}▶${NC} Calling ${REQUEST_URL}"
-  curl -v -H "Content-Type: application/json" \
-    -H "User-Agent: localhost@lifegames" \
-    -H "Accept: application/json" \
-    "$REQUEST_URL" | jq
+  # The API key is a credential: log the path, never the query string.
+  remote_api_step "GET ${REMOTE_API_URL}/files"
+  remote_api_request "${REMOTE_API_URL}/files?ApiKey=${REMOTE_API_KEY}"
 }
 
-main "$@"
+main

@@ -6,41 +6,46 @@ Complete reference for all shell scripts in the project.
 
 ### Build & Deployment
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `bin/cleanup.sh` | Full cleanup cycle (build, format, lint, test, docs) | `./bin/cleanup.sh [--fast\|--check]` |
-| `bin/pre-deploy-check.sh` | Pre-deployment validation | `./bin/pre-deploy-check.sh` |
+| Script                    | Purpose                                              | Usage                                |
+| ------------------------- | ---------------------------------------------------- | ------------------------------------ |
+| `bin/cleanup.sh`          | Full cleanup cycle (build, format, lint, test, docs) | `./bin/cleanup.sh [--fast\|--check]` |
+| `bin/pre-deploy-check.sh` | Pre-deployment validation                            | `./bin/pre-deploy-check.sh`          |
 
 ### Validation
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `bin/validate-docs.sh` | Verify documented scripts exist | `./bin/validate-docs.sh` |
-| `bin/validate-doc-sync.sh` | Sync code with documentation | `./bin/validate-doc-sync.sh` |
-| `bin/validate-graphrag.sh` | Check GraphRAG synchronization | `./bin/validate-graphrag.sh` |
-| `bin/verify-state.sh` | Verify Terraform state health | `./bin/verify-state.sh` |
+| Script                     | Purpose                         | Usage                        |
+| -------------------------- | ------------------------------- | ---------------------------- |
+| `bin/validate-docs.sh`     | Verify documented scripts exist | `./bin/validate-docs.sh`     |
+| `bin/validate-doc-sync.sh` | Sync code with documentation    | `./bin/validate-doc-sync.sh` |
+| `bin/validate-graphrag.sh` | Check GraphRAG synchronization  | `./bin/validate-graphrag.sh` |
+| `bin/verify-state.sh`      | Verify Terraform state health   | `./bin/verify-state.sh`      |
 
 ### Testing
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `bin/test-list.sh` | Test ListFiles API endpoint | `./bin/test-list.sh` |
-| `bin/test-hook.sh` | Test Feedly webhook endpoint | `./bin/test-hook.sh` |
-| `bin/test-registerDevice.sh` | Test device registration | `./bin/test-registerDevice.sh` |
-| `bin/test-integration.sh` | Run integration test suite | `./bin/test-integration.sh` |
+| Script                       | Purpose                                                                     | Usage                                        |
+| ---------------------------- | --------------------------------------------------------------------------- | -------------------------------------------- |
+| `bin/test-list.sh`           | Smoke-test `GET /files` (read-only)                                         | `./bin/test-list.sh --env staging`           |
+| `bin/test-hook.sh`           | Smoke-test `POST /feedly/webhook` (mutates; can trigger a real download)    | `./bin/test-hook.sh --env staging`           |
+| `bin/test-registerDevice.sh` | Smoke-test `POST /device/register` (mutates; idempotent)                    | `./bin/test-registerDevice.sh --env staging` |
+| `bin/test-integration.sh`    | Run integration test suite                                                  | `./bin/test-integration.sh`                  |
+| `bin/remote-api.sh`          | Shared helper for the three remote smoke tests — **source, do not execute** | `. bin/remote-api.sh`                        |
+
+The three remote smoke tests hit real AWS and accept `--env staging` only: `mantle.config.ts`
+pins `allowedStages: ['staging']`, so there is no production state to address. They are
+deliberately **not** in CI — they need live AWS credentials and mutate staging.
 
 ### Dependency Management
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `bin/update-yt-dlp.sh` | Update yt-dlp binary | `./bin/update-yt-dlp.sh` |
+| Script                     | Purpose                          | Usage                        |
+| -------------------------- | -------------------------------- | ---------------------------- |
+| `bin/update-yt-dlp.sh`     | Update yt-dlp binary             | `./bin/update-yt-dlp.sh`     |
 | `bin/update-agents-prs.sh` | Update AGENTS.md with PR history | `./bin/update-agents-prs.sh` |
 
 ### Infrastructure
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `bin/aws-audit.sh` | Comprehensive AWS infrastructure audit | `./bin/aws-audit.sh` |
+| Script             | Purpose                                | Usage                |
+| ------------------ | -------------------------------------- | -------------------- |
+| `bin/aws-audit.sh` | Find AWS resources orphaned from OpenTofu state | `./bin/aws-audit.sh --env staging` |
 
 ## Script Details
 
@@ -55,6 +60,7 @@ Full cleanup cycle with multiple modes:
 ```
 
 **Steps Performed**:
+
 1. TypeScript type checking
 2. Build Lambda bundles
 3. Format code (dprint)
@@ -70,20 +76,36 @@ Full cleanup cycle with multiple modes:
 
 ### aws-audit.sh
 
-Comprehensive AWS infrastructure audit:
+Finds **orphans** — resources that exist in AWS but are not in OpenTofu state. This is the one
+question `tofu plan` cannot answer, since plan only reconciles what state already tracks.
 
 ```bash
-./bin/aws-audit.sh
+pnpm run audit:aws:staging          # or: ./bin/aws-audit.sh --env staging
+./bin/aws-audit.sh --env staging --json
+./bin/aws-audit.sh --env staging --prune --dry-run
 ```
 
-**Reports On**:
-- Lambda function configurations
-- API Gateway endpoints
-- S3 buckets
-- DynamoDB tables
-- CloudWatch alarms
+**Reports On** (orphans, per type):
+
+- Lambda functions
 - IAM roles and policies
-- Cost estimates
+- SQS queues
+- S3 buckets
+- API Gateway REST APIs
+- CloudFront distributions
+- Lambdas whose `ManagedBy` tag does not match what the stack applies
+
+**Exit codes**: `0` clean, `1` usage/credential error, `2` orphans or tag drift found.
+
+Both sides of the comparison are **derived**, not hardcoded: Terraform-managed names come from
+`tofu show -json`, and the AWS-side filter is the stack's own `name_prefix`. Adding or renaming
+a resource needs no edit to the script. (It previously matched against a hand-maintained list
+of resource names that had drifted completely, so it compared two empty sets and always
+reported a clean estate.)
+
+`--prune` deletes only orphaned Lambda functions, IAM policies and IAM roles, after
+confirmation. Orphaned queues, buckets, APIs and distributions are reported but never
+auto-deleted.
 
 ---
 
@@ -96,6 +118,7 @@ Pre-deployment validation:
 ```
 
 **Validates**:
+
 - All tests pass
 - No lint errors
 - Bundle sizes within limits
@@ -113,6 +136,7 @@ Validates documentation matches code:
 ```
 
 **Checks**:
+
 - Lambda handlers documented
 - Entity schemas documented
 - API endpoints documented
@@ -125,16 +149,19 @@ Validates documentation matches code:
 All scripts follow patterns defined in [Script-Patterns.md](./Script-Patterns.md):
 
 ### Shebang
+
 ```bash
 #!/usr/bin/env bash
 ```
 
 ### Error Handling
+
 ```bash
 set -euo pipefail
 ```
 
 ### Help Flag
+
 ```bash
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   echo "Usage: $0 [options]"
@@ -143,6 +170,7 @@ fi
 ```
 
 ### Color Output
+
 ```bash
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
@@ -153,6 +181,7 @@ echo -e "${GREEN}Success${NC}"
 ```
 
 ### Directory Resolution
+
 ```bash
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
