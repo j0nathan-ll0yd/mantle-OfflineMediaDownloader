@@ -28,11 +28,11 @@ Complete reference for all shell scripts in the project.
 | `bin/test-hook.sh`           | Smoke-test `POST /feedly/webhook` (mutates; can trigger a real download)    | `./bin/test-hook.sh --env staging`           |
 | `bin/test-registerDevice.sh` | Smoke-test `POST /device/register` (mutates; idempotent)                    | `./bin/test-registerDevice.sh --env staging` |
 | `bin/test-integration.sh`    | Run integration test suite                                                  | `./bin/test-integration.sh`                  |
-| `bin/remote-api.sh`          | Shared helper for the three remote smoke tests — **source, do not execute** | `. bin/remote-api.sh`                        |
+| `bin/remote-api.sh`          | Shared helper for the three remote smoke tests (**source, do not execute**) | `. bin/remote-api.sh`                        |
 
 The three remote smoke tests hit real AWS and accept `--env staging` only: `mantle.config.ts`
 pins `allowedStages: ['staging']`, so there is no production state to address. They are
-deliberately **not** in CI — they need live AWS credentials and mutate staging.
+deliberately **not** in CI, because they need live AWS credentials and mutate staging.
 
 ### Dependency Management
 
@@ -43,8 +43,8 @@ deliberately **not** in CI — they need live AWS credentials and mutate staging
 
 ### Infrastructure
 
-| Script             | Purpose                                | Usage                |
-| ------------------ | -------------------------------------- | -------------------- |
+| Script             | Purpose                                         | Usage                              |
+| ------------------ | ----------------------------------------------- | ---------------------------------- |
 | `bin/aws-audit.sh` | Find AWS resources orphaned from OpenTofu state | `./bin/aws-audit.sh --env staging` |
 
 ## Script Details
@@ -76,7 +76,7 @@ Full cleanup cycle with multiple modes:
 
 ### aws-audit.sh
 
-Finds **orphans** — resources that exist in AWS but are not in OpenTofu state. This is the one
+Finds **orphans**: resources that exist in AWS but are not in OpenTofu state. This is the one
 question `tofu plan` cannot answer, since plan only reconciles what state already tracks.
 
 ```bash
