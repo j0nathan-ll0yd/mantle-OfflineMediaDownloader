@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "mantle": {
-      "command": "node",
-      "args": ["node_modules/@j0nathan-ll0yd/cli/dist/mcp/mcp-entry.mjs"]
+      "command": "./node_modules/.bin/mantle",
+      "args": ["mcp-server"]
     },
     "devtools": {
       "type": "http",

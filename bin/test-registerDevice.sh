@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
 # Script: test-registerDevice.sh
-# Purpose: Test the RegisterDevice API endpoint with synthetic device data
-# Usage: ./bin/test-registerDevice.sh --env <staging|production>
+# Purpose: Smoke-test the DeviceRegister endpoint (POST /device/register)
+# Usage: ./bin/test-registerDevice.sh --env staging
+#
+# MUTATES STAGING. The handler creates an SNS platform-application endpoint from
+# the supplied APNS token and upserts a device row (plus a user_devices link when
+# the caller is authorized as the synthetic test principal). The payload below is
+# fixed synthetic data, so repeated runs upsert the SAME device rather than
+# accumulating junk -- but the first run does create records.
+#
+# `/device/register` is one of MULTI_AUTHENTICATION_PATH_PARTS, so it is
+# authorized without an Authorization header.
 
 set -euo pipefail
 
-# Color definitions
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-# Error handler
-error() {
-  echo -e "${RED}✗${NC} Error: $1" >&2
-  exit "${2:-1}"
-}
-
-# Directory resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Parse arguments
+# shellcheck source=bin/remote-api.sh
+. "${SCRIPT_DIR}/remote-api.sh"
+
+USAGE="Usage: ./bin/test-registerDevice.sh --env staging"
+
+# Fixed synthetic device -- idempotent across runs. Must satisfy
+# DeviceRegistrationRequestSchema in src/lambdas/api/device/register.post.ts.
+readonly TEST_DEVICE_ID='00000000-0000-0000-0000-000000000001'
+readonly TEST_DEVICE_TOKEN='0000000000000000000000000000000000000000000000000000000000000001'
+
 ENVIRONMENT=""
 
 while [[ $# -gt 0 ]]; do
@@ -30,54 +36,30 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     *)
-      echo "Unknown option: $1"
-      echo "Usage: ./bin/test-registerDevice.sh --env <staging|production>"
+      echo "Unknown option: $1" >&2
+      echo "${USAGE}" >&2
       exit 1
       ;;
   esac
 done
 
-# Validate environment
-if [[ -z "$ENVIRONMENT" ]]; then
-  echo "ERROR: --env parameter is required"
-  echo "Usage: ./bin/test-registerDevice.sh --env <staging|production>"
-  exit 1
-fi
-
-if [[ "$ENVIRONMENT" != "staging" && "$ENVIRONMENT" != "production" ]]; then
-  echo "ERROR: Environment must be 'staging' or 'production', got: ${ENVIRONMENT}"
-  exit 1
-fi
+remote_api_validate_env "${ENVIRONMENT}" "${USAGE}"
 
 main() {
-  cd "${PROJECT_ROOT}/infra"
+  remote_api_resolve "${PROJECT_ROOT}/infra"
 
-  echo -e "${GREEN}▶${NC} Selecting ${ENVIRONMENT} workspace..."
-  tofu workspace select "${ENVIRONMENT}" > /dev/null
+  local payload
+  payload=$(jq -n \
+    --arg deviceId "${TEST_DEVICE_ID}" \
+    --arg token "${TEST_DEVICE_TOKEN}" \
+    '{deviceId: $deviceId, token: $token, name: "RemoteTestDevice", systemName: "iOS", systemVersion: "99.0.0"}')
 
-  local subdomain
-  local stage
-  local api_key
-  subdomain=$(tofu output -raw api_gateway_subdomain)
-  stage=$(tofu output -raw api_gateway_stage)
-  api_key=$(tofu output -raw api_gateway_api_key)
+  remote_api_warn "This registers a synthetic device in ${ENVIRONMENT} (idempotent: deviceId ${TEST_DEVICE_ID})."
 
-  local REQUEST_URL="https://${subdomain}.execute-api.us-west-2.amazonaws.com/${stage}/device/register?ApiKey=${api_key}"
-  echo -e "${GREEN}▶${NC} Calling ${REQUEST_URL}"
-
-  # Fixed synthetic test values - idempotent (same device on each run)
-  curl -v -X POST \
-    -H "Content-Type: application/json" \
-    -H "Accept: application/json" \
-    -H "User-Agent: localhost@lifegames" \
-    -d '{
-      "deviceId": "00000000-0000-0000-0000-000000000001",
-      "token": "0000000000000000000000000000000000000000000000000000000000000001",
-      "name": "RemoteTestDevice",
-      "systemName": "iOS",
-      "systemVersion": "99.0.0"
-    }' \
-    "$REQUEST_URL" | jq
+  # The API key is a credential: log the path, never the query string.
+  remote_api_step "POST ${REMOTE_API_URL}/device/register"
+  remote_api_request "${REMOTE_API_URL}/device/register?ApiKey=${REMOTE_API_KEY}" \
+    -X POST --data "${payload}"
 }
 
-main "$@"
+main

@@ -186,12 +186,13 @@ The project has 20+ scripts in `bin/` covering CI, testing, documentation, and m
 
 ### Test Scripts
 
-| Script                   | Purpose             | Key Features             |
-| ------------------------ | ------------------- | ------------------------ |
-| `test-integration.sh`    | Integration tests   | LocalStack, DynamoDB, S3 |
-| `test-hook.sh`           | Webhook testing     | Remote Feedly endpoint   |
-| `test-list.sh`           | File listing test   | Remote API testing       |
-| `test-registerDevice.sh` | Device registration | APNS token testing       |
+| Script                   | Purpose             | Key Features                                   |
+| ------------------------ | ------------------- | ---------------------------------------------- |
+| `test-integration.sh`    | Integration tests   | LocalStack, DynamoDB, S3                       |
+| `test-hook.sh`           | Webhook testing     | Remote `POST /feedly/webhook`; mutates staging |
+| `test-list.sh`           | File listing test   | Remote `GET /files`; read-only                 |
+| `test-registerDevice.sh` | Device registration | Remote `POST /device/register`; idempotent     |
+| `remote-api.sh`          | Shared helper       | Sourced by the three above; resolves outputs   |
 
 ### Documentation Scripts
 
