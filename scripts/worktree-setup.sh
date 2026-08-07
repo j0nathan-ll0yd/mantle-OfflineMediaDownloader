@@ -20,19 +20,21 @@ done
 
 # 2) Direnv auto-allow
 if command -v direnv >/dev/null 2>&1 && [ -f "$worktree/.envrc" ]; then
-  ( cd "$worktree" && direnv allow >/dev/null 2>&1 || true )
-fi
-
-# 3) Async non-blocking dependency install & heavy background tasks (tofu init)
-if [ "${WORKTREE_SKIP_INSTALL:-0}" != "1" ]; then
   (
-    if [ -f "$worktree/pnpm-lock.yaml" ]; then
-      ( cd "$worktree" && pnpm install --prefer-offline >/dev/null 2>&1 )
+    if cd "$worktree"; then
+      direnv allow >/dev/null 2>&1 || true
     fi
-    if [ -d "$worktree/terraform" ] && command -v tofu >/dev/null 2>&1; then
-      ( cd "$worktree/terraform" && tofu init -input=false >/dev/null 2>&1 || true )
-    fi
-  ) &
+  )
 fi
 
-log "done (background tasks PID $!)"
+# 3) Fast dependency install (synchronous for agent safety)
+if [ "${WORKTREE_SKIP_INSTALL:-0}" != "1" ]; then
+  if [ -f "$worktree/pnpm-lock.yaml" ]; then
+    ( cd "$worktree" && pnpm install --prefer-offline >/dev/null 2>&1 )
+  fi
+  if [ -d "$worktree/terraform" ] && command -v tofu >/dev/null 2>&1; then
+    ( cd "$worktree/terraform" && tofu init -input=false >/dev/null 2>&1 || true )
+  fi
+fi
+
+log "done"
