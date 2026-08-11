@@ -11,7 +11,7 @@
 import {defineLambda, defineScheduledHandler} from '@j0nathan-ll0yd/core'
 import {getOptionalEnv, getRequiredEnv} from '@j0nathan-ll0yd/env'
 import {UnexpectedError} from '@j0nathan-ll0yd/errors'
-import {addMetadata, endSpan, logDebug, logError, logInfo, metrics, MetricUnit, startSpan} from '@j0nathan-ll0yd/observability'
+import {addMetadata, endSpan, logDebug, logError, logInfo, logWarn, metrics, MetricUnit, startSpan} from '@j0nathan-ll0yd/observability'
 import {deleteUserDevicesByDeviceId, getAllDevices} from '#entities/queries'
 import type {Apns2Error} from '#errors/custom-errors'
 import {deleteDevice} from '#services/device/deviceService'
@@ -31,6 +31,13 @@ defineLambda({
 
 // Re-export types for external consumers
 export type { PruneDevicesResult } from '#types/lambda'
+
+/**
+ * Reserved synthetic device seeded by `bin/test-registerDevice.sh` for remote smoke tests. Its token
+ * is an all-zeros placeholder that APNS permanently rejects (400 BadDeviceToken), so it is excluded
+ * from health checks — otherwise every run would prune it and the smoke-test fixture would vanish.
+ */
+const RESERVED_TEST_DEVICE_ID = '00000000-0000-0000-0000-000000000001'
 
 /** Fetch all devices from the database */
 async function getDevices(): Promise<Device[]> {
@@ -63,19 +70,45 @@ async function dispatchHealthCheckNotificationToDeviceToken(token: string): Prom
     logDebug('apnProvider.send =>', result as unknown as Record<string, unknown>)
     return {statusCode: 200}
   } catch (err) {
-    logError('apnProvider.send =>', {error: err instanceof Error ? err.message : String(err)})
+    // A structured APNS rejection (has a `reason`) is an expected outcome of a health check — the
+    // whole point of this job is to surface dead tokens. Log it at WARN, not ERROR, so it does not
+    // trip alerting; the caller decides whether the reason is permanent (prune) or transient (skip).
     if (err && typeof err === 'object' && 'reason' in err) {
       const apnsError = err as Apns2Error
+      logWarn('apnProvider.send => APNS rejection', {statusCode: apnsError.statusCode, reason: apnsError.reason})
       return {statusCode: Number(apnsError.statusCode), reason: apnsError.reason}
     }
+    // No reason means an unexpected transport/library failure, not a token verdict — this is a real error.
+    logError('apnProvider.send => unexpected failure', {error: err instanceof Error ? err.message : String(err)})
     throw new UnexpectedError('Unexpected result from APNS')
   }
 }
 
-/** Check if a device token is disabled (APNS returns 410) */
-async function isDeviceDisabled(token: string): Promise<boolean> {
+/**
+ * APNS `reason` values that indicate the token is permanently invalid and can never receive a push.
+ * `Unregistered` (410) — app uninstalled. `BadDeviceToken` / `DeviceTokenNotForTopic` (400) — token
+ * malformed or registered against a different environment/topic. All three warrant pruning; every
+ * other reason (e.g. `TooManyRequests`, `InternalServerError`, `ServiceUnavailable`) is transient.
+ * @see https://developer.apple.com/documentation/usernotifications/handling-notification-responses-from-apns
+ */
+const PERMANENT_APNS_REASONS = new Set(['Unregistered', 'BadDeviceToken', 'DeviceTokenNotForTopic'])
+
+/**
+ * Health-check a device token and decide whether it is permanently invalid (safe to prune).
+ * Returns false for both healthy tokens and transient failures — a transient failure logs a warning
+ * and leaves the device in place so it is re-checked on the next run rather than deleted in error.
+ */
+async function isDeviceTokenPermanentlyInvalid(token: string): Promise<boolean> {
   const apnsResponse = await dispatchHealthCheckNotificationToDeviceToken(token)
-  return apnsResponse.statusCode === 410
+  if (apnsResponse.statusCode === 200) {
+    return false
+  }
+  if (apnsResponse.reason && PERMANENT_APNS_REASONS.has(apnsResponse.reason)) {
+    return true
+  }
+  // Non-200 without a permanent reason: transient (rate limit, APNS outage). Keep the device, retry next run.
+  logWarn('Transient APNS failure; leaving device in place', {statusCode: apnsResponse.statusCode, reason: apnsResponse.reason})
+  return false
 }
 
 const scheduled = defineScheduledHandler({operationName: 'PruneDevices', schedule: {expression: 'rate(1 day)'}, timeout: 300})
@@ -92,14 +125,21 @@ export const handler = scheduled(async (): Promise<PruneDevicesResult> => {
 
   for (const device of devices) {
     const deviceId = device.deviceId
+
+    // The reserved smoke-test device carries an intentionally-invalid token; never health-check or prune it.
+    if (deviceId === RESERVED_TEST_DEVICE_ID) {
+      logDebug('Skipping reserved smoke-test device', {deviceId})
+      continue
+    }
+
     logInfo('Verifying device', {deviceId})
 
     let shouldPrune = false
     let pruneReason = ''
 
-    if (await isDeviceDisabled(device.token)) {
+    if (await isDeviceTokenPermanentlyInvalid(device.token)) {
       shouldPrune = true
-      pruneReason = 'APNS 410'
+      pruneReason = 'APNS token permanently invalid'
     } else if (device.lastSeenAt && device.lastSeenAt < staleThreshold) {
       shouldPrune = true
       pruneReason = 'lastSeenAt stale'
