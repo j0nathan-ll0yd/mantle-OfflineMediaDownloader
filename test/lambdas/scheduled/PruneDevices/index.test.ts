@@ -36,6 +36,7 @@ vi.mock('@j0nathan-ll0yd/observability',
     logDebug: vi.fn(),
     logError: vi.fn(),
     logInfo: vi.fn(),
+    logWarn: vi.fn(),
     metrics: {addMetric: vi.fn()},
     MetricUnit: {Count: 'Count'},
     startSpan: vi.fn(() => ({}))
@@ -112,7 +113,7 @@ describe('PruneDevices Lambda', () => {
     expect(result.devicesPruned).toBe(0)
   })
 
-  it('should prune disabled device (APNS 410)', async () => {
+  it('should prune device unregistered by APNS (410 Unregistered)', async () => {
     vi.mocked(getAllDevices).mockResolvedValue([mockDevice])
     mockApnsSend.mockRejectedValue({reason: 'Unregistered', statusCode: 410})
     vi.mocked(deleteUserDevicesByDeviceId).mockResolvedValue(undefined as never)
@@ -125,6 +126,45 @@ describe('PruneDevices Lambda', () => {
     expect(deleteUserDevicesByDeviceId).toHaveBeenCalledWith('dev-1')
     expect(deleteDevice).toHaveBeenCalledWith(mockDevice)
     expect(metrics.addMetric).toHaveBeenCalledWith('DevicesPruned', 'Count', 1)
+  })
+
+  it('should prune device with a permanently-invalid token (400 BadDeviceToken)', async () => {
+    vi.mocked(getAllDevices).mockResolvedValue([mockDevice])
+    mockApnsSend.mockRejectedValue({reason: 'BadDeviceToken', statusCode: 400})
+    vi.mocked(deleteUserDevicesByDeviceId).mockResolvedValue(undefined as never)
+    vi.mocked(deleteDevice).mockResolvedValue(undefined)
+
+    const result = await handler()
+
+    expect(result.devicesChecked).toBe(1)
+    expect(result.devicesPruned).toBe(1)
+    expect(deleteUserDevicesByDeviceId).toHaveBeenCalledWith('dev-1')
+    expect(deleteDevice).toHaveBeenCalledWith(mockDevice)
+  })
+
+  it('should NOT prune on a transient APNS failure (429 TooManyRequests)', async () => {
+    vi.mocked(getAllDevices).mockResolvedValue([mockDevice])
+    mockApnsSend.mockRejectedValue({reason: 'TooManyRequests', statusCode: 429})
+
+    const result = await handler()
+
+    expect(result.devicesChecked).toBe(1)
+    expect(result.devicesPruned).toBe(0)
+    expect(deleteUserDevicesByDeviceId).not.toHaveBeenCalled()
+    expect(deleteDevice).not.toHaveBeenCalled()
+  })
+
+  it('should skip the reserved smoke-test device without health-checking or pruning it', async () => {
+    const reservedDevice = {...mockDevice, deviceId: '00000000-0000-0000-0000-000000000001', token: '0'.repeat(64)}
+    vi.mocked(getAllDevices).mockResolvedValue([reservedDevice])
+
+    const result = await handler()
+
+    expect(result.devicesChecked).toBe(1)
+    expect(result.devicesPruned).toBe(0)
+    expect(mockApnsSend).not.toHaveBeenCalled()
+    expect(deleteUserDevicesByDeviceId).not.toHaveBeenCalled()
+    expect(deleteDevice).not.toHaveBeenCalled()
   })
 
   it('should record error when device deletion fails', async () => {
