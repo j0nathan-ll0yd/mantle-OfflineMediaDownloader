@@ -29,6 +29,13 @@
       "when": 1747165200000,
       "tag": "0005_backfill_user_files",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1755043200000,
+      "tag": "0006_drop_legacy_lambda_roles",
+      "breakpoints": true
     }
   ]
 }
