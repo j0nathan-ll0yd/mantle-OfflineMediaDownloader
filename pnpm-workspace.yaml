@@ -44,6 +44,11 @@ trustPolicyExclude:
 #   exempt from the release-age delay.
 minimumReleaseAgeExclude:
   - 'ast-v8-to-istanbul'
+  # tar: security fast-track, translated from the retired .npmrc
+  # `minimum-release-age-exclude[]=tar` (atlas 0032 item 4). Originally added for
+  # tar@7.5.3, which fixes GHSA-8qq5-rm4j-mr97 (path traversal); kept bare so the
+  # next patch in that line is not delayed behind the 24h floor either.
+  - 'tar'
   # Bare package names cover every later version; version-qualified exclusions
   # silently reintroduce the first-publish failure on the next release.
   - '@j0nathan-ll0yd/config'
