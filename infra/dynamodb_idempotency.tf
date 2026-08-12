@@ -3,7 +3,7 @@
 
 # DynamoDB table: idempotency
 module "dynamodb_idempotency" {
-  source              = "../../mantle/modules/dynamodb"
+  source              = "../node_modules/@j0nathan-ll0yd/cli/modules/dynamodb"
   table_name          = "idempotency"
   name_prefix         = module.core.name_prefix
   tags                = module.core.common_tags

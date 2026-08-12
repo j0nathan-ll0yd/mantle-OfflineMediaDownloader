@@ -4,7 +4,7 @@
 # --- FeedlyWebhook ---
 
 module "lambda_feedly_webhook" {
-  source = "../../mantle/modules/lambda"
+  source = "../node_modules/@j0nathan-ll0yd/cli/modules/lambda"
 
   function_name      = "FeedlyWebhook"
   name_prefix        = module.core.name_prefix

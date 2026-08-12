@@ -4,7 +4,7 @@
 # --- LogNotifier ---
 
 module "lambda_log_notifier" {
-  source = "../../mantle/modules/lambda"
+  source = "../node_modules/@j0nathan-ll0yd/cli/modules/lambda"
 
   function_name      = "LogNotifier"
   name_prefix        = module.core.name_prefix

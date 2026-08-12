@@ -4,7 +4,7 @@
 # --- DevTools ---
 
 module "lambda_dev_tools" {
-  source = "../../mantle/modules/lambda"
+  source = "../node_modules/@j0nathan-ll0yd/cli/modules/lambda"
 
   function_name      = "DevTools"
   name_prefix        = module.core.name_prefix

@@ -133,14 +133,20 @@ main() {
 
   echo -e "${GREEN}✓${NC} Remote backend configured (backend.tf)"
 
-  # Ensure terraform is initialized with the backend
+  # Ensure terraform is initialized with the backend AND that the module cache is
+  # current. The presence of .terraform is NOT sufficient: a cache installed while
+  # the module `source` addresses pointed somewhere else (for example the sibling
+  # ../../mantle checkout before the registry cutover) makes every subsequent tofu
+  # command fail with "Module source has changed", which used to abort this script
+  # with no diagnostic. `tofu init` is idempotent and re-installs modules whenever
+  # their source addresses change, so run it unconditionally and let it self-heal.
   cd "${TERRAFORM_DIR}"
-  if [[ ! -d ".terraform" ]]; then
-    echo "  Initializing backend..."
-    if ! tofu init -input=false > /dev/null 2>&1; then
-      echo -e "${RED}ERROR: Failed to initialize terraform backend${NC}"
-      exit 1
-    fi
+  echo "  Initializing backend and module cache..."
+  if ! INIT_OUTPUT=$(tofu init -input=false -no-color 2>&1); then
+    echo -e "${RED}ERROR: Failed to initialize terraform backend${NC}"
+    echo ""
+    echo "$INIT_OUTPUT"
+    exit 1
   fi
   echo "  State backend: S3 (remote)"
   echo ""
@@ -148,11 +154,28 @@ main() {
   # Mantle uses NO terraform workspaces: the default workspace's state key is
   # already stage-scoped (infra-staging.tfstate). Pin the container image var from
   # live state so an unchanged image does not read as drift (deploy injects it).
-  IMAGE_URI=$(tofu state show module.lambda_start_file_upload.aws_lambda_function.function 2> /dev/null | sed -n 's/^ *image_uri *= *"\(.*\)".*/\1/p' | head -1)
+  # Reading the image from state is best-effort: a missing resource is fine (the
+  # plan still runs, an image-only diff just reads as drift). But it must never
+  # fail SILENTLY -- stderr was previously sent to /dev/null while `set -o pipefail`
+  # made the failing pipeline abort the whole script, so a hard tofu error such as
+  # "Module source has changed" surfaced only as a bare exit 1 with no message.
+  # Capture stderr, disable -e for the duration, and report whatever went wrong.
+  set +e
+  IMAGE_STATE=$(tofu state show module.lambda_start_file_upload.aws_lambda_function.function 2>&1)
+  IMAGE_STATE_EXIT=$?
+  set -e
+
   IMAGE_VAR_ARGS=()
-  if [[ -n "${IMAGE_URI}" ]]; then
-    IMAGE_VAR_ARGS+=("-var=image_uri_start_file_upload=${IMAGE_URI}")
-    echo -e "${GREEN}ok${NC} Pinned container image: ${IMAGE_URI##*/}"
+  if [[ ${IMAGE_STATE_EXIT} -ne 0 ]]; then
+    echo -e "${YELLOW}warn${NC} Could not read the container image from state (tofu exit ${IMAGE_STATE_EXIT}):"
+    echo "    ${IMAGE_STATE//$'\n'/$'\n'    }"
+    echo "  Continuing without a pinned image; an unchanged image may read as drift."
+  else
+    IMAGE_URI=$(echo "${IMAGE_STATE}" | sed -n 's/^ *image_uri *= *"\(.*\)".*/\1/p' | head -1)
+    if [[ -n "${IMAGE_URI}" ]]; then
+      IMAGE_VAR_ARGS+=("-var=image_uri_start_file_upload=${IMAGE_URI}")
+      echo -e "${GREEN}ok${NC} Pinned container image: ${IMAGE_URI##*/}"
+    fi
   fi
 
   # Run tofu plan with detailed exit code
@@ -160,7 +183,10 @@ main() {
 
   # Capture plan output and exit code
   set +e
-  PLAN_OUTPUT=$(tofu plan -var-file="${TFVARS_FILE}" "${IMAGE_VAR_ARGS[@]}" -detailed-exitcode -input=false -no-color 2>&1)
+  # ${arr[@]+"${arr[@]}"} expands to nothing when the array is empty instead of
+  # tripping `set -u`. The empty case is now reachable: the image lookup above
+  # warns and continues where it previously aborted the script.
+  PLAN_OUTPUT=$(tofu plan -var-file="${TFVARS_FILE}" ${IMAGE_VAR_ARGS[@]+"${IMAGE_VAR_ARGS[@]}"} -detailed-exitcode -input=false -no-color 2>&1)
   PLAN_EXIT=$?
   set -e
 
@@ -187,12 +213,23 @@ main() {
       echo "$PLAN_OUTPUT" | grep -E "^(  #|Plan:)" || echo "$PLAN_OUTPUT"
       echo ""
 
-      # Count additions, changes, deletions
-      ADD_COUNT=$(echo "$PLAN_OUTPUT" | grep -c "will be created" || echo 0)
-      CHANGE_COUNT=$(echo "$PLAN_OUTPUT" | grep -c "will be updated" || echo 0)
-      DESTROY_COUNT=$(echo "$PLAN_OUTPUT" | grep -c "will be destroyed" || echo 0)
+      # Report tofu's own "Plan: X to add, Y to change, Z to destroy." line verbatim
+      # rather than re-deriving counts. The previous hand-rolled tally was wrong in
+      # two ways: `grep -c` prints 0 AND exits 1 when there are no matches, so the
+      # `|| echo 0` fallback appended a SECOND zero and produced garbled multi-line
+      # output ("+0\n0 to add"); and it matched only "will be created"/"will be
+      # destroyed", so a resource that "must be replaced" -- a destroy plus a
+      # re-create -- was counted as neither and silently reported as "-0 to destroy".
+      # Under-reporting a destroy in a deploy gate is the exact failure this check
+      # exists to prevent.
+      PLAN_SUMMARY=$(echo "$PLAN_OUTPUT" | grep -E "^Plan: " | tail -1)
+      REPLACE_COUNT=$(echo "$PLAN_OUTPUT" | grep -cE "must be replaced" || true)
 
-      echo "Summary: +${ADD_COUNT} to add, ~${CHANGE_COUNT} to change, -${DESTROY_COUNT} to destroy"
+      echo "Summary: ${PLAN_SUMMARY:-<tofu emitted no Plan: line>}"
+      if [[ "${REPLACE_COUNT}" -gt 0 ]]; then
+        echo -e "${RED}WARNING:${NC} ${REPLACE_COUNT} resource(s) must be REPLACED (destroy + re-create):"
+        echo "$PLAN_OUTPUT" | grep -E "must be replaced" | sed 's/^ *#/    /'
+      fi
       echo ""
 
       if [[ "$FORCE" == "true" ]]; then

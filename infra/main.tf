@@ -21,13 +21,13 @@ provider "aws" {
 }
 
 module "core" {
-  source       = "../../mantle/modules/core"
+  source       = "../node_modules/@j0nathan-ll0yd/cli/modules/core"
   project_name = var.project_name
   environment  = var.environment
 }
 
 module "api" {
-  source      = "../../mantle/modules/api-gateway"
+  source      = "../node_modules/@j0nathan-ll0yd/cli/modules/api-gateway"
   name_prefix = module.core.name_prefix
   tags        = module.core.common_tags
 

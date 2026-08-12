@@ -4,7 +4,7 @@
 # --- FilesByIdDelete ---
 
 module "lambda_files_by_id_delete" {
-  source = "../../mantle/modules/lambda"
+  source = "../node_modules/@j0nathan-ll0yd/cli/modules/lambda"
 
   function_name      = "FilesByIdDelete"
   name_prefix        = module.core.name_prefix
