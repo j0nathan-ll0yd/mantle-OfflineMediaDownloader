@@ -4,7 +4,7 @@
 # --- EndpointCleanupHelpers ---
 
 module "lambda_endpoint_cleanup_helpers" {
-  source = "../../mantle/modules/lambda"
+  source = "../node_modules/@j0nathan-ll0yd/cli/modules/lambda"
 
   function_name      = "EndpointCleanupHelpers"
   name_prefix        = module.core.name_prefix

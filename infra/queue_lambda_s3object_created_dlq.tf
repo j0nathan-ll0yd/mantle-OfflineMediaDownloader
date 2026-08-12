@@ -3,7 +3,7 @@
 
 # SQS queue: lambda_s3object_created_dlq
 module "queue_lambda_s3object_created_dlq" {
-  source                     = "../../mantle/modules/queue"
+  source                     = "../node_modules/@j0nathan-ll0yd/cli/modules/queue"
   queue_name                 = "lambda_s3object_created_dlq"
   name_prefix                = module.core.name_prefix
   tags                       = module.core.common_tags

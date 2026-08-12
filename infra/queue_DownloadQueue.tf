@@ -3,7 +3,7 @@
 
 # SQS queue: DownloadQueue
 module "queue_DownloadQueue" {
-  source                     = "../../mantle/modules/queue"
+  source                     = "../node_modules/@j0nathan-ll0yd/cli/modules/queue"
   queue_name                 = "DownloadQueue"
   name_prefix                = module.core.name_prefix
   tags                       = module.core.common_tags

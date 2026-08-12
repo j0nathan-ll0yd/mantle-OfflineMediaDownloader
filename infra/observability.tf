@@ -9,7 +9,7 @@
 #   API Gateway 5XX: 1
 #   Total: 10 alarm-metrics -> 0 billable -> ~$0.00/month
 module "observability" {
-  source      = "../../mantle/modules/observability"
+  source      = "../node_modules/@j0nathan-ll0yd/cli/modules/observability"
   name_prefix = module.core.name_prefix
   tags        = module.core.common_tags
 

@@ -4,7 +4,7 @@
 # --- S3ObjectCreated ---
 
 module "lambda_s3object_created" {
-  source = "../../mantle/modules/lambda"
+  source = "../node_modules/@j0nathan-ll0yd/cli/modules/lambda"
 
   function_name            = "S3ObjectCreated"
   name_prefix              = module.core.name_prefix

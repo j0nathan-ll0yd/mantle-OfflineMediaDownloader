@@ -4,7 +4,7 @@
 # --- DeviceEvent ---
 
 module "lambda_device_event" {
-  source = "../../mantle/modules/lambda"
+  source = "../node_modules/@j0nathan-ll0yd/cli/modules/lambda"
 
   function_name      = "DeviceEvent"
   name_prefix        = module.core.name_prefix

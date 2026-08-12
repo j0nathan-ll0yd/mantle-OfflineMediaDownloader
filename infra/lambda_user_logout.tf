@@ -4,7 +4,7 @@
 # --- UserLogout ---
 
 module "lambda_user_logout" {
-  source = "../../mantle/modules/lambda"
+  source = "../node_modules/@j0nathan-ll0yd/cli/modules/lambda"
 
   function_name      = "UserLogout"
   name_prefix        = module.core.name_prefix
