@@ -24,7 +24,7 @@ permissions:
 jobs:
   typecheck:
     name: Type Check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -57,7 +57,7 @@ jobs:
     # stays the authoritative gate; TS7 (native) is much faster but has known non-determinism, so
     # this lane is advisory (continue-on-error). See the monorepo TS7 plan (mantle#257).
     continue-on-error: true
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -86,7 +86,7 @@ jobs:
 
   lint:
     name: Lint & Format
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -117,7 +117,7 @@ jobs:
 
   test:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -146,7 +146,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node-integration]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -171,11 +171,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: pnpm build
 
   conventions:
     name: Convention Checks
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -221,7 +223,7 @@ jobs:
   # single set of `gh api ... /branches/main/protection` commands covers the estate.
   package-version-drift:
     name: package-version-drift
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, node]
     # Required by `mantle check ci-workflows` (runaway jobs exhaust Actions minutes). Generous
     # relative to the work: with nothing publishable the script exits in under a second, and
     # even once the engine engages the measured cost is a build plus a few seconds of registry
