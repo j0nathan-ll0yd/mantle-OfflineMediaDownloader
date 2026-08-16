@@ -272,8 +272,23 @@ jobs:
             exit 0
           fi
           repo="stag/start-file-upload"
-          aws ecr describe-images --repository-name "$repo" --image-ids "imageDigest=$digest" \
-            --query 'imageDetails[0].imageManifestMediaType' --output text
+          media_type="$(aws ecr describe-images --repository-name "$repo" --image-ids "imageDigest=$digest" \
+            --query 'imageDetails[0].imageManifestMediaType' --output text)"
+          # Backstop for the refresh script's --provenance=false/--sbom=false: an OCI image
+          # INDEX (or Docker manifest list) is undeployable to AWS Lambda even though the
+          # digest itself resolves in ECR, so this must be a hard assertion, not a print.
+          case "$media_type" in
+            *image.index* | *manifest.list*)
+              echo "::error::pin.digest ($digest) resolves in ECR to an OCI image INDEX" \
+                   "($media_type), not a single image manifest. AWS Lambda rejects indexes." \
+                   "Re-run bin/refresh-download-image.sh (with --provenance=false --sbom=false)" \
+                   "to push a deployable single-manifest image and repin."
+              exit 1
+              ;;
+            *)
+              echo "OK: pinned digest is a single image manifest ($media_type)."
+              ;;
+          esac
 
 
   conventions:
