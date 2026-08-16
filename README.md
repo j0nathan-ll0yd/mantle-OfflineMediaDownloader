@@ -10,8 +10,8 @@ A serverless YouTube media downloader with a companion [iOS App](https://github.
 # Install dependencies
 pnpm install
 
-# Build all Lambda functions
-npx mantle build
+# Build all Lambda functions (Docker-free: skips the StartFileUpload container image)
+pnpm run build:ci
 
 # Deploy to staging
 npx mantle deploy --stage staging
@@ -19,6 +19,13 @@ npx mantle deploy --stage staging
 # Deploy to production
 npx mantle deploy --stage production
 ```
+
+Routine builds (CI and local `build:ci`) are Docker-free — `StartFileUpload`
+(`packageType: 'container'`) is referenced by a pinned ECR image digest
+(`docker/start-file-upload.pin.json`) instead of being rebuilt on every change. Refresh
+that image with `bin/refresh-download-image.sh` (operator-run on a host with Docker) when
+`docker/Dockerfile.download`, `layers/**`, or the `StartFileUpload` bundle change — see
+`docker/start-file-upload.pin.README.md`.
 
 ## Architecture
 

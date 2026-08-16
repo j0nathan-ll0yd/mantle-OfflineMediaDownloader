@@ -268,6 +268,8 @@ pnpm run deploy:staging        # Deploy to staging (local agents)
 
 **Note**: Staging is the only deployable stage — Terraform state is remote (S3, `infra-staging.tfstate`, native lockfile) and `allowedStages: ['staging']` hard-refuses anything else until stage-scoped state keys land (mantle Phase 2d). CI does not deploy (`ci.deploy: false`).
 
+**StartFileUpload container image**: routine builds (`pnpm run build:ci` = `mantle build --skip-container`, used by CI and this deploy path) are Docker-free — the `StartFileUpload` container Lambda is referenced by a pinned ECR manifest digest in `docker/start-file-upload.pin.json` instead of being rebuilt every time. Run `bin/refresh-download-image.sh` on a host with Docker (the Mac Studio CI host) to rebuild + push the image and repin when `docker/Dockerfile.download`, `layers/**`, or the `StartFileUpload` bundle (including transitively-imported `src/services/**` etc.) change. See `docker/start-file-upload.pin.README.md`.
+
 Before running migrations against a live stage, use these validation commands:
 
 ```bash
