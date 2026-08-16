@@ -60,8 +60,15 @@ if [[ ! -f "$BUNDLE" ]]; then
 fi
 
 echo "==> Building + pushing ${IMAGE}:${tag} (linux/amd64)"
+# --provenance=false --sbom=false: the docker-container buildx driver (needed for
+# cross-building linux/amd64 on this arm64 fleet) attaches provenance/SBOM attestations
+# by default, which turns the pushed artifact into an OCI image INDEX rather than a
+# single image manifest. AWS Lambda container images must be a single-arch manifest;
+# an index digest would produce an undeployable pin. Disable both.
 docker buildx build \
   --platform linux/amd64 \
+  --provenance=false \
+  --sbom=false \
   -f "$DOCKERFILE" \
   --push \
   -t "${IMAGE}:${tag}" \
@@ -74,6 +81,25 @@ if [[ -z "$digest" || "$digest" == "undefined" ]]; then
   cat "$META_FILE" >&2
   exit 1
 fi
+
+echo "==> Verifying the pushed artifact is a single image manifest, not an index"
+manifest_type="$(docker buildx imagetools inspect "${IMAGE}@${digest}" --raw | node -e "
+  let data = '';
+  process.stdin.on('data', (chunk) => { data += chunk; });
+  process.stdin.on('end', () => { console.log(JSON.parse(data).mediaType); });
+")"
+case "$manifest_type" in
+  *image.index* | *manifest.list*)
+    echo "ERROR: pushed artifact ${IMAGE}@${digest} is an OCI image INDEX ($manifest_type)," \
+         "not a single image manifest. AWS Lambda rejects indexes. This means" \
+         "--provenance=false/--sbom=false did not take effect, or the buildx driver" \
+         "in use still attaches attestations. Refusing to write an undeployable pin." >&2
+    exit 1
+    ;;
+  *)
+    echo "OK: pushed artifact is a single image manifest ($manifest_type)."
+    ;;
+esac
 
 bundle_hash="sha256:$(sha256sum "$BUNDLE" | cut -d' ' -f1)"
 
