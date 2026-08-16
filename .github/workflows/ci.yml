@@ -146,9 +146,19 @@ jobs:
 
   build:
     name: Build
-    runs-on: [self-hosted, linux, arm64, node-integration]
+    runs-on: [self-hosted, linux, arm64, node]
+    # id-token: write only takes effect when AWS_ROLE_CI_ECR_READ is set (job stays
+    # Docker-free and AWS-free otherwise; gate 2c below no-ops on a missing secret).
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # Gate 2b (below) diffs this PR against its base branch, which needs the
+          # base ref present locally — a depth-1 checkout has only HEAD.
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: '.nvmrc'
@@ -170,10 +180,101 @@ jobs:
         run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # Docker-free build (no container-Lambda image build/push here — see
+      # docker/start-file-upload.pin.README.md). Only esbuild + typecheck run.
       - name: Build
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
-        run: pnpm build
+        run: pnpm build:ci
+
+      # --- Pin-integrity gate (composite, Docker-free) -----------------------
+      # Verifies the committed docker/start-file-upload.pin.json still describes
+      # the image that would actually get deployed for this commit. See the plan
+      # at .omc/plans/omd-prebuilt-container-lambda-2026-08-16.md ("CI pin-integrity
+      # gate") and docker/start-file-upload.pin.README.md.
+
+      # 2a. Bundle match: the pinned image's baked index.mjs must equal the one
+      # `pnpm build:ci` just produced for this commit. This is the Docker-free proof
+      # that the pinned image still serves this commit's code, and it covers code
+      # imported transitively (via #services/*, #domain/*, etc.), not only edits
+      # under src/lambdas/sqs/StartFileUpload/.
+      - name: Verify pinned bundle hash (gate 2a)
+        run: |
+          set -euo pipefail
+          bundle="build/lambdas/StartFileUpload/index.mjs"
+          if [[ ! -f "$bundle" ]]; then
+            echo "::error::$bundle was not produced by the build step — cannot verify the pin."
+            exit 1
+          fi
+          actual_hash="sha256:$(sha256sum "$bundle" | cut -d' ' -f1)"
+          pinned_hash="$(node -e "console.log(JSON.parse(require('fs').readFileSync('docker/start-file-upload.pin.json','utf8')).bundleHash)")"
+          if [[ "$actual_hash" != "$pinned_hash" ]]; then
+            echo "::error::StartFileUpload bundle hash mismatch. Pinned bundleHash ($pinned_hash) does not match" \
+                 "the bundle produced from this commit ($actual_hash). The handler or a transitively-imported" \
+                 "module (e.g. src/services/**, src/domain/**) changed without a repin. Run" \
+                 "bin/refresh-download-image.sh to rebuild the image and repin docker/start-file-upload.pin.json."
+            exit 1
+          fi
+          echo "Pinned bundleHash matches this commit's build: $actual_hash"
+
+      # 2b. Non-code inputs: layers/** (cookies, bgutil requirements) and
+      # docker/Dockerfile.download are baked into the image but are NOT part of the
+      # esbuild bundle, so gate 2a cannot see them change. If either changed in this
+      # PR without a pin update, the image is stale.
+      - name: Verify non-code image inputs are repinned (gate 2b)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "${{ github.event.pull_request.base.sha }}"
+          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD)"
+          pin_changed="$(grep -c '^docker/start-file-upload\.pin\.json$' <<< "$changed" || true)"
+          inputs_changed="$(grep -cE '^(layers/|docker/Dockerfile\.download$)' <<< "$changed" || true)"
+          if [[ "$inputs_changed" -gt 0 && "$pin_changed" -eq 0 ]]; then
+            echo "::error::layers/** or docker/Dockerfile.download changed in this PR but" \
+                 "docker/start-file-upload.pin.json did not. These inputs are baked into the" \
+                 "StartFileUpload image but are invisible to gate 2a's bundle hash — image inputs" \
+                 "changed; run bin/refresh-download-image.sh to repin."
+            exit 1
+          fi
+          echo "No unrepinned changes to layers/** or docker/Dockerfile.download."
+
+      # 2c. Digest exists in ECR (soft — requires AWS_ROLE_CI_ECR_READ, a
+      # USER-provisioned least-privilege role: ecr:DescribeImages + ecr:BatchGetImage
+      # scoped to the start-file-upload repo, account 514454346828, us-west-2. Until
+      # that role is provisioned this step is skipped entirely; gates 2a/2b above are
+      # the correctness-critical, Docker-free, AWS-free stale-image detectors, and
+      # `mantle deploy` fails closed if the pinned digest is genuinely missing.
+      # (The `secrets` context cannot be read directly in a step `if:` — capture it via
+      # a step output first, matching the check-creds pattern in deploy-production.yml.)
+      - name: Check ECR-read role configuration (gate 2c)
+        id: check-ecr-role
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_CI_ECR_READ }}" ]; then
+            echo "::notice::AWS_ROLE_CI_ECR_READ is not configured — skipping gate 2c (digest-exists-in-ECR)."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Configure AWS credentials (ECR read, gate 2c)
+        if: steps.check-ecr-role.outputs.configured == 'true'
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_CI_ECR_READ }}
+          aws-region: us-west-2
+      - name: Verify pinned digest exists in ECR (gate 2c)
+        if: steps.check-ecr-role.outputs.configured == 'true'
+        run: |
+          set -euo pipefail
+          digest="$(node -e "console.log(JSON.parse(require('fs').readFileSync('docker/start-file-upload.pin.json','utf8')).digest)")"
+          if [[ "$digest" == sha256:PENDING* ]]; then
+            echo "::warning::pin.digest is still the bootstrap placeholder ($digest) — run" \
+                 "bin/refresh-download-image.sh to push a real image before deploying."
+            exit 0
+          fi
+          repo="stag/start-file-upload"
+          aws ecr describe-images --repository-name "$repo" --image-ids "imageDigest=$digest" \
+            --query 'imageDetails[0].imageManifestMediaType' --output text
+
 
   conventions:
     name: Convention Checks
