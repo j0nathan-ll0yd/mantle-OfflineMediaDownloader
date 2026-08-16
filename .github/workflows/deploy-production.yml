@@ -56,7 +56,7 @@ jobs:
             layers/yt-dlp/cookies/youtube-cookies.enc > layers/yt-dlp/cookies/youtube-cookies.txt
 
       - name: Build
-        run: pnpm run build
+        run: pnpm run build:ci
 
       - name: Run unit tests
         run: pnpm test
@@ -133,12 +133,6 @@ jobs:
           sops --decrypt secrets.prod.enc.yaml > secrets.prod.yaml
           sops decrypt --output-type binary \
             layers/yt-dlp/cookies/youtube-cookies.enc > layers/yt-dlp/cookies/youtube-cookies.txt
-
-      - name: Build Lambda layers
-        if: steps.check-creds.outputs.configured == 'true'
-        run: |
-          ./bin/build-deno-layer.sh
-          ./bin/build-bgutil-layer.sh
 
       - name: Deploy to Production
         if: steps.check-creds.outputs.configured == 'true'

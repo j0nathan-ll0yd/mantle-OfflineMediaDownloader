@@ -63,7 +63,7 @@ jobs:
       - uses: ./.github/actions/setup-homebrew-tools
 
       - name: Build
-        run: pnpm run build
+        run: pnpm run build:ci
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c  # v6
@@ -80,11 +80,6 @@ jobs:
           export SOPS_AGE_KEY_FILE=/tmp/age-key.txt
           ENV_SUFFIX=${{ inputs.environment == 'production' && 'prod' || 'staging' }}
           sops --decrypt secrets.${ENV_SUFFIX}.enc.yaml > secrets.${ENV_SUFFIX}.yaml
-
-      - name: Build Lambda layers
-        run: |
-          ./bin/build-deno-layer.sh
-          ./bin/build-bgutil-layer.sh
 
       - name: Rollback deployment
         env:
