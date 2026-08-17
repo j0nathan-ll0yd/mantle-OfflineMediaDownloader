@@ -20,6 +20,10 @@ import {processDownloadRequest} from './downloadOrchestrator.js'
 defineLambda({
   packageType: 'container',
   dockerfile: 'docker/Dockerfile.download',
+  // Prebuilt-image mode (cli >=2.8.0): reference the pre-built ECR image by pinned
+  // digest instead of building it at deploy time. `mantle build`/`deploy` skip Docker;
+  // the image is (re)built + repinned out-of-band by bin/refresh-download-image.sh.
+  imageDigestFile: 'docker/start-file-upload.pin.json',
   architecture: 'x86_64',
   memorySize: 2048,
   ephemeralStorage: 10240,

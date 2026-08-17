@@ -255,6 +255,18 @@ jobs:
       - name: Check gate 2c prerequisites (ECR-read role and real digest)
         id: check-ecr-role
         run: |
+          # Master switch: gate 2c reaches AWS (STS + ECR) from inside a Colima job
+          # container, which the fleet egress firewall blocks by default. Keep gate 2c
+          # dark until the ci-runners deploy-egress lane is enabled
+          # (COLIMA_DEPLOY_EGRESS_ENABLED) AND the repo variable CI_ECR_DIGEST_GATE=true
+          # is set. Without both, configure-aws-credentials HANGS on blocked STS egress.
+          # gate 2a (bundleHash) + 2b (path guard) stay active regardless; `mantle deploy`
+          # fails closed on a missing digest, so this is defense-in-depth, not the guard.
+          if [ "${{ vars.CI_ECR_DIGEST_GATE }}" != "true" ]; then
+            echo "::notice::gate 2c disabled (CI_ECR_DIGEST_GATE != true) — enable only after the ci-runners deploy-egress lane allows AWS STS/ECR."
+            echo "should_check=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ -z "${{ secrets.AWS_ROLE_CI_ECR_READ }}" ]; then
             echo "::notice::AWS_ROLE_CI_ECR_READ is not configured — skipping gate 2c (digest-exists-in-ECR)."
             echo "should_check=false" >> "$GITHUB_OUTPUT"
