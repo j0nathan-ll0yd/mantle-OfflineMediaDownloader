@@ -246,31 +246,38 @@ jobs:
       # `mantle deploy` fails closed if the pinned digest is genuinely missing.
       # (The `secrets` context cannot be read directly in a step `if:` — capture it via
       # a step output first, matching the check-creds pattern in deploy-production.yml.)
-      - name: Check ECR-read role configuration (gate 2c)
+      # Gate 2c makes a live AWS OIDC + ECR call, so BOTH prerequisites are checked here
+      # (before any AWS step): the read-role must be configured AND the pin must carry a
+      # real digest. With the bootstrap placeholder there is nothing in ECR to verify, and
+      # configuring AWS creds would hang on the self-hosted runner's egress firewall (STS
+      # is not reachable until a real refresh is needed). So skip the AWS steps entirely
+      # until the digest is real.
+      - name: Check gate 2c prerequisites (ECR-read role and real digest)
         id: check-ecr-role
         run: |
           if [ -z "${{ secrets.AWS_ROLE_CI_ECR_READ }}" ]; then
             echo "::notice::AWS_ROLE_CI_ECR_READ is not configured — skipping gate 2c (digest-exists-in-ECR)."
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "should_check=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          digest="$(node -e "console.log(JSON.parse(require('fs').readFileSync('docker/start-file-upload.pin.json','utf8')).digest)")"
+          if [[ "$digest" == sha256:PENDING* ]]; then
+            echo "::warning::pin.digest is still the bootstrap placeholder ($digest) — run bin/refresh-download-image.sh to push a real image before deploying. Skipping gate 2c (no AWS call)."
+            echo "should_check=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "should_check=true" >> "$GITHUB_OUTPUT"
       - name: Configure AWS credentials (ECR read, gate 2c)
-        if: steps.check-ecr-role.outputs.configured == 'true'
+        if: steps.check-ecr-role.outputs.should_check == 'true'
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_CI_ECR_READ }}
           aws-region: us-west-2
       - name: Verify pinned digest exists in ECR (gate 2c)
-        if: steps.check-ecr-role.outputs.configured == 'true'
+        if: steps.check-ecr-role.outputs.should_check == 'true'
         run: |
           set -euo pipefail
           digest="$(node -e "console.log(JSON.parse(require('fs').readFileSync('docker/start-file-upload.pin.json','utf8')).digest)")"
-          if [[ "$digest" == sha256:PENDING* ]]; then
-            echo "::warning::pin.digest is still the bootstrap placeholder ($digest) — run" \
-                 "bin/refresh-download-image.sh to push a real image before deploying."
-            exit 0
-          fi
           repo="staging/start-file-upload"
           media_type="$(aws ecr describe-images --repository-name "$repo" --image-ids "imageDigest=$digest" \
             --query 'imageDetails[0].imageManifestMediaType' --output text)"
