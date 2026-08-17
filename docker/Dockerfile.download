@@ -40,11 +40,15 @@ ADD https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86
 RUN cd /tmp && unzip deno.zip && chmod +x deno && mv deno /opt/bin/deno && rm deno.zip
 
 # --- ffmpeg + ffprobe (static build for stream muxing and analysis) ---
-# BtbN/FFmpeg-Builds: track the never-purged `latest` tag with the n7.1 branch asset.
-# (The timestamped autobuild-* tags are NOT immutable -- BtbN deletes old ones, which
-# 404'd the build. `latest` always exists; the n7.1 asset stays on the stable 7.1 line.)
-ARG FFMPEG_BUILD=latest
-ARG FFMPEG_ASSET=ffmpeg-n7.1-latest-linux64-gpl-7.1
+# BtbN/FFmpeg-Builds: pinned to a dated autobuild release + its exact versioned asset
+# name (NOT `latest` / `-latest-`). `latest` is a moving pointer -- a same-tag rebuild
+# is a silent no-op under this Lambda's IMMUTABLE ECR repo (F2, see
+# .omc/plans/omd-prebuilt-container-lambda-2026-08-16.md in ci-runners-private). BtbN
+# keeps a rolling window of dated autobuild-* releases (30 releases / ~15 months
+# observed 2026-08-16), so a dated tag stays resolvable for a comfortable window; bump
+# both ARGs together (verify the asset URL resolves) when the pin needs to move.
+ARG FFMPEG_BUILD=autobuild-2026-08-13-17-03
+ARG FFMPEG_ASSET=ffmpeg-n7.1.5-12-g1fdbca85aa-linux64-gpl-7.1
 ADD https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BUILD}/${FFMPEG_ASSET}.tar.xz /tmp/ffmpeg.tar.xz
 RUN cd /tmp && tar xf ffmpeg.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 \
   && chmod +x ffmpeg ffprobe && mv ffmpeg ffprobe /opt/bin/ && rm ffmpeg.tar.xz

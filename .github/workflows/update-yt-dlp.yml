@@ -162,10 +162,16 @@ jobs:
           - [ ] CI/CD tests pending
 
           ## Deployment Process
+          This bump changes \`docker/Dockerfile.download\`, so CI's pin-integrity gate (2b)
+          will go red until the image is repinned — \`pnpm run build\`/\`pnpm run deploy:staging\`
+          alone do NOT repin \`docker/start-file-upload.pin.json\`.
           1. Merge this PR
-          2. Run \`pnpm run build\` to rebuild the StartFileUpload container with the new yt-dlp
-          3. Run \`pnpm run deploy:staging\` to push the new image
-          4. Monitor CloudWatch logs for any download issues after deployment
+          2. On a host with Docker (the Mac Studio CI host), run \`bin/refresh-download-image.sh\`
+             to rebuild + push the StartFileUpload image with the new yt-dlp and commit the
+             repinned \`docker/start-file-upload.pin.json\`
+          3. Push that commit so CI's gate 2b/2a go green
+          4. Run \`pnpm run deploy:staging\` to deploy
+          5. Monitor CloudWatch logs for any download issues after deployment
 
           ## Rollback Procedure
           If issues occur after deployment:
@@ -173,7 +179,9 @@ jobs:
           sed -i '' "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${CURRENT_VERSION}|" docker/Dockerfile.download  # macOS; drop the '' on Linux
           git commit -am "chore(deps): revert yt-dlp to ${CURRENT_VERSION}"
           git push
-          pnpm run build && pnpm run deploy:staging
+          ./bin/refresh-download-image.sh  # rebuilds, pushes, and repins for the reverted version
+          git push
+          pnpm run deploy:staging
           \`\`\`
           EOF
 
