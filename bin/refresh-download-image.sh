@@ -12,7 +12,7 @@
 #   - ECR login: aws ecr get-login-password --region us-west-2 | \
 #       docker login --username AWS --password-stdin 514454346828.dkr.ecr.us-west-2.amazonaws.com
 #   - AWS credentials with ecr:GetAuthorizationToken + push access to the
-#     stag/start-file-upload repository.
+#     staging/start-file-upload repository.
 #
 # Run: ./bin/refresh-download-image.sh
 #
@@ -30,8 +30,12 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 ECR_REGISTRY="514454346828.dkr.ecr.us-west-2.amazonaws.com"
-NAME_PREFIX="stag" # resource_prefix customVariable; this repo only deploys staging today
-ECR_REPO="${NAME_PREFIX}/start-file-upload"
+# The ECR repo is named ${module.core.name_prefix}/start-file-upload, and name_prefix ==
+# var.environment == the deploy stage ("staging") -- NOT the deprecated resource_prefix
+# customVariable ("stag"/"prod"), which is S3-bucket-naming-only. This script is
+# staging-only per allowedStages, so the stage is fixed here.
+STAGE="staging"
+ECR_REPO="${STAGE}/start-file-upload"
 IMAGE="${ECR_REGISTRY}/${ECR_REPO}"
 
 DOCKERFILE="docker/Dockerfile.download"

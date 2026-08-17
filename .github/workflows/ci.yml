@@ -271,7 +271,7 @@ jobs:
                  "bin/refresh-download-image.sh to push a real image before deploying."
             exit 0
           fi
-          repo="stag/start-file-upload"
+          repo="staging/start-file-upload"
           media_type="$(aws ecr describe-images --repository-name "$repo" --image-ids "imageDigest=$digest" \
             --query 'imageDetails[0].imageManifestMediaType' --output text)"
           # Backstop for the refresh script's --provenance=false/--sbom=false: an OCI image
