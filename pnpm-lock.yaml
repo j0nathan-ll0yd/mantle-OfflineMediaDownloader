@@ -41,7 +41,7 @@ importers:
         version: 1.0.0
       '@j0nathan-ll0yd/mcp':
         specifier: ^1.3.0
-        version: 1.4.0(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(vitest@4.1.10)
+        version: 1.4.1(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(vitest@4.1.10)
       '@j0nathan-ll0yd/observability':
         specifier: ^1.0.0
         version: 1.0.0(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)
@@ -50,7 +50,7 @@ importers:
         version: 1.0.1(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/client-dynamodb@3.1101.0)(@aws-sdk/lib-dynamodb@3.1101.0(@aws-sdk/client-dynamodb@3.1101.0))(@middy/core@7.7.2)
       '@j0nathan-ll0yd/validation':
         specifier: ^2.0.1
-        version: 2.0.2(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)
+        version: 2.0.3(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)
       '@octokit/rest':
         specifier: ^22.0.1
         version: 22.0.1
@@ -1378,9 +1378,6 @@ packages:
     peerDependencies:
       eslint: '>=10.0.0'
 
-  '@j0nathan-ll0yd/core@1.1.1':
-    resolution: {integrity: sha512-lpyWiHOH8otk+vM0Sdx1EegDx0mBxb4Vq6kJN7Q7zeRigy7n3n1MHgAYSiK3N3mNZZpcMf+Nny1gCCzdMLrMfA==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/core/1.1.1/ab54e7df57ab6ffd2c5abc752676e9ed9a946211}
-
   '@j0nathan-ll0yd/core@1.2.0':
     resolution: {integrity: sha512-arU8FwjwbXJHxaIlY9aCEPL9tCqBRuwzYR/N3SUK9VJ2XqdL73isfDXuvZAuEsMN/bqF9EoFrdyNEhd7sciXaw==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/core/1.2.0/f3ddc33e9ed041d64b782661196714f31c12e095}
 
@@ -1401,9 +1398,6 @@ packages:
     resolution: {integrity: sha512-S6AccHHhCylqqCrvaoF7sqshA2sfJlOkXtADo1l9rnq34MejySGsYzsBsKMw81oW6Emq+dpIwz9oGkm7rXTuCA==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/eslint-config/1.2.0/6df8363035abd638d55138c3f0730f0cf6d764e6}
     peerDependencies:
       eslint: '>=10.0.0'
-
-  '@j0nathan-ll0yd/mcp@1.4.0':
-    resolution: {integrity: sha512-Wa+LWltxwMOVyo48kmme2OY3K1tY0Qs6BKHN8f6UNvfYpnDO96V+tMDTjHmvHHcXXlw+E8s2txrlcrk+H1Dj+A==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/mcp/1.4.0/091a4d3691117a2d504592ea3ae888460e0199de}
 
   '@j0nathan-ll0yd/mcp@1.4.1':
     resolution: {integrity: sha512-JPRWmpOe8wvWUz5xj732/E8N5c+IYBAkl9uBg/+9GeFObLsop5KW8uQYq7hfdTGVkWiT3kRHjRXsCmNh/7Z6RQ==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/mcp/1.4.1/73b5f7a33e46397e9bbfa2bc3f20c620b8a6ef41}
@@ -1435,9 +1429,6 @@ packages:
 
   '@j0nathan-ll0yd/types@1.0.0':
     resolution: {integrity: sha512-0BQz2jMjIqiv1Kv3sqYvaHSzpzJluiLr45DY0tT3MgTilOMuHXGPIIjm676MEytQGYEo9YchbZoHGc96eU2+ug==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/types/1.0.0/18db52a1617613cd4a9133420525dfa91323be33}
-
-  '@j0nathan-ll0yd/validation@2.0.2':
-    resolution: {integrity: sha512-a0i/WgtYzOCuPmg6RLoMW2OhnbDrSe0BfCG8qyccMMEpsVt+WqH4+RFh021noAJQJ09h2tPPPz+lxoKfhYCC8g==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/validation/2.0.2/e1a0d1893aad4b0f0bb00f5952991969f7c3943c}
 
   '@j0nathan-ll0yd/validation@2.0.3':
     resolution: {integrity: sha512-aa7Iya0gD9480OWy706dF7aJwSOyv0Bel8AvKL671v9i9sAYSL1noIpeFiehR0mrU7Nk5ud+w2c3w8TbCNJclQ==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/validation/2.0.3/dd5348c1f5d880cd360718822c77ed954fb108da}
@@ -7626,20 +7617,6 @@ snapshots:
       - supports-color
       - typescript
 
-  '@j0nathan-ll0yd/core@1.1.1(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)':
-    dependencies:
-      '@j0nathan-ll0yd/aws': 1.0.1(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)
-      '@j0nathan-ll0yd/env': 1.0.0
-      '@j0nathan-ll0yd/errors': 1.0.0
-      '@j0nathan-ll0yd/observability': 1.0.0(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)
-      '@j0nathan-ll0yd/types': 1.0.0
-      '@types/aws-lambda': 8.10.162
-    transitivePeerDependencies:
-      - '@aws-lambda-powertools/jmespath'
-      - '@middy/core'
-      - '@redis/client'
-      - '@valkey/valkey-glide'
-
   '@j0nathan-ll0yd/core@1.2.0(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)':
     dependencies:
       '@j0nathan-ll0yd/aws': 1.0.1(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)
@@ -7714,70 +7691,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
-
-  '@j0nathan-ll0yd/mcp@1.4.0(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(vitest@4.1.10)':
-    dependencies:
-      '@j0nathan-ll0yd/auth': 1.1.2(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)
-      '@j0nathan-ll0yd/aws': 1.0.1(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)
-      '@j0nathan-ll0yd/core': 1.1.1(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)
-      '@j0nathan-ll0yd/env': 1.0.0
-      '@j0nathan-ll0yd/errors': 1.0.0
-      '@j0nathan-ll0yd/observability': 1.0.0(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)
-      '@j0nathan-ll0yd/validation': 2.0.2(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)
-      '@modelcontextprotocol/sdk': 1.29.0(supports-color@8.1.1)(zod@4.4.3)
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@aws-lambda-powertools/jmespath'
-      - '@aws-sdk/client-rds-data'
-      - '@aws-sdk/dsql-signer'
-      - '@better-auth/core'
-      - '@better-auth/utils'
-      - '@cfworker/json-schema'
-      - '@cloudflare/workers-types'
-      - '@electric-sql/pglite'
-      - '@libsql/client'
-      - '@libsql/client-wasm'
-      - '@lynx-js/react'
-      - '@middy/core'
-      - '@neondatabase/serverless'
-      - '@op-engineering/op-sqlite'
-      - '@opentelemetry/api'
-      - '@planetscale/database'
-      - '@prisma/client'
-      - '@redis/client'
-      - '@sveltejs/kit'
-      - '@tanstack/react-start'
-      - '@tanstack/solid-start'
-      - '@tidbcloud/serverless'
-      - '@types/better-sqlite3'
-      - '@types/pg'
-      - '@types/sql.js'
-      - '@upstash/redis'
-      - '@valkey/valkey-glide'
-      - '@vercel/postgres'
-      - '@xata.io/client'
-      - better-sqlite3
-      - bun-types
-      - drizzle-kit
-      - expo-sqlite
-      - gel
-      - knex
-      - kysely
-      - mongodb
-      - mysql2
-      - next
-      - pg
-      - postgres
-      - prisma
-      - react
-      - react-dom
-      - solid-js
-      - sql.js
-      - sqlite3
-      - supports-color
-      - svelte
-      - vitest
-      - vue
 
   '@j0nathan-ll0yd/mcp@1.4.1(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(vitest@4.1.10)':
     dependencies:
@@ -7936,66 +7849,6 @@ snapshots:
       - vue
 
   '@j0nathan-ll0yd/types@1.0.0': {}
-
-  '@j0nathan-ll0yd/validation@2.0.2(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)':
-    dependencies:
-      '@j0nathan-ll0yd/auth': 1.1.2(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)
-      '@j0nathan-ll0yd/core': 1.1.1(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)
-      '@j0nathan-ll0yd/env': 1.0.0
-      '@j0nathan-ll0yd/errors': 1.0.0
-      '@j0nathan-ll0yd/observability': 1.0.0(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.2)
-      '@types/aws-lambda': 8.10.162
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@aws-lambda-powertools/jmespath'
-      - '@aws-sdk/client-rds-data'
-      - '@aws-sdk/dsql-signer'
-      - '@better-auth/core'
-      - '@better-auth/utils'
-      - '@cloudflare/workers-types'
-      - '@electric-sql/pglite'
-      - '@libsql/client'
-      - '@libsql/client-wasm'
-      - '@lynx-js/react'
-      - '@middy/core'
-      - '@neondatabase/serverless'
-      - '@op-engineering/op-sqlite'
-      - '@opentelemetry/api'
-      - '@planetscale/database'
-      - '@prisma/client'
-      - '@redis/client'
-      - '@sveltejs/kit'
-      - '@tanstack/react-start'
-      - '@tanstack/solid-start'
-      - '@tidbcloud/serverless'
-      - '@types/better-sqlite3'
-      - '@types/pg'
-      - '@types/sql.js'
-      - '@upstash/redis'
-      - '@valkey/valkey-glide'
-      - '@vercel/postgres'
-      - '@xata.io/client'
-      - better-sqlite3
-      - bun-types
-      - drizzle-kit
-      - expo-sqlite
-      - gel
-      - knex
-      - kysely
-      - mongodb
-      - mysql2
-      - next
-      - pg
-      - postgres
-      - prisma
-      - react
-      - react-dom
-      - solid-js
-      - sql.js
-      - sqlite3
-      - svelte
-      - vitest
-      - vue
 
   '@j0nathan-ll0yd/validation@2.0.3(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)':
     dependencies:
