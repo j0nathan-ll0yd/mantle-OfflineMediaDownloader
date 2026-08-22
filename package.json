@@ -57,6 +57,8 @@
     "pack:context": "repomix --config config/repomix.config.json",
     "pack:light": "repomix --include \"src/**/*.ts,docs/**/*.md,AGENTS.md\" --ignore \"**/*.test.ts,**/*.spec.ts\"",
     "plan:staging": "mantle deploy --stage staging --dry-run",
+    "openspec:covers": "node scripts/openspec-covers-ratchet.mjs",
+    "openspec:covers:update": "node scripts/openspec-covers-ratchet.mjs --update-baseline",
     "precheck": "pnpm exec mantle ci --mode pre-push",
     "typecheck": "node bin/tsc6.mjs --noEmit && pnpm run check:test:types",
     "typecheck:ts7": "node bin/tsc7.mjs --noEmit && node bin/tsc7.mjs --project ./tsconfig.test.json --noEmit",

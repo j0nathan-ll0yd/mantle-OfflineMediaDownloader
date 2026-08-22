@@ -1,0 +1,12 @@
+{
+  "description": "Grandfathered OpenSpec requirements without a `// covers:` test tether. scripts/openspec-covers-ratchet.mjs fails CI when the uncovered set grows. When a covering test lands, regenerate this file so the baseline shrinks.",
+  "generatedBy": "node scripts/openspec-covers-ratchet.mjs --update-baseline",
+  "uncovered": [
+    "cascade-deletion#cascade-operations-are-transactional",
+    "cross-repo-contract#additive-only-schema-evolution",
+    "cross-repo-contract#backend-is-sole-producer-of-openapi",
+    "cross-repo-contract#credential-free-openapi-generation",
+    "cross-repo-contract#drift-detection-notifies-ios-repo",
+    "media-download#x86-64-architecture-for-yt-dlp"
+  ]
+}
