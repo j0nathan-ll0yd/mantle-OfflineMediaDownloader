@@ -1,92 +1,10 @@
 #!/usr/bin/env node
-/*
- * Published-package version-drift gate (consumer-repo wrapper).
+/**
+ * Delegates package-version policy to the shared Mantle engine. The repository-owned git scan
+ * remains independent so tracked or new package.json files omitted by workspace discovery are
+ * still caught. Missing or incompatible shared engines are indeterminate (exit 3), never clean.
  *
- * THE FAILURE THIS PREVENTS: an agent edits source inside a published package, merges, and
- * never bumps the `version`. Nothing goes red — typecheck, tests, lint and the PR all pass,
- * and `changeset publish` SILENTLY SKIPS a version that already exists in the registry and
- * exits 0. Consumers keep resolving the old tarball forever.
- *
- * The verdict is owned by `mantle check package-versions` in @j0nathan-ll0yd/cli, which
- * compares each publishable package's PUBLISHED PAYLOAD against the payload this checkout
- * would publish. This file is a thin wrapper: it answers "what does this repo publish", then
- * delegates the verdict and AUDITS THE REPORT IT GETS BACK. It deliberately does NOT
- * reimplement the payload comparison — parallel implementations of that algorithm have
- * already diverged three ways in this estate, and a consumer repo carrying its own copy would
- * drift from the engine silently.
- *
- * ── THE TWO THINGS THIS WRAPPER CONCLUDES ON ITS OWN ────────────────────────────────────
- *
- * 1. "This repo publishes nothing, so nothing can drift." A real, verifiable answer; exit 0.
- *
- * 2. "The engine's report does not cover what this repo publishes, so its 0 means nothing."
- *    Exit 3. This is the load-bearing half, and it exists because of a MEASURED defect:
- *
- *      $ node .../packages/cli/dist/index.mjs check package-versions --cwd .   # in mantle-LifegamesPortal
- *      Package                  Declared   Reference  Verdict
- *      mantle-lifegames-portal  0.0.1      -          SKIPPED
- *      1 workspace package(s): 1 SKIPPED
- *      EXIT=0
- *
- *    The engine enumerates the workspace with `pnpm list -r --depth -1 --json`. That repo's
- *    pnpm-workspace.yaml carries no `packages:` key, so that returns the ROOT ALONE — the root
- *    is private, so zero publishable packages are found and the engine exits 0 having examined
- *    NOTHING. Meanwhile packages/portal-contract is non-private, targets GitHub Packages, and
- *    is published on every release. "I found nothing" rendered as "all clean", into a REQUIRED
- *    status context. The wrapper's own manifest scan does not go through pnpm, so it sees
- *    portal-contract; comparing the two is what turns that silent pass into a loud failure.
- *
- * EVERY OTHER outcome in which the wrapper did not obtain a TRUSTWORTHY verdict from the
- * engine — the engine is not installed, the probe could not run, the engine crashed or was
- * killed, the engine exited 0 with a report that does not cover this repo — exits 3
- * (INDETERMINATE). It is NEVER exit 0.
- *
- * There is no such thing as a warning that a merge queue reads. The only signal CI understands
- * is the exit code, so "I could not tell" must be non-zero.
- *
- * ── WHY THE DIGEST SPEC VERSION IS ASSERTED, NOT LOGGED ─────────────────────────────────
- *
- * The engine reports the `specVersion` of the payload-normalization rule it applied. This
- * wrapper requires REQUIRED_SPEC_VERSION and treats any other value as INDETERMINATE, because
- * a wrong rule produces a CONFIDENT WRONG ANSWER rather than an error. Measured on
- * @j0nathan-ll0yd/portal-contract@1.0.0 (the one package mantle-LifegamesPortal publishes), whose
- * published tarball and
- * `pnpm pack` of the unmodified source differ in the manifest alone:
- *
- *   spec 2 rule (strip `version` only)      registry ec9ff0b96a1b41b7  head 15b6c82ec57ef5d7  -> DRIFT
- *   spec 3 rule (canonical, +6 scripts)     registry 6044cfd8672bf781  head 6044cfd8672bf781  -> CLEAN
- *
- * The package is CLEAN. Spec 2 calls it DRIFT because the registry copy was uploaded by
- * `npm publish` (which strips no scripts) while the gate measures HEAD with `pnpm pack` (which
- * strips exactly six publish-only scripts, here `prepublishOnly`). An engine on the wrong spec
- * would red every PR in this repo over a package nobody touched — and the fix for THAT is
- * always "make the gate stop complaining", which is how a gate gets deleted. Pinning the spec
- * makes the mismatch report itself as a mismatch.
- *
- * ── EXIT CODES ──────────────────────────────────────────────────────────────────────────
- *
- *   0  Nothing publishable in this repo, or the engine ran, covered everything this repo
- *      publishes, and reported no drift.
- *   3  INDETERMINATE — the wrapper could not obtain a verdict it can trust. Never a pass.
- *   *  Anything else is the engine's own exit status, forwarded VERBATIM. The wrapper does
- *      not translate it: the engine owns its exit-code contract and remapping here would
- *      silently rewrite the severity of a verdict whenever that contract evolves.
- *
- * The coverage audit only ever UPGRADES a zero to a 3. A non-zero engine status is already
- * failing loudly and is forwarded intact, with any coverage problems printed as context.
- *
- * Every one of those codes is delivered by assigning `process.exitCode` and RETURNING, never by
- * calling `process.exit()`. `process.exit()` discards buffered stdout, and in CI stdout is always
- * a pipe, so the truncation is not hypothetical — measured, it silently ate the DRIFT row that
- * explained the failure. See the note on `main`.
- *
- * Extra arguments are forwarded verbatim to the engine, e.g. `--lane=pre-push`. `--json` is
- * always passed (the wrapper needs the machine-readable report to audit coverage); pass
- * `--json` yourself to get the engine's document on stdout instead of the rendered table.
- *
- * Run `node scripts/check-package-versions.mjs --self-test` for the known-answer vectors, and
- * `node --test scripts/__tests__/check-package-versions.spawn.test.mjs` for the tests that
- * spawn this file as a real process and assert its real exit code.
+ * See Atlas decision 0044 and the referenced invariant and conformance tests.
  */
 
 import {spawnSync} from 'node:child_process'
@@ -133,44 +51,11 @@ const SKIPPED = 'SKIPPED'
 // ---------------------------------------------------------------------------
 
 /**
- * The publishable-package predicate, applied to already-read manifests. It is a DELIBERATE
- * MIRROR of the engine's own rule, and it has to stay one.
+ * Mirrors the shared engine's publishable-package predicate: a package needs a name and must
+ * not be private unless it explicitly declares a registry. Keeping this filter aligned prevents
+ * the independent coverage scan from hiding packages the engine would publish.
  *
- * The engine's rule (mantle packages/cli/src/commands/check/package-versions/pipeline.ts, the
- * `isPrivate`/`inScope`/`skipReason` block) is:
- *
- *     publishable = !private AND (name starts with PACKAGE_SCOPE OR publishConfig.registry is GitHub Packages)
- *
- * — two INDEPENDENT in-scope signals, either of which suffices. This wrapper previously required
- * the registry signal ALONE, which made it strictly NARROWER than the engine it audits. That is
- * not harmless conservatism, because of what this predicate is FOR: it is the independent second
- * opinion that decides whether the engine's exit 0 covered everything. A package the wrapper
- * cannot see is a package the coverage audit never asks about.
- *
- * The divergent shape is an ordinary one — a manifest whose name is in PACKAGE_SCOPE declaring no
- * `publishConfig.registry`, inheriting it from `.npmrc`, which is how much of this estate is
- * actually written. Under the old rule the engine would call such a package publishable and try
- * to verify it, while the wrapper called it invisible; if the engine's enumeration then missed it
- * (the measured X1 defect) the report would carry NO ROW for it, the audit would have nothing to
- * compare, and the pair would agree on a pass while NEITHER had examined the package. Two blind
- * spots lining up is exactly the silent pass this file exists to prevent, so the two rules must
- * be the same rule.
- *
- * Being at least as wide as the engine is the safe direction: a package the wrapper claims and
- * the engine skips surfaces as a loud SKIPPED coverage problem — a real contradiction worth
- * reporting, not a false alarm.
- *
- * The engine's third signal, `registryOverride !== undefined`, is intentionally NOT mirrored: it
- * is a `--registry` test hook for the engine's own self-test, not a property of a manifest.
- *
- * An unreadable or unparseable manifest arrives as null and is skipped. A candidate whose NAME is
- * outside the scope but whose registry points at GitHub Packages is still returned, so the
- * engine's scope assertion can fail loudly rather than being silently dropped here.
- *
- * Takes entries carrying `dir` and `manifest` (the parsed manifest, or null) and returns
- * `{dir, name}` for the matches, ASCII-ascending by dir. `name` is carried because it is how
- * the coverage audit joins against the engine's report — package names are unique and
- * authoritative, whereas the two sides could spell a path differently.
+ * `registryOverride` is a test hook for the registry path.
  */
 export function selectPublishablePackages(entries) {
   return entries.filter((entry) => {
@@ -388,33 +273,9 @@ function readManifest(path) {
 }
 
 /**
- * Every manifest in the repo, from git rather than from a package manager or a hand-rolled
- * directory walk.
- *
- * `git ls-files --cached --others --exclude-standard` is the enumeration that matches what a
- * reviewer would call "the files in this repo": it includes tracked files AND new untracked
- * ones (so a package added in the working tree is covered on the very first run), and it
- * excludes everything .gitignore excludes (so node_modules, dist and coverage never appear).
- * Git's pathspec `*` crosses directory separators (unlike a shell glob), so the second pathspec
- * passed below reaches a manifest at any depth, not just one level under the root.
- *
- * A `pnpm list -r --depth -1 --json` enumeration was evaluated and REJECTED, and the
- * measurement is worth recording because it contradicts the obvious assumption. Measured in
- * mantle-LifegamesPortal: packages/portal-contract is NOT a pnpm workspace member there. pnpm-workspace.yaml
- * carries no `packages:` key (it is a settings-only file — "this repo is a single-package
- * project") and portal-contract carries its OWN pnpm-workspace.yaml and pnpm-lock.yaml, i.e.
- * it is a self-contained nested project by design. So `pnpm list -r` returns the root alone,
- * and `pnpm --filter` on the contract package prints "No projects matched the filters" AND
- * EXITS 0. Discovering through pnpm reports that repo as publishing nothing — which is exactly
- * the defect the coverage audit above catches in the engine.
- *
- * A `packages/*` scan was also rejected: it answers correctly here by luck of layout, and a
- * publishable package one directory elsewhere would be silently invisible. Since "this repo
- * publishes nothing" is the ONE conclusion this wrapper is allowed to reach on its own, its
- * enumeration has to be exhaustive rather than conventional.
- *
- * Returns null when git could not answer, which the caller treats as INDETERMINATE. It never
- * degrades to a partial scan: a partial scan's failure mode is a silent pass.
+ * Uses git rather than the workspace graph so tracked and newly added package.json files at the
+ * supported depth remain visible, including nested leaf packages omitted from pnpm-workspace.
+ * Discovery failure is indeterminate because an empty candidate set could be a false clean.
  */
 function readCandidateEntries(root) {
   const result = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z', '--', 'package.json', '*/package.json'], {
@@ -667,30 +528,9 @@ function failIndeterminate(headline, detail) {
 }
 
 /**
- * ── WHY THIS FUNCTION NEVER CALLS `process.exit()` ──────────────────────────────────────
- *
- * `process.exit()` terminates without draining pending stdout/stderr writes. On POSIX, a pipe
- * destination makes those writes ASYNCHRONOUS — and in CI stdout is ALWAYS a pipe. So every byte
- * still queued when `process.exit()` runs is discarded.
- *
- * MEASURED on this exact file, before the fix, with a fake engine returning 1801 rows and a log
- * reader that pauses 300ms (a CI log collector under load). The engine exited 2, reporting DRIFT
- * on the one package this repo publishes:
- *
- *   wrapper exit code ............ 2      correct, the merge is blocked
- *   bytes the reader received .... 65507  exactly one pipe buffer
- *   DRIFT row present in output .. false  THE REASON THE BUILD FAILED WAS DISCARDED
- *
- * A red gate whose output stops mid-table is worse than useless: the only actionable line — which
- * package drifted and which files differ — is the one most likely to be truncated, because the
- * engine prints it after the rows it already verified. The reported symptom becomes "CI is broken"
- * rather than "portal-contract drifted", and the fix for THAT is always "make the gate stop
- * complaining", which is how a gate gets deleted.
- *
- * Setting `process.exitCode` and RETURNING instead lets node exit naturally once the event loop
- * drains, which flushes the queued writes first. It costs nothing and it is the only spelling that
- * survives a pipe. Consequently every `failIndeterminate(...)` call below is immediately followed
- * by `return`, because `failIndeterminate` no longer terminates the process on the caller's behalf.
+ * Never call `process.exit()` here. CI writes through a pipe, so forced exit can truncate the
+ * actionable drift row; a measured 1,801-row run stopped at 65,507 bytes. Set `process.exitCode`
+ * and return so Node flushes output. Callers must return immediately after `failIndeterminate()`.
  */
 async function main() {
   const argv = process.argv.slice(2)

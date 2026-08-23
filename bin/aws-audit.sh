@@ -1,57 +1,8 @@
 #!/usr/bin/env bash
 #
-# aws-audit.sh
-# Compares live AWS resources against OpenTofu state to find ORPHANS: resources
-# that exist in AWS but are not managed by the stack. This is the one question
-# `tofu plan` cannot answer -- plan only reconciles what state already tracks.
-#
-# Usage:
-#   ./bin/aws-audit.sh --env staging                 # Audit staging
-#   ./bin/aws-audit.sh --env staging --json          # Machine-readable output
-#   ./bin/aws-audit.sh --env staging --prune --dry-run
-#   ./bin/aws-audit.sh --env staging --prune         # Delete orphans (confirmed)
-#
-# Arguments:
-#   --env <environment>  Required. Only 'staging' exists (see below).
-#   --prune              Delete orphaned Lambda functions, IAM policies and IAM
-#                        roles, after confirmation. Orphaned queues, buckets,
-#                        APIs and distributions are only ever reported.
-#   --dry-run            With --prune, show what would be deleted.
-#   --json               Emit a JSON report instead of the text report.
-#                        (Previously this flag only disabled colours and still
-#                        printed the text report -- it never emitted JSON.)
-#
-# Exit codes: 0 = clean, 1 = usage/credential error, 2 = orphans or mistags found.
-#
-# WHAT WAS BROKEN, AND WHY THIS IS A REWRITE
-# ------------------------------------------
-# This script reported a FALSE CLEAN for its entire post-Mantle life. Four
-# independent breakages, every one of which failed *open* -- it printed
-# "No orphaned Lambda functions" while comparing two empty sets:
-#
-#   1. It called `tofu workspace select <env>`. Mantle uses NO terraform
-#      workspaces; the default workspace's backend key is already stage-scoped
-#      (infra-staging.tfstate). `tofu workspace list` returns only `default`.
-#      It then pointed the operator at `./bin/init-workspaces.sh`, deleted long ago.
-#   2. The AWS side was filtered by a hand-maintained pattern,
-#      `^stag-(ListFiles|LoginUser|RegisterUser|RegisterDevice|WebhookFeedly|...)`.
-#      Live resources are `staging-FilesGet`, `staging-UserLogin`,
-#      `staging-UserRegister`, `staging-DeviceRegister`, `staging-FeedlyWebhook`...
-#      Neither the prefix (`stag-` vs `staging-`) nor a single base name still
-#      matched, so the filter selected nothing.
-#   3. The Terraform side listed resource ADDRESSES and stripped the type
-#      prefix. Every lambda now lives in a module, so the addresses are
-#      `module.lambda_files_get.aws_lambda_function.function` -- not comparable
-#      to an AWS function name under any prefix.
-#   4. The tag check required `ManagedBy=terraform`; mantle's core module tags
-#      everything `ManagedBy=opentofu`.
-#
-# Refreshing those lists would just restage the same rot: the next renamed
-# lambda silently reopens the hole. So both sides are now DERIVED instead of
-# hardcoded. Terraform-managed names come from `tofu show -json` (the real
-# `function_name` / `name` / `bucket` attributes, module nesting included), the
-# AWS-side filter is the stack's own `name_prefix`, and the expected ManagedBy
-# value is read out of the state. Adding or renaming a resource needs no edit here.
+# Reports live AWS resources absent from OpenTofu state, which `tofu plan` cannot detect.
+# Managed names, stack prefixes, and tag expectations are derived from state so module nesting
+# and resource renames cannot silently turn the comparison into a false clean.
 
 set -euo pipefail
 

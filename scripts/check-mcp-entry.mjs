@@ -1,41 +1,8 @@
 #!/usr/bin/env node
-/*
- * .mcp.json entry-point gate.
- *
- * THE FAILURE THIS PREVENTS: an MCP server is wired up by FILESYSTEM PATH into a
- * dependency's internals, that dependency reorganises its `dist/`, and the MCP server stops
- * starting. Nothing goes red. Typecheck, lint, tests and the PR all pass — an MCP server that
- * fails to spawn is a degraded editor session, not a failing build, and the only symptom is
- * that an agent quietly loses its tools.
- *
- * This is not hypothetical. `.mcp.json` used to invoke:
- *
- *     node node_modules/@j0nathan-ll0yd/cli/dist/mcp/mcp-entry.mjs
- *
- * @j0nathan-ll0yd/cli 2.0.0 RETRACTED the `./mcp` subpath from its `exports` map. That
- * retraction did not break this repo, but only by luck: a path handed to `node` never
- * consults `exports`, and the file happened to keep shipping (2.0.1 and 2.1.0 ship it
- * byte-identical, sha256 89b44acf…). The day a release drops or renames that file, the server
- * breaks silently. `dist/**` is package internals — nothing about it is covered by semver.
- *
- * The config now uses the SUPPORTED entry point instead: the `mantle` bin (a declared,
- * semver-protected `bin` field) with its `mcp-server` subcommand, which serves the identical
- * tool set. This check exists so that entry point cannot rot silently either.
- *
- * WHAT IS CHECKED: every stdio server in .mcp.json (those with a `command`; `type: "http"`
- * servers have no local entry point to verify) must have a command that actually resolves on
- * disk, plus any script-file argument it names. That is a filesystem fact, checkable in
- * milliseconds with no network and no spawning.
- *
- * WHAT IS DELIBERATELY NOT CHECKED: that the server speaks MCP correctly. Spawning each
- * server and completing an `initialize` handshake would be a better assertion, but it costs
- * seconds per server on every pre-push and would make the gate flaky on a cold cache. The
- * silent failure mode being closed here is "the entry point vanished", which existence
- * catches completely.
- *
- * Like the other gates in this repo: any outcome where a verdict could NOT be reached is a
- * non-zero exit, never a pass. A gate that exits 0 because it could not read its own input is
- * the failure it is meant to prevent.
+/**
+ * Verifies the MCP entrypoints that package metadata advertises. The check is intentionally
+ * filesystem-based: missing built artifacts must fail before publish, and discovery errors are
+ * indeterminate rather than silently treated as success.
  */
 import {accessSync, constants, readFileSync, realpathSync, statSync} from 'node:fs'
 import {dirname, isAbsolute, resolve} from 'node:path'
