@@ -1,30 +1,6 @@
-/*
- * PROCESS-BOUNDARY tests for scripts/check-package-versions.mjs.
- *
- * WHY THIS FILE EXISTS. The wrapper's `--self-test` calls its pure functions directly, so it
- * proves `classifyDelegatedRun({status: 1})` returns 1 — and proves NOTHING about whether the
- * process actually exits 1. Every assertion in the gate could be green while a one-line edit at
- * the exit-status site made the binary exit 0 on real drift. CI reads exactly one thing from this
- * gate, the exit status of a real process, and that was the one thing untested.
- *
- * So: these tests SPAWN the shipped file, byte-for-byte, as a child process, and assert
- * `child.status`. The file under test is copied from its real path rather than re-created here,
- * so there is no way for the test to drift into exercising a different implementation.
- *
- * They also assert what the process PRINTS, not just what it returns. An exit code with no
- * explanation is a gate nobody can act on — see the D7 tests near the bottom, and the note on
- * `runSlowReader` for why observing that requires a reader that is deliberately slow.
- *
- * The engine is stubbed (a fake `npx` earlier on PATH) because these tests are about the
- * WRAPPER's exit contract, and must run offline, deterministically, in a repo whose installed
- * CLI does not yet carry the subcommand. The engine's own correctness is covered by
- * `mantle check package-versions --self-test` in the CLI package.
- *
- * PROVEN ABLE TO FAIL: replacing the wrapper's final `process.exitCode = delegated.exitCode` with
- * `0` turns 'forwards a DRIFT verdict as a non-zero exit status' red while `--self-test` stays
- * fully green. Reintroducing `process.exit()` anywhere in the wrapper reds all three D7 rungs, on
- * both darwin/arm64 and the linux/arm64 CI arch, on every run. Command output is in the PR
- * description.
+/**
+ * Spawns the shipped wrapper because pure self-tests cannot cover process exit and stdout
+ * delivery. A fake `npx` keeps the test offline while preserving the wrapper/engine boundary.
  */
 
 import assert from 'node:assert/strict'
@@ -156,34 +132,10 @@ function makeRepo({manifests, engine}) {
     dir,
     engineInvocations: () => (existsSync(join(dir, 'engine-invocations.log')) ? readFileSync(join(dir, 'engine-invocations.log'), 'utf8') : ''),
     run: (args = []) => spawnSync(process.execPath, [join(dir, 'scripts', 'check-package-versions.mjs'), ...args], {cwd: dir, encoding: 'utf8', env}),
-    /**
-     * Spawn the wrapper against a DELIBERATELY SLOW pipe reader and resolve with everything the
-     * reader eventually received.
-     *
-     * `spawnSync` cannot express this: it drains the child's pipes as fast as the OS delivers
-     * them, so the child's writes never sit queued at exit time and the truncation under test does
-     * not reproduce. A real CI log collector is not that prompt.
-     *
-     * THE READER MUST NOT TOUCH THE STREAM UNTIL THE STALL EXPIRES. Two earlier revisions of this
-     * helper were racy and both produced a test that could not reliably fail:
-     *
-     *   1. pause() immediately after spawn, resume on a timer — the wrapper spends ~300ms shelling
-     *      out to the engine before printing, so the timer had already fired and there was never
-     *      any backpressure.
-     *   2. attach a 'data' handler, then pause() on the first chunk — attaching the handler puts
-     *      the stream in FLOWING mode, so libuv starts reading before the pause lands. Against an
-     *      unchanged mutant this delivered 131147 bytes (truncated) on one run and all 1160430 on
-     *      the next. A flaky gate is worse than no gate: it reds healthy work at random and greens
-     *      defective work at random.
-     *
-     * Leaving the stream in its default PAUSED, non-flowing state — no listener at all — means
-     * libuv never reads, so the OS pipe fills and stays full. The child's writes then queue in its
-     * own memory, which is precisely the state `process.exit()` discards. Listeners are attached
-     * only after `pauseMs`, and everything still buffered is drained normally from there.
-     *
-     * This cannot deadlock. If a platform ever makes stdout-to-pipe writes synchronous, the child
-     * simply blocks until the reader attaches, and the run completes either way.
-     */
+/**
+ * Attaches stream listeners after a delay so the pipe can fill and expose output lost by
+ * `process.exit()`. `spawnSync` drains too eagerly, and pausing after spawn is timing-dependent.
+ */
     runSlowReader: (args = [], {pauseMs = 400} = {}) =>
       new Promise((resolvePromise, reject) => {
         const child = spawn(process.execPath, [join(dir, 'scripts', 'check-package-versions.mjs'), ...args], {
