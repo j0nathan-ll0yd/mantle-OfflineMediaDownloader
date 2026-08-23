@@ -23,7 +23,7 @@ RUN microdnf install -y unzip tar xz && microdnf clean all
 # This ARG is the single source of truth for the yt-dlp version. It is bumped by
 # the automated weekly update (.github/workflows/update-yt-dlp.yml) and the local
 # helper (bin/update-yt-dlp.sh), both of which sed this exact line.
-ARG YTDLP_VERSION=2026.07.04
+ARG YTDLP_VERSION=2026.08.19
 ADD --chmod=755 \
   https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp_linux \
   /opt/bin/yt-dlp
