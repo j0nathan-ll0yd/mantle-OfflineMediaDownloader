@@ -23,6 +23,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          # Owner PAT, not GITHUB_TOKEN: the main ruleset requires status checks and
+          # only repository-admin pushes bypass it. github-actions[bot] pushes are rejected.
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
 
       - uses: ./.github/actions/setup-node-pnpm
 
