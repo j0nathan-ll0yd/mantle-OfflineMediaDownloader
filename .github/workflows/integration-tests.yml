@@ -55,7 +55,8 @@ jobs:
       - name: Create test results directory
         run: mkdir -p test-results
 
-      - name: Run integration tests (with CI-level retry)
+      # A2b exact-step binding (atlas audits/gate-can-fail-campaign.md)
+      - name: integration-tests
         id: integration-tests
         run: |
           # Capture start time
