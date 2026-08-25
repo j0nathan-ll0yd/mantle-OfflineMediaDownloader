@@ -11,6 +11,7 @@ process.env.AWS_REGION = 'us-west-2'
 
 import {afterAll, beforeAll, describe, expect, test} from 'vitest'
 import {createTestApi, deleteTestApi, invokeApiEndpoint, isApiGatewayAvailable} from '../helpers/apigateway-helpers'
+import {deleteTable} from '../lib/vendor/AWS/DynamoDB'
 
 describe('API Gateway Routing Integration Tests', () => {
   let apiGatewayAvailable = false
@@ -47,6 +48,15 @@ describe('API Gateway Routing Integration Tests', () => {
     expect(health.services).toBeDefined()
     // API Gateway may or may not be available depending on LocalStack version/tier
     console.log('LocalStack services:', Object.keys(health.services || {}))
+
+    // A2B SCRATCH MUTANT - DO NOT MERGE. Atlas gate-can-fail proof for the
+    // integration-tests required check. The integration fixture creates no
+    // DynamoDB tables at all (globalSetup.ts provisions PostgreSQL worker
+    // schemas only), so this table name is absent on every run and the call
+    // fails with ResourceNotFoundException deterministically. It sits after
+    // the LocalStack health assertions above so a red run proves the sidecar
+    // was reachable and the failure is the gate, not the infrastructure.
+    await deleteTable('a2b-scratch-table-that-is-never-created')
   })
 
   test('should handle API Gateway availability check', async () => {
