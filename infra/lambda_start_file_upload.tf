@@ -82,7 +82,7 @@ module "lambda_start_file_upload" {
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = ["s3:AbortMultipartUpload", "s3:HeadObject", "s3:ListMultipartUploadParts", "s3:PutObject"]
+        Action   = ["s3:AbortMultipartUpload", "s3:GetObject", "s3:ListMultipartUploadParts", "s3:PutObject"]
         Resource = "${module.storage_files.bucket_arn}/*"
       }]
     })
