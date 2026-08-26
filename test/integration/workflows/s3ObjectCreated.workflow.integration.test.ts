@@ -68,7 +68,9 @@ describe('S3ObjectCreated Workflow Integration Tests', () => {
 
     await handler(createMockS3Event(fileKey), mockContext)
 
-    const messages = await receiveAndDeleteMessages(queueUrl, 10, 2)
+    // A2b MUTANT (DO NOT MERGE): read from a queue the LocalStack fixture never creates.
+    const missingQueueUrl = queueUrl.replace(testQueueName, 'a2b-mutant-queue-never-created')
+    const messages = await receiveAndDeleteMessages(missingQueueUrl, 10, 2)
     expect(messages).toHaveLength(1)
     expect(messages[0]!.attributes.userId).toBe(userId)
   })
