@@ -1,0 +1,377 @@
+name: Update ffmpeg Pin
+
+# BtbN/FFmpeg-Builds prunes its dated `autobuild-*` releases aggressively -- the
+# observed window is about one week, not the ~15 months an earlier revision of
+# docker/Dockerfile.download assumed. When the pinned release is pruned the image build
+# fails outright rather than degrading: BuildKit resolves an ADD URL to compute its
+# cache key, so a 404 breaks the build even when the layer is otherwise cached. That is
+# exactly how autobuild-2026-08-13-17-03 broke the build on 2026-08-27.
+#
+# This workflow moves the pin forward while the current one is still alive, so the pin
+# never has the chance to rot. It runs twice a week deliberately: the yt-dlp job's
+# weekly cadence leaves no margin inside a ~1 week prune window.
+
+on:
+  schedule:
+    - cron: '0 2 * * 1,4'  # Mondays and Thursdays at 2am UTC (~3-4 day spacing)
+  workflow_dispatch:  # Allow manual triggering
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ffmpeg-update
+  cancel-in-progress: false
+
+jobs:
+  check-update:
+    runs-on: [self-hosted, linux, arm64, node]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: ./.github/actions/setup-gh
+
+      - name: Check for ffmpeg updates
+        id: check
+        run: |
+          set -euo pipefail
+
+          readonly REPO="BtbN/FFmpeg-Builds"
+          readonly BASE="https://github.com/${REPO}/releases/download"
+
+          # Single source of truth: the two ARG lines in the Dockerfile. They must move
+          # together -- the tag alone does not identify an asset, because BtbN rebuilds
+          # the asset's git-describe suffix on every autobuild.
+          CURRENT_BUILD=$(grep -E '^ARG FFMPEG_BUILD=' docker/Dockerfile.download | head -1 | cut -d= -f2 | tr -d '[:space:]')
+          CURRENT_ASSET=$(grep -E '^ARG FFMPEG_ASSET=' docker/Dockerfile.download | head -1 | cut -d= -f2 | tr -d '[:space:]')
+
+          if [ -z "$CURRENT_BUILD" ] || [ -z "$CURRENT_ASSET" ]; then
+            echo "::error::Could not read ARG FFMPEG_BUILD / ARG FFMPEG_ASSET from docker/Dockerfile.download."
+            exit 1
+          fi
+
+          # The release line we are tracking, e.g. "8.1" from "...-linux64-gpl-8.1".
+          # Staying on the same line keeps the routine bump a patch-level move; crossing
+          # lines is a real behaviour change and is flagged separately below.
+          CURRENT_LINE=$(sed -E 's/.*-linux64-gpl-([0-9]+\.[0-9]+)$/\1/' <<< "$CURRENT_ASSET")
+
+          echo "Current pin: ${CURRENT_BUILD} / ${CURRENT_ASSET} (line ${CURRENT_LINE})"
+
+          # Is the pin we are running on TODAY still resolvable? A dead pin means the
+          # image build is already broken, which is more urgent than a routine bump.
+          if curl -fsIL -o /dev/null "${BASE}/${CURRENT_BUILD}/${CURRENT_ASSET}.tar.xz"; then
+            echo "current_alive=true" >> "$GITHUB_OUTPUT"
+            echo "Current pin still resolves."
+          else
+            echo "current_alive=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Current ffmpeg pin ${CURRENT_BUILD} no longer resolves -- the image build is broken until this is bumped."
+          fi
+
+          # Releases come back newest-first. One page is far more than the ~1 week the
+          # window actually holds.
+          LATEST_BUILD=$(gh api "repos/${REPO}/releases?per_page=100" \
+            --jq '[.[] | select(.tag_name | startswith("autobuild-"))][0].tag_name')
+
+          if [ -z "$LATEST_BUILD" ]; then
+            echo "::error::No autobuild-* releases found on ${REPO}."
+            exit 1
+          fi
+
+          ASSETS=$(gh api "repos/${REPO}/releases/tags/${LATEST_BUILD}" --jq '.assets[].name')
+
+          # Prefer the line we are already on.
+          NEW_ASSET=$(grep -E "^ffmpeg-.*-linux64-gpl-${CURRENT_LINE}\.tar\.xz$" <<< "$ASSETS" | head -1 | sed 's/\.tar\.xz$//' || true)
+
+          if [ -n "$NEW_ASSET" ]; then
+            MAJOR_BUMP=false
+          else
+            # The tracked line is gone from BtbN entirely -- exactly what happened to
+            # 7.1. Staying put is not an option (the build would break), so move to the
+            # LOWEST surviving line, which is the smallest jump available, and label the
+            # PR so a human reviews the crossing rather than rubber-stamping it.
+            FALLBACK_LINE=$(grep -oE 'linux64-gpl-[0-9]+\.[0-9]+\.tar\.xz$' <<< "$ASSETS" \
+              | sed -E 's/linux64-gpl-([0-9.]+)\.tar\.xz/\1/' | sort -V | head -1)
+
+            if [ -z "$FALLBACK_LINE" ]; then
+              echo "::error::${LATEST_BUILD} carries no linux64-gpl-* asset at all. BtbN's asset naming may have changed."
+              exit 1
+            fi
+
+            NEW_ASSET=$(grep -E "^ffmpeg-.*-linux64-gpl-${FALLBACK_LINE}\.tar\.xz$" <<< "$ASSETS" | head -1 | sed 's/\.tar\.xz$//')
+            MAJOR_BUMP=true
+            echo "::warning::Line ${CURRENT_LINE} is gone from ${LATEST_BUILD}; falling back to ${FALLBACK_LINE}."
+          fi
+
+          {
+            echo "current_build=${CURRENT_BUILD}"
+            echo "current_asset=${CURRENT_ASSET}"
+            echo "current_line=${CURRENT_LINE}"
+            echo "latest_build=${LATEST_BUILD}"
+            echo "latest_asset=${NEW_ASSET}"
+            echo "major_bump=${MAJOR_BUMP}"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$LATEST_BUILD" != "$CURRENT_BUILD" ]; then
+            echo "update_needed=true" >> "$GITHUB_OUTPUT"
+            echo "Update available: ${CURRENT_BUILD} -> ${LATEST_BUILD}"
+          else
+            echo "update_needed=false" >> "$GITHUB_OUTPUT"
+            echo "Already on the newest autobuild: ${CURRENT_BUILD}"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Check for existing PR
+        if: steps.check.outputs.update_needed == 'true'
+        id: pr_check
+        run: |
+          set -euo pipefail
+          BRANCH_NAME="chore/update-ffmpeg-${{ steps.check.outputs.latest_build }}"
+
+          EXISTING_PR=$(gh pr list \
+            --head "${BRANCH_NAME}" \
+            --state open \
+            --json number,url \
+            --jq '.[0].url // empty')
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Open PR already exists: ${EXISTING_PR}"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Download and verify asset
+        if: steps.check.outputs.update_needed == 'true' && steps.pr_check.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+
+          readonly BUILD="${{ steps.check.outputs.latest_build }}"
+          readonly ASSET="${{ steps.check.outputs.latest_asset }}"
+          readonly BASE="https://github.com/BtbN/FFmpeg-Builds/releases/download/${BUILD}"
+
+          # The deployment target is x86_64 (docker/Dockerfile.download, and the
+          # `architecture = "x86_64"` Lambda config), so the linux64 asset is the one
+          # that matters. This job runs on arm64 runners and cannot execute it, so the
+          # gate is the published SHA256 -- architecture-agnostic, and enough to prove
+          # the tag and asset exist and are intact before opening a bump PR. The build
+          # itself is what exercises the binary.
+          workdir="$(mktemp -d)"
+          trap 'rm -rf "$workdir"' EXIT
+          cd "$workdir"
+
+          echo "Downloading ${ASSET}.tar.xz ..."
+          curl -fsSL -o "${ASSET}.tar.xz" "${BASE}/${ASSET}.tar.xz"
+          curl -fsSL -o checksums.sha256 "${BASE}/checksums.sha256"
+
+          echo "Verifying SHA256 ..."
+          if ! grep -F "  ${ASSET}.tar.xz" checksums.sha256 > expected.sha256; then
+            echo "::error::${ASSET}.tar.xz is absent from the release's checksums.sha256."
+            exit 1
+          fi
+          sha256sum --check --status expected.sha256
+
+          # Confirm the archive really carries the two binaries the Dockerfile extracts,
+          # so a rename upstream fails here rather than inside a later image build.
+          echo "Verifying the archive contains bin/ffmpeg and bin/ffprobe ..."
+          listing="$(tar tf "${ASSET}.tar.xz")"
+          grep -qE '/bin/ffmpeg$'  <<< "$listing"
+          grep -qE '/bin/ffprobe$' <<< "$listing"
+
+          echo "Asset verification complete."
+
+      - name: Ensure required labels exist
+        if: steps.check.outputs.update_needed == 'true' && steps.pr_check.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+
+          create_label_if_missing() {
+            local name="$1"
+            local description="$2"
+            local color="$3"
+
+            if ! gh label list --json name --jq '.[].name' | grep -q "^${name}$"; then
+              echo "Creating label: ${name}"
+              gh label create "${name}" --description "${description}" --color "${color}" || true
+            fi
+          }
+
+          create_label_if_missing "dependencies" "Dependency updates" "0366d6"
+          create_label_if_missing "automated" "Automated by GitHub Actions" "bfd4f2"
+          create_label_if_missing "ffmpeg" "Related to the ffmpeg binaries" "fbca04"
+          create_label_if_missing "bug" "Something is not working" "d73a4a"
+          create_label_if_missing "automation" "CI/CD automation issues" "c2e0c6"
+          create_label_if_missing "infrastructure" "Infrastructure changes" "d4c5f9"
+          create_label_if_missing "major-version-bump" "Crosses an upstream major/minor line" "e99695"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Bump Dockerfile ARGs and create PR
+        if: steps.check.outputs.update_needed == 'true' && steps.pr_check.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+
+          readonly BUILD="${{ steps.check.outputs.latest_build }}"
+          readonly ASSET="${{ steps.check.outputs.latest_asset }}"
+          readonly CURRENT_BUILD="${{ steps.check.outputs.current_build }}"
+          readonly CURRENT_ASSET="${{ steps.check.outputs.current_asset }}"
+          readonly MAJOR_BUMP="${{ steps.check.outputs.major_bump }}"
+          readonly BRANCH_NAME="chore/update-ffmpeg-${BUILD}"
+
+          echo "Bumping FFMPEG_BUILD/FFMPEG_ASSET in docker/Dockerfile.download ..."
+          tmp="$(mktemp)"
+          sed -e "s|^ARG FFMPEG_BUILD=.*|ARG FFMPEG_BUILD=${BUILD}|" \
+              -e "s|^ARG FFMPEG_ASSET=.*|ARG FFMPEG_ASSET=${ASSET}|" \
+              docker/Dockerfile.download > "$tmp"
+          mv "$tmp" docker/Dockerfile.download
+
+          # Both lines must actually have changed; a silent no-op sed would otherwise
+          # open an empty PR that looks like a successful bump.
+          grep -qxF "ARG FFMPEG_BUILD=${BUILD}" docker/Dockerfile.download
+          grep -qxF "ARG FFMPEG_ASSET=${ASSET}" docker/Dockerfile.download
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Clean up stale remote branch if it exists (from closed/merged PRs)
+          if git ls-remote --exit-code --heads origin "${BRANCH_NAME}" > /dev/null 2>&1; then
+            echo "Removing stale remote branch ${BRANCH_NAME}..."
+            git push origin --delete "${BRANCH_NAME}"
+          fi
+
+          git checkout -b "${BRANCH_NAME}"
+          git add docker/Dockerfile.download
+          git commit -m "chore(deps): update ffmpeg pin to ${BUILD}"
+          git push origin "${BRANCH_NAME}"
+
+          if [ "$MAJOR_BUMP" = "true" ]; then
+            line_note="**This PR crosses an upstream release line.** The line this pin tracked (\`${{ steps.check.outputs.current_line }}\`) is no longer published by BtbN, so the pin moves to the lowest surviving line. Review the ffmpeg changelog before merging."
+          else
+            line_note="Stays on the \`${{ steps.check.outputs.current_line }}\` line -- a patch-level move within the same release series."
+          fi
+
+          cat > /tmp/pr-body.md << EOF
+          Automated bump of the BtbN ffmpeg pin to \`${BUILD}\`.
+
+          ${line_note}
+
+          ## Why this is automated
+
+          BtbN prunes dated \`autobuild-*\` releases on roughly a one-week window. When the
+          pinned release is pruned the image build fails outright -- BuildKit resolves an
+          \`ADD\` URL to compute its cache key, so a 404 breaks the build even when the layer
+          is otherwise cached. This job runs twice a week so the pin moves forward while the
+          current one is still alive.
+
+          ## Changes
+          - \`ARG FFMPEG_BUILD\`: \`${CURRENT_BUILD}\` -> \`${BUILD}\`
+          - \`ARG FFMPEG_ASSET\`: \`${CURRENT_ASSET}\` -> \`${ASSET}\`
+
+          **Release**: https://github.com/BtbN/FFmpeg-Builds/releases/tag/${BUILD}
+
+          ## Pre-merge Verification
+          - [x] Release tag and \`linux64-gpl\` asset resolve
+          - [x] SHA256 verified against the release's \`checksums.sha256\`
+          - [x] Archive contains \`bin/ffmpeg\` and \`bin/ffprobe\` (the paths the Dockerfile extracts)
+          - [ ] CI/CD checks pending
+
+          ## Repin required before this can go green
+
+          This changes \`docker/Dockerfile.download\`, so CI's pin-integrity gate (2b) will be
+          RED until the image is repinned. That is expected, not a failure of this job.
+          \`mantle build\` / \`mantle deploy\` do NOT repin \`docker/start-file-upload.pin.json\`.
+          1. Merge this PR
+          2. On a host with Docker (the Mac Studio CI host), run \`bin/refresh-download-image.sh\`
+             to rebuild + push the image and commit the repinned \`docker/start-file-upload.pin.json\`
+          3. Push that commit so gates 2a/2b go green
+          4. \`pnpm run deploy:staging\`
+          5. Confirm \`ffmpeg -version\` in the deployed image reports the new build
+
+          ## Rollback Procedure
+          Only useful while \`${CURRENT_BUILD}\` is still un-pruned; past that the old pin
+          404s and rolling back reintroduces the broken build.
+          \`\`\`bash
+          sed -i '' -e "s|^ARG FFMPEG_BUILD=.*|ARG FFMPEG_BUILD=${CURRENT_BUILD}|" \\
+                    -e "s|^ARG FFMPEG_ASSET=.*|ARG FFMPEG_ASSET=${CURRENT_ASSET}|" \\
+                    docker/Dockerfile.download  # macOS; drop the '' on Linux
+          git commit -am "chore(deps): revert ffmpeg pin to ${CURRENT_BUILD}"
+          ./bin/refresh-download-image.sh
+          git push
+          pnpm run deploy:staging
+          \`\`\`
+          EOF
+
+          labels=(--label "dependencies" --label "automated" --label "ffmpeg" --label "infrastructure")
+          if [ "$MAJOR_BUMP" = "true" ]; then
+            labels+=(--label "major-version-bump")
+          fi
+
+          gh pr create \
+            --title "chore(deps): update ffmpeg pin to ${BUILD}" \
+            --body-file /tmp/pr-body.md \
+            "${labels[@]}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Escalate a dead pin
+        # A pruned pin means the image cannot be rebuilt right now. The bump PR above is
+        # the fix, but it needs a human to merge and repin, so say so loudly.
+        if: always() && steps.check.outputs.current_alive == 'false'
+        run: |
+          set -euo pipefail
+          ISSUE_TITLE="ffmpeg pin has been pruned upstream"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY="The pinned ffmpeg release \`${{ steps.check.outputs.current_build }}\` no longer resolves, so \`docker/Dockerfile.download\` cannot build until the pin moves. See [run](${RUN_URL}). The automated bump PR to \`${{ steps.check.outputs.latest_build }}\` still needs a merge plus \`bin/refresh-download-image.sh\` to repin the image."
+
+          EXISTING_ISSUE=$(gh issue list \
+            --state open \
+            --search "in:title ${ISSUE_TITLE}" \
+            --json number,title \
+            --jq '.[] | select(.title == "'"${ISSUE_TITLE}"'") | .number' \
+            | head -1)
+
+          if [ -n "$EXISTING_ISSUE" ]; then
+            gh issue comment "${EXISTING_ISSUE}" --body "${BODY}"
+          else
+            gh issue create \
+              --title "${ISSUE_TITLE}" \
+              --body "${BODY}" \
+              --label "bug" \
+              --label "automation" \
+              --label "ffmpeg"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          ISSUE_TITLE="ffmpeg update workflow failed"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          EXISTING_ISSUE=$(gh issue list \
+            --state open \
+            --search "in:title ${ISSUE_TITLE}" \
+            --json number,title \
+            --jq '.[] | select(.title == "'"${ISSUE_TITLE}"'") | .number' \
+            | head -1)
+
+          if [ -n "$EXISTING_ISSUE" ]; then
+            echo "Adding comment to existing issue #${EXISTING_ISSUE}..."
+            gh issue comment "${EXISTING_ISSUE}" \
+              --body "Workflow failed again. See [run](${RUN_URL})."
+          else
+            echo "Creating new issue..."
+            gh issue create \
+              --title "${ISSUE_TITLE}" \
+              --body "The automated ffmpeg update workflow failed. Check [workflow run](${RUN_URL})." \
+              --label "bug" \
+              --label "automation" \
+              --label "ffmpeg"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
