@@ -66,6 +66,11 @@ RUN cd /tmp && tar xf ffmpeg.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' -
 # Set the mode here rather than in decrypt-cookies.sh so the image does not depend on
 # the build host's umask, and so the decrypted secret stays 0600 at rest on disk.
 COPY --chmod=0644 layers/yt-dlp/cookies/youtube-cookies.txt /opt/cookies/youtube-cookies.txt
+# --chmod also applies to the parent directories COPY creates implicitly, which leaves
+# /opt/cookies at 0644 -- no execute bit, so a non-root user cannot traverse into it and
+# the read fails with EACCES even though the file itself is 0644. Restore the search bit
+# explicitly; verified by stat-ing both paths in the built image.
+RUN chmod 0755 /opt/cookies
 
 # --- bgutil Python plugin for yt-dlp (from builder stage) ---
 COPY --from=bgutil-builder /opt/python/ /opt/python/
