@@ -44,17 +44,33 @@ RUN cd /tmp && unzip deno.zip && chmod +x deno && mv deno /opt/bin/deno && rm de
 # name (NOT `latest` / `-latest-`). `latest` is a moving pointer -- a same-tag rebuild
 # is a silent no-op under this Lambda's IMMUTABLE ECR repo (F2, see
 # .omc/plans/omd-prebuilt-container-lambda-2026-08-16.md in ci-runners-private). BtbN
-# keeps a rolling window of dated autobuild-* releases (30 releases / ~15 months
-# observed 2026-08-16), so a dated tag stays resolvable for a comfortable window; bump
-# both ARGs together (verify the asset URL resolves) when the pin needs to move.
-ARG FFMPEG_BUILD=autobuild-2026-08-13-17-03
-ARG FFMPEG_ASSET=ffmpeg-n7.1.5-12-g1fdbca85aa-linux64-gpl-7.1
+# prunes aggressively: on 2026-08-27 the oldest surviving autobuild was 8 days old and
+# the previous pin (autobuild-2026-08-13-17-03) already 404ed, which broke the build
+# outright -- BuildKit resolves an ADD URL to compute its cache key, so a pruned release
+# fails even when the layer is otherwise cached. Treat the window as ~1 week, not the
+# ~15 months a previous revision of this comment assumed. Bump both ARGs together and
+# verify the asset URL resolves. The 7.1 line is gone from BtbN entirely (no surviving
+# release carries a linux64-gpl-7.1 asset), so this pin tracks 8.1.
+ARG FFMPEG_BUILD=autobuild-2026-08-27-16-45
+ARG FFMPEG_ASSET=ffmpeg-n8.1.2-47-g156bb4d299-linux64-gpl-8.1
 ADD https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BUILD}/${FFMPEG_ASSET}.tar.xz /tmp/ffmpeg.tar.xz
 RUN cd /tmp && tar xf ffmpeg.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 \
   && chmod +x ffmpeg ffprobe && mv ffmpeg ffprobe /opt/bin/ && rm ffmpeg.tar.xz
 
 # --- yt-dlp cookies (SOPS-encrypted in repo, decrypted before build) ---
-COPY layers/yt-dlp/cookies/youtube-cookies.txt /opt/cookies/youtube-cookies.txt
+# --chmod=0644 is required, not cosmetic. bin/decrypt-cookies.sh writes the plaintext
+# via mktemp, which is mode 0600, and mv preserves it; a bare COPY would carry that
+# 0600 into the image as root:root. The Lambda function process runs as a non-root
+# sandbox user, so it could not read the source and prepareCookies() failed with
+# EACCES -- yt-dlp then ran cookieless and fetchVideoInfo returned no metadata.
+# Set the mode here rather than in decrypt-cookies.sh so the image does not depend on
+# the build host's umask, and so the decrypted secret stays 0600 at rest on disk.
+COPY --chmod=0644 layers/yt-dlp/cookies/youtube-cookies.txt /opt/cookies/youtube-cookies.txt
+# --chmod also applies to the parent directories COPY creates implicitly, which leaves
+# /opt/cookies at 0644 -- no execute bit, so a non-root user cannot traverse into it and
+# the read fails with EACCES even though the file itself is 0644. Restore the search bit
+# explicitly; verified by stat-ing both paths in the built image.
+RUN chmod 0755 /opt/cookies
 
 # --- bgutil Python plugin for yt-dlp (from builder stage) ---
 COPY --from=bgutil-builder /opt/python/ /opt/python/
