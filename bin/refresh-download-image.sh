@@ -2,8 +2,9 @@
 
 # refresh-download-image.sh
 # Builds + pushes the StartFileUpload container-Lambda image (docker/Dockerfile.download)
-# and repins docker/start-file-upload.pin.json to the pushed digest. Operator-run on the
-# Mac Studio host (it has the Colima Docker daemon) -- see the plan:
+# and repins docker/start-file-upload.pin.json to the pushed digest. It runs either in the
+# isolated CI image-build lane (Docker CLI talking to an ephemeral non-rootless privileged
+# DinD sidecar) or manually on the Mac Studio host -- see the plan:
 # .omc/plans/omd-prebuilt-container-lambda-2026-08-16.md ("Image refresh (occasional)").
 #
 # Prerequisites:
@@ -16,12 +17,11 @@
 #
 # Run: ./bin/refresh-download-image.sh
 #
-# CI automation note: this script is currently run BY HAND. Automating it (Phase 2 --
-# an isolated rootless-DinD ci-runners lane) requires pushing the repinned commit back
-# to trigger CI, which needs a USER-provisioned fine-grained PAT (OMD_REFRESH_PAT,
-# contents:write on this repo only) passed to actions/checkout -- github.token pushes
-# do not re-trigger `on: pull_request` workflow runs (GitHub anti-recursion). Not
-# implemented here; see plan Q2.
+# CI automation note: update-ffmpeg.yml and update-yt-dlp.yml invoke this script on the
+# `image-build` lane, then push the pin commit with the USER-provisioned fine-grained
+# OMD_REFRESH_PAT (Contents:write on this repo only). A github.token push cannot be used:
+# GitHub intentionally does not re-trigger `on: pull_request` workflows from that token.
+# Other Dockerfile/layer/bundle changes still require an explicit refresh.
 
 set -euo pipefail
 
