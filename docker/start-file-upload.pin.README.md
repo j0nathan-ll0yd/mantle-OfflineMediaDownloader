@@ -37,10 +37,10 @@ This file was bootstrapped, not produced by a real refresh:
   as a soft warning, not a failure — gate 2c only runs when `AWS_ROLE_CI_ECR_READ` is
   configured, and gates 2a/2b (Docker-free, AWS-free) are the correctness-critical checks
   in Phase 0.
-- Run `bin/refresh-download-image.sh` on the Mac Studio host (it has the Colima Docker
-  daemon) to build + push the real image and replace this placeholder with a real digest.
-  Do this before the first `mantle deploy --stage staging` that relies on prebuilt-image
-  mode.
+- The scheduled ffmpeg and yt-dlp workflows run `bin/refresh-download-image.sh`
+  automatically on the isolated `image-build` lane. For any other image-input change,
+  run it explicitly on an authorized Docker host to build + push the image and update
+  this pin before deployment.
 
 ## `imageDigestFile` wiring status (step 6 of Phase 0)
 

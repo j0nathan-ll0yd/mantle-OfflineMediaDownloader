@@ -18,6 +18,8 @@ jobs:
   check-update:
     runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 15
+    outputs:
+      repin_branch: ${{ steps.bump.outputs.branch_name }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: ./.github/actions/setup-gh
@@ -121,6 +123,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Bump Dockerfile ARG and create PR
+        id: bump
         if: steps.check.outputs.update_needed == 'true' && steps.pr_check.outputs.skip != 'true'
         run: |
           set -e
@@ -161,17 +164,14 @@ jobs:
           - [x] x86_64 \`yt-dlp_linux\` downloaded and SHA256 checksum verified against the release's SHA2-256SUMS
           - [ ] CI/CD tests pending
 
-          ## Deployment Process
-          This bump changes \`docker/Dockerfile.download\`, so CI's pin-integrity gate (2b)
-          will go red until the image is repinned — \`pnpm run build\`/\`pnpm run deploy:staging\`
-          alone do NOT repin \`docker/start-file-upload.pin.json\`.
-          1. Merge this PR
-          2. On a host with Docker (the Mac Studio CI host), run \`bin/refresh-download-image.sh\`
-             to rebuild + push the StartFileUpload image with the new yt-dlp and commit the
-             repinned \`docker/start-file-upload.pin.json\`
-          3. Push that commit so CI's gate 2b/2a go green
-          4. Run \`pnpm run deploy:staging\` to deploy
-          5. Monitor CloudWatch logs for any download issues after deployment
+          ## Automated image repin
+          This changes \`docker/Dockerfile.download\`, so a dependent \`image-build\` job
+          rebuilds and pushes the linux/amd64 image, commits the refreshed
+          \`docker/start-file-upload.pin.json\` to this branch with the scoped repin PAT,
+          and retriggers the PR checks. Do not merge until gates 2a/2b are green.
+
+          After merge, run \`pnpm run deploy:staging\` and monitor CloudWatch logs for
+          download issues.
 
           ## Rollback Procedure
           If issues occur after deployment:
@@ -192,6 +192,11 @@ jobs:
             --label "automated" \
             --label "yt-dlp" \
             --label "infrastructure"
+
+          # Hand the trusted, workflow-created branch to the isolated image-build job.
+          # That job pushes with OMD_REFRESH_PAT so the PR's pull_request checks rerun;
+          # a github.token push is intentionally suppressed by GitHub anti-recursion.
+          echo "branch_name=${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -223,3 +228,99 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ github.token }}
+
+  repin-image:
+    name: Build, push, and repin image
+    needs: check-update
+    if: needs.check-update.outputs.repin_branch != ''
+    runs-on: [self-hosted, linux, arm64, image-build]
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    steps:
+      - name: Check out the update branch with the repin PAT
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ needs.check-update.outputs.repin_branch }}
+          fetch-depth: 0
+          # github.token pushes do not trigger pull_request workflows. This narrowly
+          # scoped Contents:write PAT makes the pin commit retrigger gates 2a/2b.
+          token: ${{ secrets.OMD_REFRESH_PAT }}
+
+      - uses: ./.github/actions/setup-node-pnpm
+
+      - name: Configure AWS credentials for the staging ECR push
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_STAGING }}
+          aws-region: us-west-2
+          role-session-name: omd-image-repin-${{ github.run_id }}
+
+      - name: Prepare the SOPS age key
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOPS_AGE_KEY" ]]; then
+            echo "::error::SOPS_AGE_KEY is not configured."
+            exit 1
+          fi
+          key_file="${RUNNER_TEMP}/omd-refresh-age-key.txt"
+          umask 077
+          printf '%s\n' "$SOPS_AGE_KEY" > "$key_file"
+          echo "SOPS_AGE_KEY_FILE=${key_file}" >> "$GITHUB_ENV"
+
+      - name: Verify DinD and log in to ECR
+        run: |
+          set -euo pipefail
+          ready=false
+          for _ in {1..30}; do
+            if docker info >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [[ "$ready" != true ]]; then
+            echo "::error::The image-build DinD sidecar did not become ready."
+            exit 1
+          fi
+          docker info --format 'DinD server: {{.ServerVersion}} / {{.Architecture}}'
+          docker buildx version
+
+          registry="514454346828.dkr.ecr.us-west-2.amazonaws.com"
+          aws ecr get-login-password --region us-west-2 \
+            | docker login --username AWS --password-stdin "$registry"
+
+      - name: Build, push, and commit the refreshed image pin
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          bin/refresh-download-image.sh
+
+      - name: Verify and push only the generated pin commit
+        env:
+          REPIN_BRANCH: ${{ needs.check-update.outputs.repin_branch }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+          if [[ "$changed" != "docker/start-file-upload.pin.json" ]]; then
+            echo "::error::Refresh commit changed an unexpected path:"
+            printf '%s\n' "$changed"
+            exit 1
+          fi
+          if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+            echo "::error::Refresh left tracked worktree changes behind."
+            git status --short --untracked-files=no
+            exit 1
+          fi
+          git push origin "HEAD:${REPIN_BRANCH}"
+
+      - name: Remove decrypted credentials and registry auth
+        if: always()
+        run: |
+          rm -f -- "${SOPS_AGE_KEY_FILE:-}" layers/yt-dlp/cookies/youtube-cookies.txt
+          docker logout 514454346828.dkr.ecr.us-west-2.amazonaws.com >/dev/null 2>&1 || true
