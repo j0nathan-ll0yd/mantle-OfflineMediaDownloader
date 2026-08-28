@@ -32,6 +32,10 @@ jobs:
     outputs:
       # A retry may find the automation PR that an earlier run already created.
       repin_branch: ${{ steps.bump.outputs.branch_name || steps.pr_check.outputs.branch_name }}
+      repin_sha: ${{ steps.bump.outputs.branch_sha || steps.pr_check.outputs.branch_sha }}
+      latest_build: ${{ steps.check.outputs.latest_build }}
+      latest_asset: ${{ steps.check.outputs.latest_asset }}
+      current_line: ${{ steps.check.outputs.current_line }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: ./.github/actions/setup-gh
@@ -77,8 +81,10 @@ jobs:
           LATEST_BUILD=$(gh api "repos/${REPO}/releases?per_page=100" \
             --jq '[.[] | select(.tag_name | startswith("autobuild-"))][0].tag_name')
 
-          if [ -z "$LATEST_BUILD" ]; then
-            echo "::error::No autobuild-* releases found on ${REPO}."
+          # Release metadata is third-party input. Keep it data: reject every character that
+          # could alter a shell command, git ref, URL path, or Dockerfile before exporting it.
+          if [[ ! "$LATEST_BUILD" =~ ^autobuild-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "::error::Unexpected ffmpeg release tag format: ${LATEST_BUILD@Q}"
             exit 1
           fi
 
@@ -107,6 +113,11 @@ jobs:
             echo "::warning::Line ${CURRENT_LINE} is gone from ${LATEST_BUILD}; falling back to ${FALLBACK_LINE}."
           fi
 
+          if [[ ! "$NEW_ASSET" =~ ^ffmpeg-[A-Za-z0-9._+-]+-linux64-gpl-[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Unexpected ffmpeg asset name format: ${NEW_ASSET@Q}"
+            exit 1
+          fi
+
           {
             echo "current_build=${CURRENT_BUILD}"
             echo "current_asset=${CURRENT_ASSET}"
@@ -131,31 +142,46 @@ jobs:
         id: pr_check
         run: |
           set -euo pipefail
-          BRANCH_NAME="chore/update-ffmpeg-${{ steps.check.outputs.latest_build }}"
+          readonly BRANCH_NAME="chore/update-ffmpeg-${LATEST_BUILD}"
+          git check-ref-format --branch "$BRANCH_NAME" >/dev/null
 
           EXISTING_PR=$(gh pr list \
             --head "${BRANCH_NAME}" \
             --state open \
-            --json number,url \
-            --jq '.[0].url // empty')
+            --json number,url,headRefOid,isCrossRepository,baseRefName \
+            --jq '.[0] // empty')
 
           if [ -n "$EXISTING_PR" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "branch_name=${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
-            echo "Open PR already exists: ${EXISTING_PR}"
+            if [[ "$(jq -r '.isCrossRepository' <<< "$EXISTING_PR")" != "false" || \
+                  "$(jq -r '.baseRefName' <<< "$EXISTING_PR")" != "main" ]]; then
+              echo "::error::Existing automation PR has an unexpected repository or base branch."
+              exit 1
+            fi
+            branch_sha="$(jq -r '.headRefOid' <<< "$EXISTING_PR")"
+            [[ "$branch_sha" =~ ^[0-9a-f]{40}$ ]] || {
+              echo "::error::Existing automation PR returned an invalid head SHA."
+              exit 1
+            }
+            {
+              echo "skip=true"
+              echo "branch_name=${BRANCH_NAME}"
+              echo "branch_sha=${branch_sha}"
+            } >> "$GITHUB_OUTPUT"
+            echo "Open PR already exists: $(jq -r '.url' <<< "$EXISTING_PR")"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
         env:
           GH_TOKEN: ${{ github.token }}
+          LATEST_BUILD: ${{ steps.check.outputs.latest_build }}
 
       - name: Download and verify asset
-        if: steps.check.outputs.update_needed == 'true' && steps.pr_check.outputs.skip != 'true'
+        if: steps.check.outputs.update_needed == 'true'
         run: |
           set -euo pipefail
 
-          readonly BUILD="${{ steps.check.outputs.latest_build }}"
-          readonly ASSET="${{ steps.check.outputs.latest_asset }}"
+          readonly BUILD="$LATEST_BUILD"
+          readonly ASSET="$LATEST_ASSET"
           readonly BASE="https://github.com/BtbN/FFmpeg-Builds/releases/download/${BUILD}"
 
           # The deployment target is x86_64 (docker/Dockerfile.download, and the
@@ -187,6 +213,9 @@ jobs:
           grep -qE '/bin/ffprobe$' <<< "$listing"
 
           echo "Asset verification complete."
+        env:
+          LATEST_BUILD: ${{ steps.check.outputs.latest_build }}
+          LATEST_ASSET: ${{ steps.check.outputs.latest_asset }}
 
       - name: Ensure required labels exist
         if: steps.check.outputs.update_needed == 'true' && steps.pr_check.outputs.skip != 'true'
@@ -220,12 +249,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          readonly BUILD="${{ steps.check.outputs.latest_build }}"
-          readonly ASSET="${{ steps.check.outputs.latest_asset }}"
-          readonly CURRENT_BUILD="${{ steps.check.outputs.current_build }}"
-          readonly CURRENT_ASSET="${{ steps.check.outputs.current_asset }}"
-          readonly MAJOR_BUMP="${{ steps.check.outputs.major_bump }}"
+          readonly BUILD="$LATEST_BUILD"
+          readonly ASSET="$LATEST_ASSET"
+          readonly CURRENT_BUILD="$PREVIOUS_BUILD"
+          readonly CURRENT_ASSET="$PREVIOUS_ASSET"
+          readonly MAJOR_BUMP="$IS_MAJOR_BUMP"
           readonly BRANCH_NAME="chore/update-ffmpeg-${BUILD}"
+          git check-ref-format --branch "$BRANCH_NAME" >/dev/null
 
           echo "Bumping FFMPEG_BUILD/FFMPEG_ASSET in docker/Dockerfile.download ..."
           tmp="$(mktemp)"
@@ -252,11 +282,13 @@ jobs:
           git add docker/Dockerfile.download
           git commit -m "chore(deps): update ffmpeg pin to ${BUILD}"
           git push origin "${BRANCH_NAME}"
+          BRANCH_SHA="$(git rev-parse HEAD)"
+          readonly BRANCH_SHA
 
           if [ "$MAJOR_BUMP" = "true" ]; then
-            line_note="**This PR crosses an upstream release line.** The line this pin tracked (\`${{ steps.check.outputs.current_line }}\`) is no longer published by BtbN, so the pin moves to the lowest surviving line. Review the ffmpeg changelog before merging."
+            line_note="**This PR crosses an upstream release line.** The line this pin tracked (\`${CURRENT_LINE}\`) is no longer published by BtbN, so the pin moves to the lowest surviving line. Review the ffmpeg changelog before merging."
           else
-            line_note="Stays on the \`${{ steps.check.outputs.current_line }}\` line -- a patch-level move within the same release series."
+            line_note="Stays on the \`${CURRENT_LINE}\` line -- a patch-level move within the same release series."
           fi
 
           cat > /tmp/pr-body.md << EOF
@@ -322,8 +354,15 @@ jobs:
           # That job pushes with OMD_REFRESH_PAT so the PR's pull_request checks rerun;
           # a github.token push is intentionally suppressed by GitHub anti-recursion.
           echo "branch_name=${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
+          echo "branch_sha=${BRANCH_SHA}" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
+          LATEST_BUILD: ${{ steps.check.outputs.latest_build }}
+          LATEST_ASSET: ${{ steps.check.outputs.latest_asset }}
+          PREVIOUS_BUILD: ${{ steps.check.outputs.current_build }}
+          PREVIOUS_ASSET: ${{ steps.check.outputs.current_asset }}
+          CURRENT_LINE: ${{ steps.check.outputs.current_line }}
+          IS_MAJOR_BUMP: ${{ steps.check.outputs.major_bump }}
 
       - name: Escalate a dead pin
         # A pruned pin means the image cannot be rebuilt right now. The bump PR above is
@@ -332,8 +371,7 @@ jobs:
         run: |
           set -euo pipefail
           ISSUE_TITLE="ffmpeg pin has been pruned upstream"
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          BODY="The pinned ffmpeg release \`${{ steps.check.outputs.current_build }}\` no longer resolves, so \`docker/Dockerfile.download\` cannot build until the pin moves. See [run](${RUN_URL}). The automated bump PR to \`${{ steps.check.outputs.latest_build }}\` includes an image-build repin; review and merge it once gates 2a/2b are green."
+          BODY="The pinned ffmpeg release \`${CURRENT_BUILD}\` no longer resolves, so \`docker/Dockerfile.download\` cannot build until the pin moves. See [run](${RUN_URL}). The automated bump PR to \`${LATEST_BUILD}\` includes an image-build repin; review and merge it once gates 2a/2b are green."
 
           EXISTING_ISSUE=$(gh issue list \
             --state open \
@@ -354,40 +392,14 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Notify on failure
-        if: failure()
-        run: |
-          ISSUE_TITLE="ffmpeg update workflow failed"
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          EXISTING_ISSUE=$(gh issue list \
-            --state open \
-            --search "in:title ${ISSUE_TITLE}" \
-            --json number,title \
-            --jq '.[] | select(.title == "'"${ISSUE_TITLE}"'") | .number' \
-            | head -1)
-
-          if [ -n "$EXISTING_ISSUE" ]; then
-            echo "Adding comment to existing issue #${EXISTING_ISSUE}..."
-            gh issue comment "${EXISTING_ISSUE}" \
-              --body "Workflow failed again. See [run](${RUN_URL})."
-          else
-            echo "Creating new issue..."
-            gh issue create \
-              --title "${ISSUE_TITLE}" \
-              --body "The automated ffmpeg update workflow failed. Check [workflow run](${RUN_URL})." \
-              --label "bug" \
-              --label "automation" \
-              --label "ffmpeg"
-          fi
-        env:
-          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CURRENT_BUILD: ${{ steps.check.outputs.current_build }}
+          LATEST_BUILD: ${{ steps.check.outputs.latest_build }}
 
   repin-image:
     name: Build, push, and repin image
     needs: check-update
-    if: needs.check-update.outputs.repin_branch != ''
+    if: needs.check-update.outputs.repin_branch != '' && needs.check-update.outputs.repin_sha != ''
     runs-on: [self-hosted, linux, arm64, image-build]
     timeout-minutes: 60
     permissions:
@@ -395,16 +407,96 @@ jobs:
       packages: read
       id-token: write
     steps:
-      - name: Check out the update branch with the repin PAT
+      # Never execute code from the mutable automation branch. Start from the exact trusted
+      # workflow commit, validate the branch as data, then reconstruct its one allowed change.
+      - name: Check out the trusted main workflow commit
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
-          ref: ${{ needs.check-update.outputs.repin_branch }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
-          # github.token pushes do not trigger pull_request workflows. This narrowly
-          # scoped Contents:write PAT makes the pin commit retrigger gates 2a/2b.
-          token: ${{ secrets.OMD_REFRESH_PAT }}
+          persist-credentials: false
 
       - uses: ./.github/actions/setup-node-pnpm
+
+      - name: Verify the exact update commit and reconstruct it on trusted main
+        id: prepare
+        env:
+          REPIN_BRANCH: ${{ needs.check-update.outputs.repin_branch }}
+          EXPECTED_BRANCH_SHA: ${{ needs.check-update.outputs.repin_sha }}
+          TRUSTED_SHA: ${{ github.sha }}
+          TRUSTED_REF: ${{ github.ref }}
+          LATEST_BUILD: ${{ needs.check-update.outputs.latest_build }}
+          LATEST_ASSET: ${{ needs.check-update.outputs.latest_asset }}
+        run: |
+          set -euo pipefail
+
+          [[ "$TRUSTED_REF" == "refs/heads/main" ]] || {
+            echo "::error::Image repins may run only from refs/heads/main."
+            exit 1
+          }
+          [[ "$EXPECTED_BRANCH_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$TRUSTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$LATEST_BUILD" =~ ^autobuild-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]]
+          [[ "$LATEST_ASSET" =~ ^ffmpeg-[A-Za-z0-9._+-]+-linux64-gpl-[0-9]+\.[0-9]+$ ]]
+          [[ "$REPIN_BRANCH" == "chore/update-ffmpeg-${LATEST_BUILD}" ]]
+          git check-ref-format --branch "$REPIN_BRANCH" >/dev/null
+          [[ "$(git rev-parse HEAD)" == "$TRUSTED_SHA" ]]
+
+          remote_sha="$(git ls-remote --heads origin "refs/heads/${REPIN_BRANCH}" | awk 'NR == 1 {print $1}')"
+          if [[ "$remote_sha" != "$EXPECTED_BRANCH_SHA" ]]; then
+            echo "::error::Update branch moved after check-update (expected ${EXPECTED_BRANCH_SHA}, found ${remote_sha:-missing})."
+            exit 1
+          fi
+          git fetch --no-tags origin \
+            "refs/heads/${REPIN_BRANCH}:refs/remotes/origin/repin-source"
+          [[ "$(git rev-parse refs/remotes/origin/repin-source)" == "$EXPECTED_BRANCH_SHA" ]]
+
+          merge_base="$(git merge-base "$TRUSTED_SHA" "$EXPECTED_BRANCH_SHA")"
+          [[ -n "$merge_base" ]]
+          changed="$(git diff --name-only "$merge_base" "$EXPECTED_BRANCH_SHA")"
+          unexpected="$(grep -vE '^(docker/Dockerfile\.download|docker/start-file-upload\.pin\.json)$' <<< "$changed" || true)"
+          if [[ -n "$unexpected" ]] || ! grep -qxF 'docker/Dockerfile.download' <<< "$changed"; then
+            echo "::error::Automation branch contains paths outside the dependency Dockerfile and generated pin:"
+            printf '%s\n' "$changed"
+            exit 1
+          fi
+
+          verify_dir="$(mktemp -d)"
+          trap 'rm -rf "$verify_dir"' EXIT
+          git show "${merge_base}:docker/Dockerfile.download" > "$verify_dir/expected"
+          git show "${EXPECTED_BRANCH_SHA}:docker/Dockerfile.download" > "$verify_dir/actual"
+          branch_build="$(grep -E '^ARG FFMPEG_BUILD=' "$verify_dir/actual" | cut -d= -f2)"
+          branch_asset="$(grep -E '^ARG FFMPEG_ASSET=' "$verify_dir/actual" | cut -d= -f2)"
+          [[ "$branch_build" =~ ^autobuild-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]]
+          [[ "$branch_asset" =~ ^ffmpeg-[A-Za-z0-9._+-]+-linux64-gpl-[0-9]+\.[0-9]+$ ]]
+          sed -e 's|^ARG FFMPEG_BUILD=.*|ARG FFMPEG_BUILD=__VALIDATED__|' \
+              -e 's|^ARG FFMPEG_ASSET=.*|ARG FFMPEG_ASSET=__VALIDATED__|' \
+              "$verify_dir/expected" > "$verify_dir/expected.normalized"
+          sed -e 's|^ARG FFMPEG_BUILD=.*|ARG FFMPEG_BUILD=__VALIDATED__|' \
+              -e 's|^ARG FFMPEG_ASSET=.*|ARG FFMPEG_ASSET=__VALIDATED__|' \
+              "$verify_dir/actual" > "$verify_dir/actual.normalized"
+          if ! cmp -s "$verify_dir/expected.normalized" "$verify_dir/actual.normalized"; then
+            echo "::error::Automation branch Dockerfile changes more than the two validated ffmpeg ARG values."
+            diff -u "$verify_dir/expected.normalized" "$verify_dir/actual.normalized" || true
+            exit 1
+          fi
+
+          # Recreate the data-only dependency change on trusted main. No file from the mutable
+          # automation branch is checked out or executed.
+          git switch -c "ci-repin-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          sed -e "s|^ARG FFMPEG_BUILD=.*|ARG FFMPEG_BUILD=${LATEST_BUILD}|" \
+              -e "s|^ARG FFMPEG_ASSET=.*|ARG FFMPEG_ASSET=${LATEST_ASSET}|" \
+              docker/Dockerfile.download > "$verify_dir/trusted.new"
+          mv "$verify_dir/trusted.new" docker/Dockerfile.download
+          grep -qxF "ARG FFMPEG_BUILD=${LATEST_BUILD}" docker/Dockerfile.download
+          grep -qxF "ARG FFMPEG_ASSET=${LATEST_ASSET}" docker/Dockerfile.download
+          [[ "$(git diff --name-only)" == "docker/Dockerfile.download" ]]
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docker/Dockerfile.download
+          git commit -m "chore(deps): update ffmpeg pin to ${LATEST_BUILD}"
+          echo "dependency_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials for the staging ECR push
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6
@@ -454,15 +546,24 @@ jobs:
       - name: Build, push, and commit the refreshed image pin
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           bin/refresh-download-image.sh
 
       - name: Verify and push only the generated pin commit
         env:
           REPIN_BRANCH: ${{ needs.check-update.outputs.repin_branch }}
+          EXPECTED_BRANCH_SHA: ${{ needs.check-update.outputs.repin_sha }}
+          DEPENDENCY_SHA: ${{ steps.prepare.outputs.dependency_sha }}
+          OMD_REFRESH_PAT: ${{ secrets.OMD_REFRESH_PAT }}
         run: |
           set -euo pipefail
+          if [[ -z "$OMD_REFRESH_PAT" ]]; then
+            echo "::error::OMD_REFRESH_PAT is not configured."
+            exit 1
+          fi
+          if [[ "$(git rev-list --count "${DEPENDENCY_SHA}..HEAD")" != "1" ]]; then
+            echo "::error::Refresh must create exactly one commit after the reconstructed dependency commit."
+            exit 1
+          fi
           changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
           if [[ "$changed" != "docker/start-file-upload.pin.json" ]]; then
             echo "::error::Refresh commit changed an unexpected path:"
@@ -474,10 +575,50 @@ jobs:
             git status --short --untracked-files=no
             exit 1
           fi
-          git push origin "HEAD:${REPIN_BRANCH}"
+          auth_header="$(printf 'x-access-token:%s' "$OMD_REFRESH_PAT" | base64 | tr -d '\n')"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${auth_header}" \
+            push \
+            --force-with-lease="refs/heads/${REPIN_BRANCH}:${EXPECTED_BRANCH_SHA}" \
+            origin "HEAD:refs/heads/${REPIN_BRANCH}"
 
       - name: Remove decrypted credentials and registry auth
         if: always()
         run: |
           rm -f -- "${SOPS_AGE_KEY_FILE:-}" layers/yt-dlp/cookies/youtube-cookies.txt
           docker logout 514454346828.dkr.ecr.us-west-2.amazonaws.com >/dev/null 2>&1 || true
+
+  notify-failure:
+    name: Report updater failure
+    needs: [check-update, repin-image]
+    if: >-
+      always() &&
+      (needs.check-update.result == 'failure' || needs.check-update.result == 'cancelled' ||
+       needs.repin-image.result == 'failure' || needs.repin-image.result == 'cancelled')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Create or update the failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          readonly ISSUE_TITLE="ffmpeg update workflow failed"
+          existing_issue="$(gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --search "in:title ${ISSUE_TITLE}" \
+            --json number,title \
+            --jq '.[] | select(.title == "'"${ISSUE_TITLE}"'") | .number' \
+            | head -1)"
+          if [[ -n "$existing_issue" ]]; then
+            gh issue comment "$existing_issue" --repo "$GITHUB_REPOSITORY" \
+              --body "Workflow failed again. See [run](${RUN_URL})."
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "$ISSUE_TITLE" \
+              --body "The automated ffmpeg update workflow failed. Check [workflow run](${RUN_URL})." \
+              --label bug --label automation --label ffmpeg
+          fi
