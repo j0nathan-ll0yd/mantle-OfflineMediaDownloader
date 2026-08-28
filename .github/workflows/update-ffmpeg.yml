@@ -30,7 +30,8 @@ jobs:
     runs-on: [self-hosted, linux, arm64, node]
     timeout-minutes: 15
     outputs:
-      repin_branch: ${{ steps.bump.outputs.branch_name }}
+      # A retry may find the automation PR that an earlier run already created.
+      repin_branch: ${{ steps.bump.outputs.branch_name || steps.pr_check.outputs.branch_name }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: ./.github/actions/setup-gh
@@ -140,6 +141,7 @@ jobs:
 
           if [ -n "$EXISTING_PR" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "branch_name=${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
             echo "Open PR already exists: ${EXISTING_PR}"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
