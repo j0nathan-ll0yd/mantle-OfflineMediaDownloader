@@ -2,7 +2,7 @@ name: Update yt-dlp Binary
 
 on:
   schedule:
-    - cron: '0 2 * * 0'  # Weekly on Sunday at 2am UTC
+    - cron: '23 2 * * 0'  # Avoid GitHub's start-of-hour schedule congestion
   workflow_dispatch:  # Allow manual triggering
 
 permissions:
@@ -23,6 +23,7 @@ jobs:
       repin_branch: ${{ steps.bump.outputs.branch_name || steps.pr_check.outputs.branch_name }}
       repin_sha: ${{ steps.bump.outputs.branch_sha || steps.pr_check.outputs.branch_sha }}
       latest_version: ${{ steps.check.outputs.latest }}
+      latest_sha256: ${{ steps.asset.outputs.sha256 }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: ./.github/actions/setup-gh
@@ -43,14 +44,25 @@ jobs:
             exit 1
           fi
 
-          # Single source of truth: the ARG YTDLP_VERSION line in the Dockerfile
-          # (the StartFileUpload container's runtime binary).
+          # Single source of truth: the version/checksum ARG pair for the
+          # StartFileUpload container's runtime binary.
           CURRENT=$(grep -E '^ARG YTDLP_VERSION=' docker/Dockerfile.download | head -1 | cut -d= -f2 | tr -d '[:space:]' || echo "none")
+          CURRENT_SHA256=$(grep -E '^ARG YTDLP_SHA256=' docker/Dockerfile.download | head -1 | cut -d= -f2 | tr -d '[:space:]' || echo "none")
+          LATEST_SHA256=$(gh api "repos/yt-dlp/yt-dlp/releases/tags/${LATEST}" \
+            --jq '.assets[] | select(.name == "yt-dlp_linux") | .digest | ltrimstr("sha256:")')
+          if [[ ! "$LATEST_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::Release metadata did not contain one valid yt-dlp_linux SHA256."
+            exit 1
+          fi
 
-          echo "latest=${LATEST}" >> "$GITHUB_OUTPUT"
-          echo "current=${CURRENT}" >> "$GITHUB_OUTPUT"
+          {
+            echo "latest=${LATEST}"
+            echo "latest_sha256=${LATEST_SHA256}"
+            echo "current=${CURRENT}"
+            echo "current_sha256=${CURRENT_SHA256}"
+          } >> "$GITHUB_OUTPUT"
 
-          if [ "$LATEST" != "$CURRENT" ]; then
+          if [ "$LATEST" != "$CURRENT" ] || [ "$LATEST_SHA256" != "$CURRENT_SHA256" ]; then
             echo "update_needed=true" >> "$GITHUB_OUTPUT"
             echo "✅ Update available: ${CURRENT} → ${LATEST}"
           else
@@ -100,6 +112,7 @@ jobs:
 
       - name: Download and verify binary for testing
         if: steps.check.outputs.update_needed == 'true'
+        id: asset
         run: |
           set -euo pipefail
 
@@ -115,12 +128,23 @@ jobs:
           wget -q "https://github.com/yt-dlp/yt-dlp/releases/download/${VERSION}/SHA2-256SUMS"
 
           echo "Verifying SHA256 checksum of x86_64 yt-dlp_linux..."
-          grep "yt-dlp_linux$" SHA2-256SUMS | sha256sum --check --status
+          checksum="$(awk '$2 == "yt-dlp_linux" {print $1}' SHA2-256SUMS)"
+          [[ "$checksum" =~ ^[0-9a-f]{64}$ ]] || {
+            echo "::error::Release checksum file did not contain one valid yt-dlp_linux SHA256."
+            exit 1
+          }
+          [[ "$checksum" == "$EXPECTED_SHA256" ]] || {
+            echo "::error::Publisher checksum and GitHub's asset digest disagree."
+            exit 1
+          }
+          printf '%s  yt-dlp_linux\n' "$checksum" | sha256sum --check --status
+          echo "sha256=${checksum}" >> "$GITHUB_OUTPUT"
 
           rm -f yt-dlp_linux SHA2-256SUMS
           echo "Binary verification complete"
         env:
           VERSION: ${{ steps.check.outputs.latest }}
+          EXPECTED_SHA256: ${{ steps.check.outputs.latest_sha256 }}
 
       - name: Ensure required labels exist
         if: steps.check.outputs.update_needed == 'true' && steps.pr_check.outputs.skip != 'true'
@@ -154,13 +178,20 @@ jobs:
           set -euo pipefail
 
           readonly CURRENT_VERSION="$PREVIOUS_VERSION"
+          readonly CURRENT_SHA256="$PREVIOUS_SHA256"
+          readonly SHA256="$YTDLP_SHA256"
           readonly BRANCH_NAME="chore/update-yt-dlp-${VERSION}"
           git check-ref-format --branch "$BRANCH_NAME" >/dev/null
+          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]]
 
-          echo "Bumping ARG YTDLP_VERSION to ${VERSION} in docker/Dockerfile.download..."
+          echo "Bumping the yt-dlp version and verified SHA256 in docker/Dockerfile.download..."
           tmp="$(mktemp)"
-          sed "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${VERSION}|" docker/Dockerfile.download > "$tmp"
+          sed -e "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${VERSION}|" \
+              -e "s|^ARG YTDLP_SHA256=.*|ARG YTDLP_SHA256=${SHA256}|" \
+              docker/Dockerfile.download > "$tmp"
           mv "$tmp" docker/Dockerfile.download
+          grep -qxF "ARG YTDLP_VERSION=${VERSION}" docker/Dockerfile.download
+          grep -qxF "ARG YTDLP_SHA256=${SHA256}" docker/Dockerfile.download
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -185,6 +216,7 @@ jobs:
 
           ## Changes
           - Bumped \`ARG YTDLP_VERSION\` in \`docker/Dockerfile.download\` from ${CURRENT_VERSION} to ${VERSION}
+          - Pinned \`ARG YTDLP_SHA256\` to the checksum verified from the release's \`SHA2-256SUMS\`
           - The new binary is baked into the StartFileUpload container image at build time (\`ADD .../\${YTDLP_VERSION}/yt-dlp_linux\`)
 
           ## Pre-merge Verification
@@ -203,7 +235,9 @@ jobs:
           ## Rollback Procedure
           If issues occur after deployment:
           \`\`\`bash
-          sed -i '' "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${CURRENT_VERSION}|" docker/Dockerfile.download  # macOS; drop the '' on Linux
+          sed -i '' -e "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${CURRENT_VERSION}|" \\
+                    -e "s|^ARG YTDLP_SHA256=.*|ARG YTDLP_SHA256=${CURRENT_SHA256}|" \\
+                    docker/Dockerfile.download  # macOS; drop the '' on Linux
           git commit -am "chore(deps): revert yt-dlp to ${CURRENT_VERSION}"
           git push
           ./bin/refresh-download-image.sh  # rebuilds, pushes, and repins for the reverted version
@@ -228,7 +262,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.check.outputs.latest }}
+          YTDLP_SHA256: ${{ steps.asset.outputs.sha256 }}
           PREVIOUS_VERSION: ${{ steps.check.outputs.current }}
+          PREVIOUS_SHA256: ${{ steps.check.outputs.current_sha256 }}
 
   repin-image:
     name: Build, push, and repin image
@@ -260,6 +296,7 @@ jobs:
           TRUSTED_SHA: ${{ github.sha }}
           TRUSTED_REF: ${{ github.ref }}
           VERSION: ${{ needs.check-update.outputs.latest_version }}
+          YTDLP_SHA256: ${{ needs.check-update.outputs.latest_sha256 }}
         run: |
           set -euo pipefail
 
@@ -270,6 +307,7 @@ jobs:
           [[ "$EXPECTED_BRANCH_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$TRUSTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$VERSION" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}$ ]]
+          [[ "$YTDLP_SHA256" =~ ^[0-9a-f]{64}$ ]]
           [[ "$REPIN_BRANCH" == "chore/update-yt-dlp-${VERSION}" ]]
           git check-ref-format --branch "$REPIN_BRANCH" >/dev/null
           [[ "$(git rev-parse HEAD)" == "$TRUSTED_SHA" ]]
@@ -298,22 +336,28 @@ jobs:
           git show "${merge_base}:docker/Dockerfile.download" > "$verify_dir/expected"
           git show "${EXPECTED_BRANCH_SHA}:docker/Dockerfile.download" > "$verify_dir/actual"
           branch_version="$(grep -E '^ARG YTDLP_VERSION=' "$verify_dir/actual" | cut -d= -f2)"
+          branch_sha256="$(grep -E '^ARG YTDLP_SHA256=' "$verify_dir/actual" | cut -d= -f2)"
           [[ "$branch_version" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}$ ]]
-          sed 's|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=__VALIDATED__|' \
+          [[ "$branch_sha256" == "$YTDLP_SHA256" ]]
+          sed -e 's|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=__VALIDATED__|' \
+              -e 's|^ARG YTDLP_SHA256=.*|ARG YTDLP_SHA256=__VALIDATED__|' \
             "$verify_dir/expected" > "$verify_dir/expected.normalized"
-          sed 's|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=__VALIDATED__|' \
+          sed -e 's|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=__VALIDATED__|' \
+              -e 's|^ARG YTDLP_SHA256=.*|ARG YTDLP_SHA256=__VALIDATED__|' \
             "$verify_dir/actual" > "$verify_dir/actual.normalized"
           if ! cmp -s "$verify_dir/expected.normalized" "$verify_dir/actual.normalized"; then
-            echo "::error::Automation branch Dockerfile changes more than the validated yt-dlp ARG value."
+            echo "::error::Automation branch Dockerfile changes more than the validated yt-dlp version/checksum pair."
             diff -u "$verify_dir/expected.normalized" "$verify_dir/actual.normalized" || true
             exit 1
           fi
 
           git switch -c "ci-repin-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          sed "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${VERSION}|" \
+          sed -e "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${VERSION}|" \
+              -e "s|^ARG YTDLP_SHA256=.*|ARG YTDLP_SHA256=${YTDLP_SHA256}|" \
             docker/Dockerfile.download > "$verify_dir/trusted.new"
           mv "$verify_dir/trusted.new" docker/Dockerfile.download
           grep -qxF "ARG YTDLP_VERSION=${VERSION}" docker/Dockerfile.download
+          grep -qxF "ARG YTDLP_SHA256=${YTDLP_SHA256}" docker/Dockerfile.download
           [[ "$(git diff --name-only)" == "docker/Dockerfile.download" ]]
 
           git config user.name "github-actions[bot]"

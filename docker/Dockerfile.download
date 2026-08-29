@@ -3,12 +3,24 @@
 # Target architecture: x86_64 (matching binary dependencies)
 
 # ===========================================================
-# Build bgutil Python plugin (pip install in Lambda Python image)
+# Build Python-side yt-dlp support
 # ===========================================================
 FROM public.ecr.aws/lambda/python:3.12-x86_64 AS bgutil-builder
 COPY layers/bgutil/requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt -t /opt/python --no-cache-dir --quiet \
-  && pip install yt-dlp-ejs==0.8.0 -t /opt/python --no-cache-dir --quiet \
+RUN pip install --require-hashes --only-binary=:all: \
+    -r /tmp/requirements.txt -t /opt/python --no-cache-dir --quiet \
+  && chmod -R 755 /opt/python
+
+# The jim60105 Rust provider requires its own Python plugin; the similarly named
+# Brainicism package is a different implementation and is explicitly incompatible.
+ARG BGUTIL_VERSION=v0.8.1
+ARG BGUTIL_PLUGIN_SHA256=99fd83b98fa93b193d6a3b69dc74410d76e7a2b889868c54d16121cac9060344
+ADD --checksum=sha256:${BGUTIL_PLUGIN_SHA256} \
+  https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/download/${BGUTIL_VERSION}/bgutil-ytdlp-pot-provider-rs.zip \
+  /tmp/bgutil-plugin.zip
+RUN python -m zipfile -e /tmp/bgutil-plugin.zip /opt/python \
+  && rm /tmp/bgutil-plugin.zip \
+  && test -f /opt/python/yt_dlp_plugins/extractor/getpot_bgutil_cli.py \
   && chmod -R 755 /opt/python
 
 # ===========================================================
@@ -20,23 +32,27 @@ FROM public.ecr.aws/lambda/nodejs:24-x86_64 AS base
 RUN microdnf install -y unzip tar xz && microdnf clean all
 
 # --- yt-dlp ---
-# This ARG is the single source of truth for the yt-dlp version. It is bumped by
-# the automated weekly update (.github/workflows/update-yt-dlp.yml) and the local
-# helper (bin/update-yt-dlp.sh), both of which sed this exact line.
-ARG YTDLP_VERSION=2026.07.04
-ADD --chmod=755 \
+# This version/checksum pair is bumped atomically by the automated weekly update
+# (.github/workflows/update-yt-dlp.yml) and the local helper (bin/update-yt-dlp.sh).
+ARG YTDLP_VERSION=2026.08.19
+ARG YTDLP_SHA256=58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a
+ADD --checksum=sha256:${YTDLP_SHA256} --chmod=755 \
   https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp_linux \
   /opt/bin/yt-dlp
 
 # --- bgutil (Rust PO-token provider for yt-dlp) ---
 ARG BGUTIL_VERSION=v0.8.1
-ADD --chmod=755 \
+ARG BGUTIL_BINARY_SHA256=e7c264a574fa2705b6e5dc62283a8a4e80130f27b9d7e9df44e6b09aa6151a87
+ADD --checksum=sha256:${BGUTIL_BINARY_SHA256} --chmod=755 \
   https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/download/${BGUTIL_VERSION}/bgutil-pot-linux-x86_64 \
-  /opt/bin/bgutil
+  /opt/bin/bgutil-pot
 
 # --- Deno (JS runtime for yt-dlp YouTube challenge solving) ---
 ARG DENO_VERSION=2.7.7
-ADD https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip /tmp/deno.zip
+ARG DENO_SHA256=0cd918870657ccc3d96ac682290e894dda374e2a742424aae9118b258a6cf7a3
+ADD --checksum=sha256:${DENO_SHA256} \
+  https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip \
+  /tmp/deno.zip
 RUN cd /tmp && unzip deno.zip && chmod +x deno && mv deno /opt/bin/deno && rm deno.zip
 
 # --- ffmpeg + ffprobe (static build for stream muxing and analysis) ---
@@ -50,10 +66,14 @@ RUN cd /tmp && unzip deno.zip && chmod +x deno && mv deno /opt/bin/deno && rm de
 # fails even when the layer is otherwise cached. Treat the window as ~1 week, not the
 # ~15 months a previous revision of this comment assumed. Bump both ARGs together and
 # verify the asset URL resolves. The 7.1 line is gone from BtbN entirely (no surviving
-# release carries a linux64-gpl-7.1 asset), so this pin tracks 8.1.
+# release carries a linux64-gpl-7.1 asset), so this pin tracks 8.1. The updater moves
+# the build, asset, and checksum ARGs as one validated tuple.
 ARG FFMPEG_BUILD=autobuild-2026-08-28-17-08
 ARG FFMPEG_ASSET=ffmpeg-n8.1.2-50-g1a748fe2cd-linux64-gpl-8.1
-ADD https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BUILD}/${FFMPEG_ASSET}.tar.xz /tmp/ffmpeg.tar.xz
+ARG FFMPEG_SHA256=af69c6a006cf3768826586362fec3426a25544c69fb3d50a95bda08020d5425c
+ADD --checksum=sha256:${FFMPEG_SHA256} \
+  https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BUILD}/${FFMPEG_ASSET}.tar.xz \
+  /tmp/ffmpeg.tar.xz
 RUN cd /tmp && tar xf ffmpeg.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 \
   && chmod +x ffmpeg ffprobe && mv ffmpeg ffprobe /opt/bin/ && rm ffmpeg.tar.xz
 
@@ -80,7 +100,9 @@ COPY --from=bgutil-builder /opt/python/ /opt/python/
 # ===========================================================
 COPY build/lambdas/StartFileUpload/index.mjs ${LAMBDA_TASK_ROOT}/index.mjs
 
-# Ensure binaries are on PATH and yt-dlp can discover yt-dlp-ejs solver scripts
+# Ensure binaries are on PATH and expose yt-dlp-ejs on Python's module path.
+# The bgutil plugin itself is loaded explicitly with `--plugin-dirs /opt`:
+# yt-dlp enumerates /opt's children and finds /opt/python/yt_dlp_plugins.
 ENV PATH="/opt/bin:${PATH}"
 ENV PYTHONPATH="/opt/python"
 

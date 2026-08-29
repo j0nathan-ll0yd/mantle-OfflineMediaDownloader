@@ -2,9 +2,9 @@
 
 # update-yt-dlp.sh
 # Checks for the latest yt-dlp release and optionally bumps the version.
-# The single source of truth is the `ARG YTDLP_VERSION=` line in
+# The source of truth is the `ARG YTDLP_VERSION` / `ARG YTDLP_SHA256` pair in
 # docker/Dockerfile.download (the StartFileUpload container's runtime binary).
-# Usage: pnpm run update-yt-dlp [check|update]
+# Usage: pnpm run update:ytdlp [check|update]
 
 set -euo pipefail
 
@@ -29,13 +29,20 @@ read_current_version() {
   grep -E '^ARG YTDLP_VERSION=' "$DOCKERFILE" | head -1 | cut -d= -f2 | tr -d '[:space:]'
 }
 
+read_current_sha256() {
+  grep -E '^ARG YTDLP_SHA256=' "$DOCKERFILE" | head -1 | cut -d= -f2 | tr -d '[:space:]'
+}
+
 # Replace the Dockerfile ARG version. Portable across macOS/BSD and GNU sed
 # (avoids the `sed -i` incompatibility) by writing through a temp file.
 write_version() {
   local new_version="$1"
+  local new_sha256="$2"
   local tmp
   tmp="$(mktemp)"
-  sed "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${new_version}|" "$DOCKERFILE" > "$tmp"
+  sed -e "s|^ARG YTDLP_VERSION=.*|ARG YTDLP_VERSION=${new_version}|" \
+    -e "s|^ARG YTDLP_SHA256=.*|ARG YTDLP_SHA256=${new_sha256}|" \
+    "$DOCKERFILE" > "$tmp"
   mv "$tmp" "$DOCKERFILE"
 }
 
@@ -64,16 +71,28 @@ main() {
 
   echo -e "${GREEN}Latest version:${NC} ${LATEST_VERSION}"
 
+  local LATEST_SHA256
+  LATEST_SHA256="$(gh api "repos/yt-dlp/yt-dlp/releases/tags/${LATEST_VERSION}" \
+    --jq '.assets[] | select(.name == "yt-dlp_linux") | .digest | ltrimstr("sha256:")')"
+  if [[ ! "$LATEST_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+    error "Release metadata did not return a valid yt-dlp_linux SHA256"
+  fi
+
   local CURRENT_VERSION
   CURRENT_VERSION="$(read_current_version)"
   if [ -z "$CURRENT_VERSION" ]; then
     error "Could not read current ARG YTDLP_VERSION from ${DOCKERFILE}"
   fi
   echo -e "${GREEN}Current version:${NC} ${CURRENT_VERSION}"
+  local CURRENT_SHA256
+  CURRENT_SHA256="$(read_current_sha256)"
+  if [[ ! "$CURRENT_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+    error "Could not read current ARG YTDLP_SHA256 from ${DOCKERFILE}"
+  fi
 
   echo ""
 
-  if [ "$LATEST_VERSION" == "$CURRENT_VERSION" ]; then
+  if [ "$LATEST_VERSION" == "$CURRENT_VERSION" ] && [ "$LATEST_SHA256" == "$CURRENT_SHA256" ]; then
     echo -e "${GREEN}✓${NC} Already on latest version"
     exit 0
   fi
@@ -83,22 +102,23 @@ main() {
 
   if [ "$MODE" == "check" ]; then
     echo "Run with 'update' argument to bump the Dockerfile ARG:"
-    echo "  pnpm run update-yt-dlp update"
+    echo "  pnpm run update:ytdlp update"
     exit 0
   fi
 
   if [ "$MODE" == "update" ]; then
-    echo -e "${BLUE}Updating docker/Dockerfile.download ARG YTDLP_VERSION...${NC}"
-    write_version "$LATEST_VERSION"
+    echo -e "${BLUE}Updating docker/Dockerfile.download yt-dlp version/checksum pair...${NC}"
+    write_version "$LATEST_VERSION" "$LATEST_SHA256"
 
     echo -e "${GREEN}✓${NC} Dockerfile ARG updated to ${LATEST_VERSION}"
     echo ""
     echo "Next steps:"
     echo "  1. Review the change: git diff ${DOCKERFILE}"
-    echo "  2. Rebuild the container: pnpm run build (rebuilds the StartFileUpload image)"
-    echo "  3. Commit the change: git add ${DOCKERFILE}"
+    echo "  2. Commit the dependency tuple: git add ${DOCKERFILE}"
     echo "     git commit -m \"chore(deps): update yt-dlp to ${LATEST_VERSION}\""
-    echo "  4. Deploy: pnpm run deploy:staging"
+    echo "  3. On an authorized image-build host, run bin/refresh-download-image.sh"
+    echo "     (it builds, pushes, smoke-tests, and commits the generated image pin)"
+    echo "  4. Push both commits and wait for the pin-integrity gates before merge/deploy"
     exit 0
   fi
 

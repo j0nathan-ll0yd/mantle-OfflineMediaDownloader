@@ -1,0 +1,12 @@
+{
+  "specVersion": 1,
+  "kind": "artifacts",
+  "lambdas": {},
+  "unresolved": [
+    {
+      "scope": "StartFileUpload",
+      "reason": "s3-key-not-static",
+      "detail": "src/services/youtube/youtube.ts :: key"
+    }
+  ]
+}

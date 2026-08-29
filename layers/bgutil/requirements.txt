@@ -1,4 +1,4 @@
-# bgutil-ytdlp-pot-provider - PO Token provider for yt-dlp
-# Generates proof-of-origin tokens to bypass YouTube bot detection
-# https://github.com/Brainicism/bgutil-ytdlp-pot-provider
-bgutil-ytdlp-pot-provider>=0.7.2
+# Python support package used by yt-dlp's EJS challenge solver. Keep the wheel hash pinned:
+# this file is installed with pip --require-hashes in docker/Dockerfile.download.
+yt-dlp-ejs==0.8.0 \
+    --hash=sha256:79300e5fca7f937a1eeede11f0456862c1b41107ce1d726871e0207424f4bdb4

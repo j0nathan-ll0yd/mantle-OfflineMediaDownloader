@@ -1,0 +1,16 @@
+# Send only the four local inputs referenced by Dockerfile.download to the remote DinD builder.
+# In particular, do not upload the worktree's .git history, SOPS material, local env files,
+# node_modules, or unrelated build artifacts into the privileged sidecar's BuildKit cache.
+**
+!docker/
+!docker/Dockerfile.download
+!layers/
+!layers/bgutil/
+!layers/bgutil/requirements.txt
+!layers/yt-dlp/
+!layers/yt-dlp/cookies/
+!layers/yt-dlp/cookies/youtube-cookies.txt
+!build/
+!build/lambdas/
+!build/lambdas/StartFileUpload/
+!build/lambdas/StartFileUpload/index.mjs

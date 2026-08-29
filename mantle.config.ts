@@ -18,11 +18,12 @@ export default defineConfig({
   // deploy would rename everything staging->prod, destroying the live stack; the
   // CLI refuses it until stage-scoped state keys land (mantle Phase 2d).
   allowedStages: ['staging'],
-  // Raised from the CLI default (5) to 30 (~1 year of refreshes at the observed
-  // ~2/month StartFileUpload image-refresh cadence + a comfortable rollback window).
+  // The automated ffmpeg/yt-dlp lanes can now refresh about 12 times/month. Keep roughly
+  // eight months of immutable digests so a routine lifecycle pass cannot erase the rollback
+  // window after only 2-3 months.
   // Drives the ECR lifecycle policy `countNumber` on the StartFileUpload container
   // repo (infra-api.ts). See .omc/plans/omd-prebuilt-container-lambda-2026-08-16.md, Q3.
-  containerRegistry: {imageRetentionCount: 30},
+  containerRegistry: {imageRetentionCount: 100},
   customVariables: [
     {
       name: 'resource_prefix',
