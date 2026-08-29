@@ -51,8 +51,8 @@ RUN cd /tmp && unzip deno.zip && chmod +x deno && mv deno /opt/bin/deno && rm de
 # ~15 months a previous revision of this comment assumed. Bump both ARGs together and
 # verify the asset URL resolves. The 7.1 line is gone from BtbN entirely (no surviving
 # release carries a linux64-gpl-7.1 asset), so this pin tracks 8.1.
-ARG FFMPEG_BUILD=autobuild-2026-08-27-16-45
-ARG FFMPEG_ASSET=ffmpeg-n8.1.2-47-g156bb4d299-linux64-gpl-8.1
+ARG FFMPEG_BUILD=autobuild-2026-08-28-17-08
+ARG FFMPEG_ASSET=ffmpeg-n8.1.2-50-g1a748fe2cd-linux64-gpl-8.1
 ADD https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BUILD}/${FFMPEG_ASSET}.tar.xz /tmp/ffmpeg.tar.xz
 RUN cd /tmp && tar xf ffmpeg.tar.xz --wildcards '*/bin/ffmpeg' '*/bin/ffprobe' --strip-components=2 \
   && chmod +x ffmpeg ffprobe && mv ffmpeg ffprobe /opt/bin/ && rm ffmpeg.tar.xz
