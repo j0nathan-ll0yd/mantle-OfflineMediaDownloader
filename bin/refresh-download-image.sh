@@ -64,11 +64,10 @@ if [[ ! -f "$BUNDLE" ]]; then
 fi
 
 echo "==> Building + pushing ${IMAGE}:${tag} (linux/amd64)"
-# --provenance=false --sbom=false: the docker-container buildx driver (needed for
-# cross-building linux/amd64 on this arm64 fleet) attaches provenance/SBOM attestations
-# by default, which turns the pushed artifact into an OCI image INDEX rather than a
-# single image manifest. AWS Lambda container images must be a single-arch manifest;
-# an index digest would produce an undeployable pin. Disable both.
+# --provenance=false --sbom=false: BuildKit can attach provenance/SBOM attestations that turn
+# the pushed artifact into an OCI image INDEX. AWS Lambda container images must be a single-arch
+# manifest; an index digest would produce an undeployable pin. Disable both. The image-build lane
+# currently uses BuildKit's native docker driver; this remains required regardless of driver.
 docker buildx build \
   --platform linux/amd64 \
   --provenance=false \
@@ -95,9 +94,9 @@ manifest_type="$(docker buildx imagetools inspect "${IMAGE}@${digest}" --raw | n
 case "$manifest_type" in
   *image.index* | *manifest.list*)
     echo "ERROR: pushed artifact ${IMAGE}@${digest} is an OCI image INDEX ($manifest_type)," \
-         "not a single image manifest. AWS Lambda rejects indexes. This means" \
-         "--provenance=false/--sbom=false did not take effect, or the buildx driver" \
-         "in use still attaches attestations. Refusing to write an undeployable pin." >&2
+      "not a single image manifest. AWS Lambda rejects indexes. This means" \
+      "--provenance=false/--sbom=false did not take effect, or the buildx driver" \
+      "in use still attaches attestations. Refusing to write an undeployable pin." >&2
     exit 1
     ;;
   *)
@@ -105,10 +104,46 @@ case "$manifest_type" in
     ;;
 esac
 
+echo "==> Smoke-testing the pushed linux/amd64 image without network or root"
+# The official yt-dlp Linux binary is a PyInstaller one-file executable. It
+# currently expands to roughly 70-90 MiB before starting; an undersized tmpfs
+# reports a misleading archive-decompression failure. Keep /tmp
+# noexec/nosuid/nodev, but leave headroom for future dependency growth.
+smoke_output="$(docker run \
+  --rm \
+  --platform linux/amd64 \
+  --network none \
+  --read-only \
+  --tmpfs /tmp:rw,noexec,nosuid,nodev,size=256m \
+  --user 1000:1000 \
+  --entrypoint /bin/sh \
+  "${IMAGE}@${digest}" \
+  -ec '
+    test -s /var/task/index.mjs
+    test -r /opt/cookies/youtube-cookies.txt
+    test -f /opt/python/yt_dlp_plugins/extractor/getpot_bgutil_cli.py
+    ffmpeg -version >/dev/null
+    ffprobe -version >/dev/null
+    deno --version >/dev/null
+    bgutil-pot --version
+    yt-dlp --version
+    # yt-dlp enumerates children of --plugin-dirs, so /opt (not /opt/python)
+    # discovers the plugin namespace at /opt/python/yt_dlp_plugins.
+    yt-dlp --ignore-config --no-cache-dir --plugin-dirs /opt --verbose --simulate \
+      --socket-timeout 1 --retries 0 \
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 2>&1 || true
+  ')"
+printf '%s\n' "$smoke_output"
+grep -Eq 'PO Token Providers: .*bgutil:cli-0\.8\.1' <<< "$smoke_output" || {
+  echo "ERROR: the pushed image did not discover the matching bgutil:cli-0.8.1 plugin/provider pair." >&2
+  exit 1
+}
+echo "OK: runtime binaries, non-root cookie access, handler bundle, and bgutil provider discovery passed."
+
 bundle_hash="sha256:$(sha256sum "$BUNDLE" | cut -d' ' -f1)"
 
 echo "==> Writing ${PIN_FILE}"
-cat > "$PIN_FILE" <<EOF
+cat > "$PIN_FILE" << EOF
 {
   "digest": "${digest}",
   "bundleHash": "${bundle_hash}",

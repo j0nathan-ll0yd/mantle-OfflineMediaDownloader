@@ -81,7 +81,7 @@
     "update:ffmpeg": "./bin/update-ffmpeg.sh",
     "update:ffmpeg:check": "./bin/update-ffmpeg.sh --check-only",
     "update:ytdlp": "./bin/update-yt-dlp.sh",
-    "update:ytdlp:check": "./bin/update-yt-dlp.sh --check-only",
+    "update:ytdlp:check": "./bin/update-yt-dlp.sh check",
     "validate:env-vars": "mantle check env-vars",
     "validate:doc:sync": "./bin/validate-doc-sync.sh",
     "validate:docs": "./bin/validate-docs.sh",

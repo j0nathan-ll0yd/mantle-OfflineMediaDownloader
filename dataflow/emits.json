@@ -1,0 +1,14 @@
+{
+  "specVersion": 1,
+  "kind": "emits",
+  "lambdas": {
+    "FeedlyWebhook": [
+      "DownloadRequested"
+    ],
+    "StartFileUpload": [
+      "DownloadCompleted",
+      "DownloadFailed"
+    ]
+  },
+  "unresolved": []
+}

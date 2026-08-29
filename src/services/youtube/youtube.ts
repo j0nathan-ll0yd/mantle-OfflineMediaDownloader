@@ -27,11 +27,12 @@ function runLayerDiagnostics(binaryPath: string): void {
   // Check key files exist
   const paths = [
     binaryPath,
-    '/opt/bin/bgutil',
+    '/opt/bin/bgutil-pot',
     '/opt/bin/deno',
     '/opt/bin/ffmpeg',
     '/opt/cookies/youtube-cookies.txt',
-    '/opt/python'
+    '/opt/python',
+    '/opt/python/yt_dlp_plugins/extractor/getpot_bgutil_cli.py'
   ]
   for (const p of paths) {
     try {
@@ -86,8 +87,12 @@ const YTDLP_STATIC_CONFIG = {
   MERGE_FORMAT: 'mp4',
   /** Number of concurrent fragment downloads for speed */
   CONCURRENT_FRAGMENTS: '4',
-  /** bgutil plugin path in Lambda layer (set via PYTHONPATH env var) */
-  PLUGIN_PATH: '/opt/python',
+  /**
+   * Parent searched by yt-dlp's explicit plugin loader. The loader enumerates
+   * each child as a plugin root, so /opt discovers /opt/python/yt_dlp_plugins;
+   * passing /opt/python would incorrectly search one level below it.
+   */
+  PLUGIN_PATH: '/opt',
   /** Explicit deno path for yt-dlp JS challenge solving (PyInstaller binary can't discover via PATH) */
   JS_RUNTIME: 'deno:/opt/bin/deno',
   /** Explicit ffmpeg location (PyInstaller binary can't discover via PATH) */

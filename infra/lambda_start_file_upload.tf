@@ -21,11 +21,11 @@ resource "aws_ecr_lifecycle_policy" "start_file_upload" {
   policy = jsonencode({
     rules = [{
       rulePriority = 1
-      description  = "Retain last 30 images"
+      description  = "Retain last 100 images"
       selection = {
         tagStatus   = "any"
         countType   = "imageCountMoreThan"
-        countNumber = 30
+        countNumber = 100
       }
       action = { type = "expire" }
     }]
