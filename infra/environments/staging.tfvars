@@ -31,17 +31,10 @@ cors_allowed_origins = [
   "https://jonathanlloyd.me"
 ]
 
-# Required variables (Atlas decision 0098, mantle CLI 2.12.1).
-# These derive from getRequiredEnv() calls, so the generator emits them with no
-# default. A plan fails unless every stage binds them.
+# Required variable (Atlas decision 0098, mantle CLI 2.12.2).
+# It derives from a getRequiredEnv() call, so the generator emits it with no
+# default. A plan fails unless every stage binds it.
 #
 # ytdlp_binary_path is live: it wires FeedlyWebhook's YTDLP_BINARY_PATH. The path
 # is where docker/Dockerfile.download installs the yt-dlp binary.
 ytdlp_binary_path = "/opt/bin/yt-dlp"
-
-# The two below are required-but-inlined. Each is also set via staticEnvVars in
-# the handler, so the generator writes the literal straight into the .tf and the
-# variable is never referenced. The value here satisfies tofu; the runtime uses
-# the inlined literal. Keep both in sync with their staticEnvVars source.
-multi_authentication_path_parts = "device/register,device/event,files"
-apple_app_bundle_identifier     = "lifegames.OfflineMediaDownloader"
