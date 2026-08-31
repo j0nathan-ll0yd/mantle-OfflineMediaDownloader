@@ -51,7 +51,6 @@ variable "dsql_endpoint" {
 variable "multi_authentication_path_parts" {
   description = "multi authentication path parts"
   type        = string
-  default     = ""
 }
 
 variable "node_env" {
@@ -99,13 +98,11 @@ variable "ytdlp_max_sleep_interval" {
 variable "ytdlp_binary_path" {
   description = "ytdlp binary path"
   type        = string
-  default     = ""
 }
 
 variable "apple_app_bundle_identifier" {
   description = "apple app bundle identifier"
   type        = string
-  default     = ""
 }
 
 # Project-specific custom variables
