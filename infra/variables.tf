@@ -48,25 +48,8 @@ variable "dsql_endpoint" {
   default     = ""
 }
 
-variable "multi_authentication_path_parts" {
-  description = "multi authentication path parts"
-  type        = string
-}
-
 variable "node_env" {
   description = "node env"
-  type        = string
-  default     = ""
-}
-
-variable "reserved_client_ip" {
-  description = "reserved client ip"
-  type        = string
-  default     = ""
-}
-
-variable "apns_host" {
-  description = "apns host"
   type        = string
   default     = ""
 }
@@ -97,11 +80,6 @@ variable "ytdlp_max_sleep_interval" {
 
 variable "ytdlp_binary_path" {
   description = "ytdlp binary path"
-  type        = string
-}
-
-variable "apple_app_bundle_identifier" {
-  description = "apple app bundle identifier"
   type        = string
 }
 

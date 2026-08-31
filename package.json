@@ -134,7 +134,7 @@
     "@eslint/eslintrc": "^3.3.6",
     "@eslint/js": "^10.0.1",
     "@huggingface/transformers": "^4.2.0",
-    "@j0nathan-ll0yd/cli": "^2.12.1",
+    "@j0nathan-ll0yd/cli": "^2.12.2",
     "@j0nathan-ll0yd/config": "^1.2.1",
     "@j0nathan-ll0yd/eslint-config": "^1.1.0",
     "@j0nathan-ll0yd/testing": "^1.1.4",
