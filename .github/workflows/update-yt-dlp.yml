@@ -367,7 +367,7 @@ jobs:
           echo "dependency_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials for the staging ECR push
-        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6
+        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6
         with:
           # Dedicated OIDC role: main-ref trust plus ECR push access scoped to
           # staging/start-file-upload. Do not reuse the broader staging deploy secret.
