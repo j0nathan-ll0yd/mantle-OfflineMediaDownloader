@@ -6,7 +6,7 @@
     {
       "scope": "StartFileUpload",
       "reason": "s3-key-not-static",
-      "detail": "src/services/youtube/youtube.ts :: key"
+      "detail": "src/services/youtube/youtube.ts:628:41 :: key"
     }
   ]
 }

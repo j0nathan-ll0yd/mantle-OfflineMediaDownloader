@@ -27,7 +27,7 @@ const SUBCOMMAND = 'package-versions'
 
 /**
  * The payload-normalization rule this repo's packages must be measured under. Canonical
- * definition and the measurements behind it: atlas `contracts/package-digest/`. See the
+ * definition and measurements: https://github.com/j0nathan-ll0yd/phoenix/blob/main/packages/estate-contracts/package-digest/GUIDE.md. See the
  * spec-version note in the header for why this is a hard assertion rather than a log line.
  */
 const REQUIRED_SPEC_VERSION = 3
