@@ -14,6 +14,10 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+    # A bare `pull_request:` defaults to [opened, synchronize, reopened]; `ready_for_review`
+    # is not in that set, so flipping a draft to ready re-runs nothing and leaves a stale
+    # green in place. A `types:` key REPLACES the defaults, so all four are listed.
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # packages: read lets the run's GITHUB_TOKEN pull @j0nathan-ll0yd/config
 # (shared dprint + tsconfig) from GitHub Packages during install.
