@@ -270,6 +270,24 @@ pnpm run deploy:staging        # Deploy to staging (local agents)
 
 **StartFileUpload container image**: routine builds (`pnpm run build:ci` = `mantle build --skip-container`, used by CI and this deploy path) are Docker-free — the `StartFileUpload` container Lambda is referenced by a pinned ECR manifest digest in `docker/start-file-upload.pin.json` instead of being rebuilt every time. The scheduled ffmpeg and yt-dlp update workflows run `bin/refresh-download-image.sh` on the isolated `image-build` CI lane and push the generated pin commit back to their PR branch. For other changes to `docker/Dockerfile.download`, `layers/**`, or the `StartFileUpload` bundle (including transitively-imported `src/services/**` etc.), run that script explicitly on an authorized Docker host to rebuild, push, and repin. See `docker/start-file-upload.pin.README.md`.
 
+#### Manual-deploy policy and the image-drift measurer
+
+Deploys are manual and human-run. CI never deploys (`ci.deploy: false`), and no schedule deploys. The scheduled ffmpeg and yt-dlp lanes only merge a new `docker/*.pin.json` to `main`; the image reaches staging when a person runs `pnpm run deploy:staging`. Between those two events `main` legitimately leads staging, and a pin can sit merged and undeployed for days.
+
+```bash
+pnpm run check:image-drift      # Advisory: does deployed staging match every committed container pin?
+```
+
+The measurer resolves each `docker/*.pin.json` to the Lambda that declares it (`imageDigestFile`), derives the deployed function name (`infra` `function_name` prefixed with `environment` from `infra/environments/staging.tfvars`), and compares the pinned digest to the digest the live function is running. One read-only `lambda:GetFunction` call per pin. Exit codes:
+
+| Exit | Meaning                                                                                            |
+| ---- | -------------------------------------------------------------------------------------------------- |
+| 0    | Every committed pin is the image staging is running.                                               |
+| 1    | Drift. ADVISORY: a deploy is pending, not a broken build. Run `npx mantle deploy --stage staging`. |
+| 3    | UNMEASURED, never a pass. No credentials, no such function, API error, or malformed pin.           |
+
+Run it manually. It is deliberately not a required CI context and not on a schedule: `main` running ahead of staging is the normal state between deploys, so a blocking version would go red for doing its job. Its own unit tests (`pnpm run test:image-drift`) do run in CI.
+
 Before running migrations against a live stage, use these validation commands:
 
 ```bash

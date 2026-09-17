@@ -3,6 +3,10 @@ name: PR Checks
 on:
   pull_request:
     branches: [main]
+    # A bare `pull_request:` defaults to [opened, synchronize, reopened]; `ready_for_review`
+    # is not in that set, so flipping a draft to ready re-runs nothing and leaves a stale
+    # green in place. A `types:` key REPLACES the defaults, so all four are listed.
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # packages: read must be granted here so the reusable full-ci / integration
 # calls below can pass it through to unit-tests.yml / integration-tests.yml,
