@@ -105,7 +105,7 @@ importers:
         version: 4.2.0(@types/node@26.1.1)
       '@j0nathan-ll0yd/cli':
         specifier: ^2.19.1
-        version: 2.19.1(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/client-api-gateway@3.1101.0)(@aws-sdk/client-cloudwatch@3.1101.0)(@aws-sdk/client-sns@3.1101.0)(@aws-sdk/dsql-signer@3.1101.0)(@aws-sdk/lib-dynamodb@3.1101.0(@aws-sdk/client-dynamodb@3.1101.0))(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(kysely@0.29.4)(postgres@3.4.9))(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@6.0.3)(vitest@4.1.10)(zod@4.4.3)
+        version: 2.19.2(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/client-api-gateway@3.1101.0)(@aws-sdk/client-cloudwatch@3.1101.0)(@aws-sdk/client-sns@3.1101.0)(@aws-sdk/dsql-signer@3.1101.0)(@aws-sdk/lib-dynamodb@3.1101.0(@aws-sdk/client-dynamodb@3.1101.0))(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(kysely@0.29.4)(postgres@3.4.9))(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@6.0.3)(vitest@4.1.10)(zod@4.4.3)
       '@j0nathan-ll0yd/config':
         specifier: ^1.2.1
         version: 1.2.1(eslint@10.7.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
@@ -1376,8 +1376,8 @@ packages:
   '@j0nathan-ll0yd/aws@1.5.0':
     resolution: {integrity: sha512-XlH/EgCbLav1CKYnQSy1iK+M41WjhKKQyfkmpdDcNuAJu3B9M2DuWCak+RIfF81ITpW5cqPQF8fEjjgiCg8tXg==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/aws/1.5.0/e5bbde509e59643e754d50029c00721174fbe547}
 
-  '@j0nathan-ll0yd/cli@2.19.1':
-    resolution: {integrity: sha512-m2selozFeTqx0q6dYiRWXbZx75myvYaYh2khA50zKAoYjXLOY46WMx6fNl/rFgGUe1DKauGldz/TXLquYoDROg==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/cli/2.19.1/13adbeca1fde7df2594d57fb1f59a740f21c81a2}
+  '@j0nathan-ll0yd/cli@2.19.2':
+    resolution: {integrity: sha512-WVqujeKt7ApC2I5PSst+7w4ueZzz9C+65lPWSmNCgTUmzAuU0GaXU5GimdRq1EQvk1m/L602L1q46g50gb6sig==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/cli/2.19.2/c7e9c3dde1580147ad6c212a850f86e939f8d1bf}
     hasBin: true
     peerDependencies:
       typescript: 5.9.2 || 5.9.3 || 6.0.3
@@ -1418,8 +1418,8 @@ packages:
     peerDependencies:
       eslint: '>=10.0.0'
 
-  '@j0nathan-ll0yd/estate-contracts@0.13.2':
-    resolution: {integrity: sha512-i0SVdtj4V2fjaWebtLa+T3Wv5o01scNK6ppfxRJTeI+TMGoo4qMRbP7bXvaJOjQMS0HqymNtoS4bqJqbOjvU+g==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/estate-contracts/0.13.2/3e9e5deb90625ecbd2bfb4fe87a21f5336624360}
+  '@j0nathan-ll0yd/estate-contracts@0.13.3':
+    resolution: {integrity: sha512-YL/BtSFLnuh70kClUzpoKsgRknvrJnrszoMDjbPX4Db8lnW6ztkYDeFJ/EUCTtSc0FYu7vWZgBat3WdqDmNRHg==, tarball: https://npm.pkg.github.com/download/@j0nathan-ll0yd/estate-contracts/0.13.3/4264342b7a5295a231b3e9e2e9be064699c6c0e0}
     peerDependencies:
       typescript: 5.9.2 || 5.9.3 || 6.0.3
 
@@ -7667,7 +7667,7 @@ snapshots:
       - '@redis/client'
       - '@valkey/valkey-glide'
 
-  '@j0nathan-ll0yd/cli@2.19.1(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/client-api-gateway@3.1101.0)(@aws-sdk/client-cloudwatch@3.1101.0)(@aws-sdk/client-sns@3.1101.0)(@aws-sdk/dsql-signer@3.1101.0)(@aws-sdk/lib-dynamodb@3.1101.0(@aws-sdk/client-dynamodb@3.1101.0))(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(kysely@0.29.4)(postgres@3.4.9))(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@6.0.3)(vitest@4.1.10)(zod@4.4.3)':
+  '@j0nathan-ll0yd/cli@2.19.2(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/client-api-gateway@3.1101.0)(@aws-sdk/client-cloudwatch@3.1101.0)(@aws-sdk/client-sns@3.1101.0)(@aws-sdk/dsql-signer@3.1101.0)(@aws-sdk/lib-dynamodb@3.1101.0(@aws-sdk/client-dynamodb@3.1101.0))(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(kysely@0.29.4)(postgres@3.4.9))(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@6.0.3)(vitest@4.1.10)(zod@4.4.3)':
     dependencies:
       '@aws-sdk/client-dynamodb': 3.1101.0
       '@aws-sdk/client-eventbridge': 3.1101.0
@@ -7679,7 +7679,7 @@ snapshots:
       '@j0nathan-ll0yd/database': 2.0.2(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(kysely@0.29.4)(postgres@3.4.9)
       '@j0nathan-ll0yd/env': 1.0.0
       '@j0nathan-ll0yd/errors': 1.0.0
-      '@j0nathan-ll0yd/estate-contracts': 0.13.2(typescript@6.0.3)
+      '@j0nathan-ll0yd/estate-contracts': 0.13.3(typescript@6.0.3)
       '@j0nathan-ll0yd/mcp': 1.4.12(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/dsql-signer@3.1101.0)(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(vitest@4.1.10)
       '@j0nathan-ll0yd/testing': 1.1.12(@aws-lambda-powertools/jmespath@2.34.0)(@aws-sdk/client-api-gateway@3.1101.0)(@aws-sdk/client-cloudwatch@3.1101.0)(@aws-sdk/client-dynamodb@3.1101.0)(@aws-sdk/client-eventbridge@3.1101.0)(@aws-sdk/client-lambda@3.1101.0)(@aws-sdk/client-s3@3.1101.0)(@aws-sdk/client-sns@3.1101.0)(@aws-sdk/client-sqs@3.1101.0)(@aws-sdk/dsql-signer@3.1101.0)(@aws-sdk/lib-dynamodb@3.1101.0(@aws-sdk/client-dynamodb@3.1101.0))(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.4)(nanostores@1.4.2))(@better-auth/utils@0.4.2)(@middy/core@7.7.2)(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(kysely@0.29.4)(postgres@3.4.9))(kysely@0.29.4)(postgres@3.4.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.1.10)
       '@modelcontextprotocol/sdk': 1.29.0(supports-color@8.1.1)(zod@4.4.3)
@@ -7891,7 +7891,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@j0nathan-ll0yd/estate-contracts@0.13.2(typescript@6.0.3)':
+  '@j0nathan-ll0yd/estate-contracts@0.13.3(typescript@6.0.3)':
     dependencies:
       typescript: 6.0.3
       zod: 4.4.3
