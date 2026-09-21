@@ -68,9 +68,9 @@ RUN cd /tmp && unzip deno.zip && chmod +x deno && mv deno /opt/bin/deno && rm de
 # verify the asset URL resolves. The 7.1 line is gone from BtbN entirely (no surviving
 # release carries a linux64-gpl-7.1 asset), so this pin tracks 8.1. The updater moves
 # the build, asset, and checksum ARGs as one validated tuple.
-ARG FFMPEG_BUILD=autobuild-2026-09-12-13-12
-ARG FFMPEG_ASSET=ffmpeg-n8.1.2-52-g5a03dfa0f6-linux64-gpl-8.1
-ARG FFMPEG_SHA256=682dba33847c14b496b51bb4f8bd6601a180295d038928c68c558ab8978d6fa8
+ARG FFMPEG_BUILD=autobuild-2026-09-20-13-11
+ARG FFMPEG_ASSET=ffmpeg-n8.1.2-267-gb2f422d306-linux64-gpl-8.1
+ARG FFMPEG_SHA256=9575ed910aeca8e34427409c6c1c5c774e741cadad6c85f2c4b5e7fc3cd8f72e
 ADD --checksum=sha256:${FFMPEG_SHA256} \
   https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BUILD}/${FFMPEG_ASSET}.tar.xz \
   /tmp/ffmpeg.tar.xz
