@@ -49,6 +49,19 @@ jobs:
           readonly REPO="BtbN/FFmpeg-Builds"
           readonly BASE="https://github.com/${REPO}/releases/download"
 
+          # Every upstream read is bounded. A stalled fetch must fail this step, not hang
+          # until the 15-minute job timeout and not read as an empty result.
+          # curl exit 22 is an HTTP error (-f); 28 is a timeout. timeout(1) exits 124.
+          readonly CURL_BOUNDS=(--connect-timeout 15 --max-time 60)
+          gh_api() {
+            local rc=0
+            timeout -k 10 60 gh api "$@" || rc=$?
+            if [ "$rc" -ne 0 ]; then
+              echo "::error::gh api ${1@Q} failed with exit ${rc} (124 means it timed out after 60s)." >&2
+              return "$rc"
+            fi
+          }
+
           # Single source of truth: the build/asset/checksum ARG tuple in the Dockerfile.
           # It must move together -- the tag alone does not identify an asset, because
           # BtbN rebuilds the asset's git-describe suffix on every autobuild.
@@ -70,17 +83,28 @@ jobs:
 
           # Is the pin we are running on TODAY still resolvable? A dead pin means the
           # image build is already broken, which is more urgent than a routine bump.
-          if curl -fsIL -o /dev/null "${BASE}/${CURRENT_BUILD}/${CURRENT_ASSET}.tar.xz"; then
-            echo "current_alive=true" >> "$GITHUB_OUTPUT"
-            echo "Current pin still resolves."
-          else
-            echo "current_alive=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Current ffmpeg pin ${CURRENT_BUILD} no longer resolves -- the image build is broken until this is bumped."
-          fi
+          # Only an HTTP error proves the pin is dead. A timeout or network error proves
+          # nothing, so it fails the step rather than raising a false dead-pin escalation.
+          pin_rc=0
+          curl -fsIL "${CURL_BOUNDS[@]}" -o /dev/null "${BASE}/${CURRENT_BUILD}/${CURRENT_ASSET}.tar.xz" || pin_rc=$?
+          case "$pin_rc" in
+            0)
+              echo "current_alive=true" >> "$GITHUB_OUTPUT"
+              echo "Current pin still resolves."
+              ;;
+            22)
+              echo "current_alive=false" >> "$GITHUB_OUTPUT"
+              echo "::warning::Current ffmpeg pin ${CURRENT_BUILD} no longer resolves -- the image build is broken until this is bumped."
+              ;;
+            *)
+              echo "::error::Could not check the current ffmpeg pin: curl exit ${pin_rc} (28 means it timed out)."
+              exit 1
+              ;;
+          esac
 
           # Releases come back newest-first. One page is far more than the ~1 week the
           # window actually holds.
-          LATEST_BUILD=$(gh api "repos/${REPO}/releases?per_page=100" \
+          LATEST_BUILD=$(gh_api "repos/${REPO}/releases?per_page=100" \
             --jq '[.[] | select(.tag_name | startswith("autobuild-"))][0].tag_name')
 
           # Release metadata is third-party input. Keep it data: reject every character that
@@ -90,7 +114,7 @@ jobs:
             exit 1
           fi
 
-          ASSETS=$(gh api "repos/${REPO}/releases/tags/${LATEST_BUILD}" --jq '.assets[].name')
+          ASSETS=$(gh_api "repos/${REPO}/releases/tags/${LATEST_BUILD}" --jq '.assets[].name')
 
           # Prefer the line we are already on.
           NEW_ASSET=$(grep -E "^ffmpeg-.*-linux64-gpl-${CURRENT_LINE}\.tar\.xz$" <<< "$ASSETS" | head -1 | sed 's/\.tar\.xz$//' || true)
@@ -120,7 +144,7 @@ jobs:
             exit 1
           fi
 
-          LATEST_SHA256=$(gh api "repos/${REPO}/releases/tags/${LATEST_BUILD}" \
+          LATEST_SHA256=$(gh_api "repos/${REPO}/releases/tags/${LATEST_BUILD}" \
             --jq ".assets[] | select(.name == \"${NEW_ASSET}.tar.xz\") | .digest | ltrimstr(\"sha256:\")")
           if [[ ! "$LATEST_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
             echo "::error::Release metadata did not contain one valid SHA256 for ${NEW_ASSET}.tar.xz."
@@ -209,8 +233,10 @@ jobs:
           cd "$workdir"
 
           echo "Downloading ${ASSET}.tar.xz ..."
-          curl -fsSL -o "${ASSET}.tar.xz" "${BASE}/${ASSET}.tar.xz"
-          curl -fsSL -o checksums.sha256 "${BASE}/checksums.sha256"
+          # Bounded so a stalled transfer fails this step instead of hanging until the
+          # 15-minute job timeout. The asset took 11s on green runs; 300s is ample headroom.
+          curl -fsSL --connect-timeout 15 --max-time 300 -o "${ASSET}.tar.xz" "${BASE}/${ASSET}.tar.xz"
+          curl -fsSL --connect-timeout 15 --max-time 60 -o checksums.sha256 "${BASE}/checksums.sha256"
 
           echo "Verifying SHA256 ..."
           if ! grep -F "  ${ASSET}.tar.xz" checksums.sha256 > expected.sha256; then
