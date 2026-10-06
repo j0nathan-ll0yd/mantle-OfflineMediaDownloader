@@ -10,7 +10,7 @@
 
 import assert from 'node:assert/strict'
 import {spawnSync} from 'node:child_process'
-import {chmodSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs'
+import {chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {delimiter, dirname, join, resolve} from 'node:path'
 import {after, describe, test} from 'node:test'
@@ -36,6 +36,30 @@ const script = join(scriptsDir, 'check-image-drift.mjs')
 
 const PINNED = 'sha256:2c8bf906e3febc5c1a5e889d53ca26a1c6b5508b09d475cec95fd4ef7bf419aa'
 const OTHER = 'sha256:1111111111111111111111111111111111111111111111111111111111111111'
+
+const PIN_PATH = 'docker/start-file-upload.pin.json'
+
+/**
+ * The digest this repo has committed right now, READ rather than transcribed.
+ *
+ * `PINNED` above is synthetic: the evaluator tests feed it through an injected fetcher and never
+ * touch the filesystem, so a fixed value is exactly right there. The spawn block at the bottom is
+ * different — it runs the shipped script against this repo's REAL pin file, so its stub has to
+ * answer with whatever is committed today.
+ *
+ * Transcribing a digest here instead makes the MATCH case a known-answer test for one specific pin,
+ * and the scheduled ffmpeg and yt-dlp lanes rewrite that pin on their own cadence. `Tests` is a
+ * REQUIRED check, so every unattended pin PR reds on a constant nobody told it about: five of them
+ * piled up unmergeable (#650, #651, #653, #654, #659) before this read the file.
+ *
+ * A malformed pin throws rather than silently skipping the comparison — a MATCH proven against a
+ * digest the parser rejected would be the vacuous pass this whole file exists to rule out.
+ */
+const COMMITTED = (() => {
+  const parsed = parsePinDigest(readFileSync(resolve(repoRoot, PIN_PATH), 'utf8'))
+  if (!parsed.digest) throw new Error(`${PIN_PATH} is unreadable as a pin record: ${String(parsed.problem)}`)
+  return parsed.digest
+})()
 
 const pinText = (digest) => JSON.stringify({digest, bundleHash: OTHER, tag: 'sha-3db71539'})
 const target = (overrides) => ({pinPath: 'docker/start-file-upload.pin.json', pinText: pinText(PINNED), functionName: 'staging-StartFileUpload', ...overrides})
@@ -361,7 +385,7 @@ describe('spawned against the real repo with a stubbed aws CLI', () => {
   }
 
   test('exits 0 and reports MATCH for staging-StartFileUpload when the stub returns the committed digest', () => {
-    const result = runWith({digest: PINNED})
+    const result = runWith({digest: COMMITTED})
     assert.equal(result.status, 0, result.stdout + result.stderr)
     assert.match(result.stdout, /^MATCH docker\/start-file-upload\.pin\.json staging-StartFileUpload/m)
     assert.match(result.stdout, /Exit 0: every committed pin is the image the stage is running\./)
@@ -375,7 +399,7 @@ describe('spawned against the real repo with a stubbed aws CLI', () => {
   })
 
   test('exits 3 and reports UNMEASURED when the CLI fails, never 0', () => {
-    const result = runWith({digest: PINNED, exitStatus: 255})
+    const result = runWith({digest: COMMITTED, exitStatus: 255})
     assert.equal(result.status, 3, result.stdout + result.stderr)
     assert.match(result.stdout, /^UNMEASURED docker\/start-file-upload\.pin\.json staging-StartFileUpload/m)
     assert.match(result.stdout, /Unable to locate credentials/)
