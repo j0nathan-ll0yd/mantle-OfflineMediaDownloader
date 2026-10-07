@@ -512,50 +512,83 @@ main() {
   # =============================================================================
   # Check 12: docs/llms.txt factual claims match the tree (BLOCKING)
   # =============================================================================
-  # docs/llms.txt is hand-written for agents. Every repo path it names must exist,
-  # resolved from the repository root. Paths are markdown link targets and
-  # backtick spans that contain a slash or end in a file extension. npm package
-  # specifiers (@scope/name), URLs, and commands (spans with spaces) are skipped.
-  # Globs must match at least one file. A stated "Node.js N" must equal the
-  # minimum major in package.json engines.node.
+  # docs/llms.txt is hand-written for agents. It must not name anything the tree
+  # lacks. Refs are markdown link targets (title and #anchor stripped) and
+  # backtick spans. Each ref is judged as follows:
+  #   - spans with spaces (commands), URLs (scheme:), #aliases: skipped
+  #   - @scope/name[/subpath]: @scope/name must be a package.json dependency
+  #   - absolute, ~ or ../ paths: rejected; paths are repo-root-relative
+  #   - spans with a slash, or ending in a known file extension: a repo path.
+  #     A :line suffix is stripped. Globs (*, **) must match at least one file.
+  #   - anything else: skipped
+  # Keep prose that contains a slash (for example S3/CloudFront) out of backticks.
+  # A stated "Node.js N" or "Node N" must equal the minimum major of
+  # package.json engines.node.
   echo -n "  [12/12] Checking docs/llms.txt claims... "
   LLMS_FILE="docs/llms.txt"
   LLMS_OK=true
   LLMS_ERRORS=""
+  LLMS_PATH_EXTENSIONS='md|txt|json|ya?ml|ts|mts|mjs|cjs|js|tf|tfvars|sh|toml'
 
   if [ -f "$LLMS_FILE" ]; then
+    command -v node > /dev/null || error "node is required for Check 12 (docs/llms.txt)"
+    DECLARED_PACKAGES=$(node -p "const p = require('./package.json'); Object.keys({...p.dependencies, ...p.devDependencies}).join('\n')")
+    ENGINES_NODE_MAJOR=$(node -p "(require('./package.json').engines?.node ?? '').match(/[0-9]+/)?.[0] ?? ''")
+
+    shopt -s globstar
     while IFS= read -r ref; do
       [ -z "$ref" ] && continue
       [[ "$ref" == *" "* ]] && continue
-      [[ "$ref" == @* ]] && continue
-      [[ "$ref" =~ ^[a-z]+: ]] && continue
+      [[ "$ref" =~ ^[a-z][a-z0-9+.-]*:([^0-9]|$) ]] && continue
       [[ "$ref" == "#"* ]] && continue
-      if [[ "$ref" != */* ]] && [[ ! "$ref" =~ \.[A-Za-z0-9]+$ ]]; then
-        continue
-      fi
-      if [[ "$ref" == *"*"* ]]; then
-        if ! compgen -G "$ref" > /dev/null; then
-          LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: glob '$ref' matches no file"
+      if [[ "$ref" == @*/* ]]; then
+        package_name=$(cut -d/ -f1-2 <<< "$ref")
+        if ! grep -qxF "$package_name" <<< "$DECLARED_PACKAGES"; then
+          LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: package '$package_name' is not a package.json dependency"
           LLMS_OK=false
         fi
-      elif [ ! -e "$ref" ]; then
-        LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: path '$ref' does not exist"
+        continue
+      fi
+      [[ "$ref" == @* ]] && continue
+      if [[ "$ref" == /* || "$ref" == "~"* || "$ref" == ../* ]]; then
+        LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: path '$ref' must be relative to the repository root"
+        LLMS_OK=false
+        continue
+      fi
+      if [[ "$ref" != */* ]] && [[ ! "$ref" =~ \.($LLMS_PATH_EXTENSIONS)(:[0-9].*)?$ ]]; then
+        continue
+      fi
+      repo_path="${ref%%:[0-9]*}"
+      if [[ "$repo_path" == *"*"* ]]; then
+        # Escape brackets so directories such as [fileId] match literally
+        path_glob=$(sed -e 's/\[/\\[/g' -e 's/\]/\\]/g' <<< "$repo_path")
+        if ! compgen -G "$path_glob" > /dev/null; then
+          LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: glob '$repo_path' matches no file"
+          LLMS_OK=false
+        fi
+      elif [ ! -e "$repo_path" ]; then
+        LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: path '$repo_path' does not exist"
         LLMS_OK=false
       fi
     done < <(
-      grep -oE '\]\([^)]+\)' "$LLMS_FILE" | sed -E 's/^\]\(([^)#]*).*$/\1/'
+      tr -d '\r' < "$LLMS_FILE" | grep -oE '\]\([^)]+\)' | sed -E 's/^\]\(([^)# ]*).*$/\1/'
       # shellcheck disable=SC2016 # literal backticks, not command substitution
-      grep -oE '`[^`]+`' "$LLMS_FILE" | tr -d '`'
+      tr -d '\r' < "$LLMS_FILE" | grep -oE '`[^`]+`' | tr -d '`'
     )
+    shopt -u globstar
 
-    ENGINES_NODE_MAJOR=$(node -p "(require('./package.json').engines?.node ?? '').match(/[0-9]+/)?.[0] ?? ''")
-    while IFS= read -r stated_major; do
-      [ -z "$stated_major" ] && continue
-      if [ "$stated_major" != "$ENGINES_NODE_MAJOR" ]; then
-        LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: states Node.js $stated_major, package.json engines.node requires $ENGINES_NODE_MAJOR"
-        LLMS_OK=false
-      fi
-    done < <(grep -oE 'Node\.js [0-9]+' "$LLMS_FILE" | awk '{print $2}' || true)
+    if [ -z "$ENGINES_NODE_MAJOR" ]; then
+      LLMS_ERRORS="$LLMS_ERRORS\n  - package.json engines.node is missing, so the Node.js claim in $LLMS_FILE cannot be checked"
+      LLMS_OK=false
+    else
+      while IFS= read -r stated_major; do
+        [ -z "$stated_major" ] && continue
+        if [ "$stated_major" != "$ENGINES_NODE_MAJOR" ]; then
+          LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: states Node.js $stated_major, package.json engines.node requires $ENGINES_NODE_MAJOR"
+          LLMS_OK=false
+        fi
+      done < <(grep -oE '[Nn]ode(\.js)? v?[0-9]+' "$LLMS_FILE" | grep -oE '[0-9]+$' || true)
+    fi
 
     if [ "$LLMS_OK" = true ]; then
       echo -e "${GREEN}OK${NC}"
