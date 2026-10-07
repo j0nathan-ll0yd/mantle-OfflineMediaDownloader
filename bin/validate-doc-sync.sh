@@ -16,6 +16,7 @@
 #   9. Code path references in wiki docs
 #  10. Import alias validation in code blocks
 #  11. TypeSpec covers all API endpoints
+#  12. docs/llms.txt names only existing repo paths and the declared Node.js major (BLOCKING)
 #
 # Issue #145: Living Documentation System with Stale Page Detection
 
@@ -48,7 +49,7 @@ main() {
   # =============================================================================
   # Check 1: Entity query file count matches documentation
   # =============================================================================
-  echo -n "  [1/11] Checking entity query files... "
+  echo -n "  [1/12] Checking entity query files... "
   # Count query files in src/entities/queries/ (excluding index.ts and test files)
   QUERY_FILE_COUNT=$(find src/entities/queries -name "*.ts" ! -name "*.test.ts" ! -name "index.ts" 2> /dev/null | wc -l | tr -d ' ')
 
@@ -67,7 +68,7 @@ main() {
   # =============================================================================
   # Check 2: Lambda count matches documentation
   # =============================================================================
-  echo -n "  [2/11] Checking Lambda count... "
+  echo -n "  [2/12] Checking Lambda count... "
   # Count Lambda entry points: file-based routing (*.post.ts, *.get.ts, *.delete.ts)
   # and directory-based (index.ts inside named folders, excluding test files)
   LAMBDA_COUNT=$(find src/lambdas \( -name "*.post.ts" -o -name "*.get.ts" -o -name "*.delete.ts" -o -name "*.put.ts" -o -name "*.patch.ts" -o -name "index.ts" \) ! -name "*.test.ts" 2> /dev/null | wc -l | tr -d ' ')
@@ -87,13 +88,13 @@ main() {
   # =============================================================================
   # Check 3: Convention validation (managed by Mantle)
   # =============================================================================
-  echo -n "  [3/11] Convention validation... "
+  echo -n "  [3/12] Convention validation... "
   echo -e "${GREEN}SKIP${NC} (managed by mantle check)"
 
   # =============================================================================
   # Check 4: Critical paths exist
   # =============================================================================
-  echo -n "  [4/11] Checking documented paths exist... "
+  echo -n "  [4/12] Checking documented paths exist... "
   PATHS_OK=true
 
   REQUIRED_PATHS=(
@@ -119,7 +120,7 @@ main() {
   # =============================================================================
   # Check 5: Forbidden patterns in AGENTS.md
   # =============================================================================
-  echo -n "  [5/11] Checking for stale patterns... "
+  echo -n "  [5/12] Checking for stale patterns... "
   STALE_OK=true
 
   # Check for old Prettier reference (should be dprint)
@@ -144,7 +145,7 @@ main() {
   # =============================================================================
   # Check 6: GraphRAG metadata completeness
   # =============================================================================
-  echo -n "  [6/11] Checking GraphRAG metadata... "
+  echo -n "  [6/12] Checking GraphRAG metadata... "
   GRAPHRAG_OK=true
 
   # Get query file names from entities/queries/ directory
@@ -178,7 +179,7 @@ main() {
   # =============================================================================
   # Check 7: Wiki internal links resolve
   # =============================================================================
-  echo -n "  [7/11] Checking wiki links... "
+  echo -n "  [7/12] Checking wiki links... "
   WIKI_OK=true
   BROKEN_LINKS=""
 
@@ -232,7 +233,7 @@ main() {
   # =============================================================================
   # Check 8: Documentation structure (markdown in wiki/, machine files in root)
   # =============================================================================
-  echo -n "  [8/11] Checking docs/ structure... "
+  echo -n "  [8/12] Checking docs/ structure... "
   DOCS_OK=true
 
   # Allowed files in docs/ root
@@ -296,7 +297,7 @@ main() {
   # =============================================================================
   # Check 9: Code path references in wiki docs
   # =============================================================================
-  echo -n "  [9/11] Checking code path references... "
+  echo -n "  [9/12] Checking code path references... "
   CODE_PATHS_OK=true
   STALE_PATHS=""
 
@@ -374,7 +375,7 @@ main() {
   # =============================================================================
   # Check 10: Import alias validation in code blocks
   # =============================================================================
-  echo -n "  [10/11] Checking import aliases... "
+  echo -n "  [10/12] Checking import aliases... "
   IMPORTS_OK=true
   STALE_IMPORTS=""
 
@@ -449,7 +450,7 @@ main() {
   # =============================================================================
   # Check 11: TypeSpec covers all API endpoints
   # =============================================================================
-  echo -n "  [11/11] Checking TypeSpec endpoint coverage... "
+  echo -n "  [11/12] Checking TypeSpec endpoint coverage... "
   COVERAGE_OK=true
 
   # Non-HTTP Lambdas to skip (authorizers, scheduled, event-triggered)
@@ -509,6 +510,64 @@ main() {
   fi
 
   # =============================================================================
+  # Check 12: docs/llms.txt factual claims match the tree (BLOCKING)
+  # =============================================================================
+  # docs/llms.txt is hand-written for agents. Every repo path it names must exist,
+  # resolved from the repository root. Paths are markdown link targets and
+  # backtick spans that contain a slash or end in a file extension. npm package
+  # specifiers (@scope/name), URLs, and commands (spans with spaces) are skipped.
+  # Globs must match at least one file. A stated "Node.js N" must equal the
+  # minimum major in package.json engines.node.
+  echo -n "  [12/12] Checking docs/llms.txt claims... "
+  LLMS_FILE="docs/llms.txt"
+  LLMS_OK=true
+  LLMS_ERRORS=""
+
+  if [ -f "$LLMS_FILE" ]; then
+    while IFS= read -r ref; do
+      [ -z "$ref" ] && continue
+      [[ "$ref" == *" "* ]] && continue
+      [[ "$ref" == @* ]] && continue
+      [[ "$ref" =~ ^[a-z]+: ]] && continue
+      [[ "$ref" == "#"* ]] && continue
+      if [[ "$ref" != */* ]] && [[ ! "$ref" =~ \.[A-Za-z0-9]+$ ]]; then
+        continue
+      fi
+      if [[ "$ref" == *"*"* ]]; then
+        if ! compgen -G "$ref" > /dev/null; then
+          LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: glob '$ref' matches no file"
+          LLMS_OK=false
+        fi
+      elif [ ! -e "$ref" ]; then
+        LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: path '$ref' does not exist"
+        LLMS_OK=false
+      fi
+    done < <(
+      grep -oE '\]\([^)]+\)' "$LLMS_FILE" | sed -E 's/^\]\(([^)#]*).*$/\1/'
+      # shellcheck disable=SC2016 # literal backticks, not command substitution
+      grep -oE '`[^`]+`' "$LLMS_FILE" | tr -d '`'
+    )
+
+    ENGINES_NODE_MAJOR=$(node -p "(require('./package.json').engines?.node ?? '').match(/[0-9]+/)?.[0] ?? ''")
+    while IFS= read -r stated_major; do
+      [ -z "$stated_major" ] && continue
+      if [ "$stated_major" != "$ENGINES_NODE_MAJOR" ]; then
+        LLMS_ERRORS="$LLMS_ERRORS\n  - $LLMS_FILE: states Node.js $stated_major, package.json engines.node requires $ENGINES_NODE_MAJOR"
+        LLMS_OK=false
+      fi
+    done < <(grep -oE 'Node\.js [0-9]+' "$LLMS_FILE" | awk '{print $2}' || true)
+
+    if [ "$LLMS_OK" = true ]; then
+      echo -e "${GREEN}OK${NC}"
+    else
+      echo -e "${RED}STALE${NC}"
+      ERRORS="$ERRORS$LLMS_ERRORS"
+    fi
+  else
+    echo -e "${GREEN}SKIP${NC} (no $LLMS_FILE)"
+  fi
+
+  # =============================================================================
   # Summary
   # =============================================================================
   echo ""
@@ -530,6 +589,7 @@ main() {
     echo "  2. Update graphrag/metadata.json if entities changed"
     echo "  3. Run 'pnpm run graphrag:extract' to regenerate knowledge graph"
     echo "  4. Fix any broken wiki links"
+    echo "  5. Correct stale paths or versions in docs/llms.txt"
     exit 1
   fi
 
