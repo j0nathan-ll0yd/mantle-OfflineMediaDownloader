@@ -8,10 +8,10 @@ on:
     # green in place. A `types:` key REPLACES the defaults, so all four are listed.
     types: [opened, synchronize, reopened, ready_for_review]
 
-# packages: read must be granted here so the reusable full-ci / integration
-# calls below can pass it through to unit-tests.yml / integration-tests.yml,
-# whose install jobs read @j0nathan-ll0yd/config from GitHub Packages. A caller
-# cannot grant a called workflow more than it holds, so this is the ceiling.
+# packages: read must be granted here so the reusable full-ci call below can
+# pass it through to unit-tests.yml, whose install jobs read
+# @j0nathan-ll0yd/config from GitHub Packages. A caller cannot grant a called
+# workflow more than it holds, so this is the ceiling.
 permissions:
   contents: read
   packages: read
@@ -21,39 +21,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Quick validation (no build required)
-  quick-checks:
-    runs-on: [self-hosted, linux, arm64, node]
-    timeout-minutes: 25
-    permissions:
-      contents: read
-      packages: read # read @j0nathan-ll0yd/* (Mantle framework + shared config) from GitHub Packages
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-
-      - uses: ./.github/actions/setup-node-pnpm
-
-      - name: Format Check
-        run: pnpm run format:check
-
-      - name: Lint
-        run: pnpm run lint
-
-  # Full CI (depends on quick checks)
+  # Unit Tests runs only through this call on a PR head (atlas decision 0168
+  # item 3). It starts at once: the former quick-checks job only repeated the
+  # lint and format checks that `Lint & Format` (ci.yml) and `lint-and-types`
+  # already run, and held this call back by about 175 s (decision 0168 item 4).
+  # Integration Tests is not called here: its own `pull_request` run produces
+  # the required `integration-tests` context, once per head.
   full-ci:
-    needs: quick-checks
     uses: ./.github/workflows/unit-tests.yml
     secrets: inherit
 
-  integration:
-    needs: quick-checks
-    uses: ./.github/workflows/integration-tests.yml
-    secrets: inherit
-
-  # Final status check for branch protection
+  # Final status check for branch protection. `if: always()` plus the explicit
+  # success test means a skipped or cancelled full-ci reads as failure
+  # (decision 0152).
   pr-ready:
-    needs: [quick-checks, full-ci, integration]
+    needs: [full-ci]
     runs-on: [self-hosted, linux, arm64, base]
     timeout-minutes: 5
     if: always()
@@ -67,10 +49,6 @@ jobs:
             echo "::error::Unit tests failed"
             exit 1
           fi
-          if [ "${{ needs.integration.result }}" != "success" ]; then
-            echo "::error::Integration tests failed"
-            exit 1
-          fi
           echo "All checks passed!"
 
       - name: Post summary
@@ -80,7 +58,5 @@ jobs:
             echo ""
             echo "| Check | Status |"
             echo "|-------|--------|"
-            echo "| Quick Checks | ${{ needs.quick-checks.result }} |"
             echo "| Unit Tests | ${{ needs.full-ci.result }} |"
-            echo "| Integration Tests | ${{ needs.integration.result }} |"
           } >> "$GITHUB_STEP_SUMMARY"

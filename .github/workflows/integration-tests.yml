@@ -1,15 +1,16 @@
 name: Integration Tests
 
 on:
+  # The `pull_request` run produces the required `integration-tests` context.
+  # A branch-wide `push` repeated it on the same head (atlas decision 0168 item 3).
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
     branches: [main]
     # A bare `pull_request:` defaults to [opened, synchronize, reopened]; `ready_for_review`
     # is not in that set, so flipping a draft to ready re-runs nothing and leaves a stale
     # green in place. A `types:` key REPLACES the defaults, so all four are listed.
     types: [opened, synchronize, reopened, ready_for_review]
-  workflow_call:
 
 permissions: {}
 
@@ -37,7 +38,6 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version-file: '.nvmrc'
-          cache: 'pnpm'
       # The @j0nathan-ll0yd scope (the Mantle framework packages and the shared
       # dprint + tsconfig config) lives on GitHub Packages, which requires auth
       # even for reads. pnpm ignores the token in the committed project .npmrc,

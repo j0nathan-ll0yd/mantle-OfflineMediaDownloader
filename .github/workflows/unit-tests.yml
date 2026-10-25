@@ -1,9 +1,11 @@
 name: Unit Tests
 
 on:
+  # PR heads run this workflow once, through the `full-ci` call in
+  # pr-checks.yml. A branch-wide `push` and a standalone `pull_request` run
+  # repeated the same four jobs twice more per head (atlas decision 0168 item 3).
+  # No job here is a required context; `pr-ready` gates on the call's result.
   push:
-    branches: ['**']
-  pull_request:
     branches: [main]
   workflow_call:
 
@@ -90,14 +92,23 @@ jobs:
             echo "Checking $file..."
             # Strip SQL comments before checking (lines starting with --)
             sql_content=$(grep -v '^[[:space:]]*--' "$file")
-            # Check for CREATE INDEX without ASYNC (DSQL requires ASYNC for non-blocking)
-            if echo "$sql_content" | grep -qE "CREATE INDEX\s+(?!ASYNC)" 2>/dev/null; then
-              # Allow IF NOT EXISTS without ASYNC (idempotent recreations)
-              if echo "$sql_content" | grep -E "CREATE INDEX\s+(?!ASYNC)" | grep -qv "IF NOT EXISTS"; then
-                echo "ERROR: $file uses CREATE INDEX without ASYNC or IF NOT EXISTS"
-                echo "Aurora DSQL requires CREATE INDEX ASYNC for non-blocking index creation"
-                errors=$((errors + 1))
-              fi
+            # Check for CREATE [UNIQUE] INDEX without ASYNC (DSQL requires ASYNC for
+            # non-blocking index creation). IF NOT EXISTS without ASYNC is allowed
+            # (idempotent recreations; the migration runner adds ASYNC). POSIX awk,
+            # not grep: ERE has no lookahead, and the old `grep -E "(?!ASYNC)"`
+            # matched nothing on GNU grep, so this arm could never fail. An awk
+            # error exits non-zero and fails the step under `bash -e`.
+            unsafe_index=$(printf '%s\n' "$sql_content" | awk '
+              { u = toupper($0) }
+              u ~ /CREATE[[:space:]]+(UNIQUE[[:space:]]+)?INDEX[[:space:]]/ &&
+                u !~ /INDEX[[:space:]]+ASYNC([[:space:]]|$)/ &&
+                u !~ /IF[[:space:]]+NOT[[:space:]]+EXISTS/ { print }
+            ')
+            if [ -n "$unsafe_index" ]; then
+              echo "ERROR: $file uses CREATE INDEX without ASYNC or IF NOT EXISTS:"
+              printf '%s\n' "$unsafe_index" | sed 's/^/  /'
+              echo "Aurora DSQL requires CREATE INDEX ASYNC for non-blocking index creation"
+              errors=$((errors + 1))
             fi
             # Check for unsupported DSQL features (in actual SQL, not comments)
             if echo "$sql_content" | grep -qi "ALTER TABLE.*DROP COLUMN"; then
@@ -114,6 +125,12 @@ jobs:
             exit 1
           fi
           echo "All migrations are DSQL-compatible"
+
+      - name: Check DSQL statement breakpoints (mantle db check-dsql)
+        # The DSQL migration runner executes each `--> statement-breakpoint` step
+        # as one statement, so a step that packs several statements fails at
+        # migrate time. check-dsql exits 1 on any such step.
+        run: npx mantle db check-dsql
 
   # Parallel job 2: Type checking and linting
   lint-and-types:
