@@ -880,8 +880,9 @@ async function main() {
   }
 }
 
-// Run if executed directly
-if (import.meta.url === `file://${__filename}`) {
+// Run only when executed as the entry script (`node --import tsx graphrag/extract.ts`), not when imported.
+// argv[1] is the entry path; __filename derives from import.meta.url, so comparing those two is always true.
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   main()
 }
 
