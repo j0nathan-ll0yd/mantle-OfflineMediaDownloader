@@ -115,16 +115,49 @@ allowBuilds:
   "@swc/core": true             # TS/JS transform native binary
   "sharp": true                 # Image processing native binary
 
+# -----------------------------------------------------------------------------
+# AUDIT
+# -----------------------------------------------------------------------------
+# The CI `audit` job runs `pnpm audit --audit-level=high` on every pull request and
+# push. This is its only exception. Each entry needs a scope, the reason the fix is
+# blocked, and a removal condition.
+auditConfig:
+  ignoreGhsas:
+    # GHSA-mrhx-c7xc-m3w5 (zod <4.6.6, high). There is no fixed zod 3.x release.
+    # Scope: dev-only. zod 3.25.76 is reached only through @modelcontextprotocol/inspector
+    # 0.22.0 (its CLI, client, server and mcp-ui SDK copies) and through chromium-bidi
+    # 16.0.1 under puppeteer-core. No untrusted input reaches either. The runtime
+    # dependency is zod 4.6.7.
+    # Fix blocked: the zod 4 builds of both importers trip `trustPolicy: no-downgrade`.
+    # Inspector 2.x needs chokidar@4.0.3, which ships without provenance. puppeteer-core
+    # 25.16.0 needs chromium-bidi 157.x, whose publisher changed from GitHub Actions OIDC
+    # with provenance to the chrome-devtools-npm account without provenance.
+    # Remove when an inspector or puppeteer-core release declares zod 4 WITH provenance
+    # through its whole dependency chain, and that importer is upgraded.
+    - GHSA-mrhx-c7xc-m3w5
+
 overrides:
   # Security updates for transitive dev tools; see pnpm audit advisories.
-  'adm-zip': '0.6.0'
-  'fast-uri': '3.1.4'
-  'sharp': '0.35.3'
-  'qs': '>=6.14.1'
+  # The CI `audit` job (pnpm audit --audit-level=high) gates regressions. An override
+  # is only allowed where every importer's declared range admits the forced version.
   'drizzle-zod>zod': '^4.3.4'
   'undici-types': '7.16.0'
   'ws': '>=8.20.1'
   'protobufjs': '>=7.5.8'
-  'shell-quote': '>=1.8.4'
-  'hono': '>=4.12.25'
   'esbuild': '>=0.28.1'
+  # typed-rest-client 2.3.1 pins qs to exactly 6.15.1 (GHSA-x5fp-wj9c-mxmx,
+  # GHSA-4mjr-xmp4-gh2g; fixed in qs 6.16.0). 2.3.0 declares qs ^6.14.1, so it
+  # resolves the fixed qs. Its only importer, @stryker-mutator/core (up to 10.1.1),
+  # declares ~2.3.0, which admits 2.3.0. Remove when Stryker admits a
+  # typed-rest-client whose qs range admits 6.16.0 (3.x declares ^6.16.0).
+  'typed-rest-client': '2.3.0'
+  # @lancedb/lancedb (up to 0.40.0) declares @huggingface/transformers 3.0.2 as an
+  # OPTIONAL dependency. 3.0.2 pulls sharp ^0.33.5 (GHSA-rgj7-g3m4-5g8c,
+  # GHSA-wq5f-xc86-pv6w: fixed only in 0.35.4 and 0.35.5) and onnxruntime-node 1.19.2,
+  # which pulls adm-zip ^0.5.16 (GHSA-7q85-xj36-vmfc, GHSA-rcw4-f5rp-g42v,
+  # GHSA-j5f4-cc29-5x44, GHSA-8238-w5pm-2374, GHSA-vwc7-r8mq-g2x9,
+  # GHSA-p634-w6r4-rjp2, GHSA-c6fg-446q-cg94: fixed only in 0.6.1). No fixed version
+  # is in range. scripts/embeddings.ts uses our own direct @huggingface/transformers
+  # 4.x, and lancedb loads its optional copy lazily inside a try/catch, so drop it.
+  # Remove when lancedb's optional transformers moves to a line with fixed sharp and adm-zip.
+  '@lancedb/lancedb>@huggingface/transformers': '-'
