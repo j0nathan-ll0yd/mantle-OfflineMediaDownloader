@@ -225,6 +225,27 @@
       }
     },
     {
+      "id": "entity:Sessions",
+      "type": "Entity",
+      "properties": {
+        "name": "Sessions"
+      }
+    },
+    {
+      "id": "entity:Accounts",
+      "type": "Entity",
+      "properties": {
+        "name": "Accounts"
+      }
+    },
+    {
+      "id": "entity:VerificationTokens",
+      "type": "Entity",
+      "properties": {
+        "name": "VerificationTokens"
+      }
+    },
+    {
       "id": "entity:UserFiles",
       "type": "Entity",
       "properties": {
@@ -391,22 +412,17 @@
   "edges": [
     {
       "source": "lambda:api/device/event",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/device/event",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/device/event",
       "target": "entity:Devices",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/device/event",
-      "target": "entity:Sessions",
+      "target": "entity:DeviceEvents",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/device/event",
+      "target": "entity:UserDevices",
       "relationship": "accesses"
     },
     {
@@ -416,22 +432,12 @@
     },
     {
       "source": "lambda:api/device/register",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/device/register",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/device/register",
       "target": "entity:Devices",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/device/register",
-      "target": "entity:Sessions",
+      "target": "entity:UserDevices",
       "relationship": "accesses"
     },
     {
@@ -441,22 +447,17 @@
     },
     {
       "source": "lambda:api/feedly/webhook",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/feedly/webhook",
       "target": "entity:Files",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/feedly/webhook",
-      "target": "entity:Devices",
+      "target": "entity:FileDownloads",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/feedly/webhook",
-      "target": "entity:Sessions",
+      "target": "entity:UserFiles",
       "relationship": "accesses"
     },
     {
@@ -466,22 +467,17 @@
     },
     {
       "source": "lambda:api/files/[fileId]/index",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/files/[fileId]/index",
       "target": "entity:Files",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/files/[fileId]/index",
-      "target": "entity:Devices",
+      "target": "entity:FileDownloads",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/files/[fileId]/index",
-      "target": "entity:Sessions",
+      "target": "entity:UserFiles",
       "relationship": "accesses"
     },
     {
@@ -491,22 +487,17 @@
     },
     {
       "source": "lambda:api/files/index",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/files/index",
       "target": "entity:Files",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/files/index",
-      "target": "entity:Devices",
+      "target": "entity:FileDownloads",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/files/index",
-      "target": "entity:Sessions",
+      "target": "entity:UserFiles",
       "relationship": "accesses"
     },
     {
@@ -526,17 +517,17 @@
     },
     {
       "source": "lambda:api/user/index",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/user/index",
       "target": "entity:Devices",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/user/index",
-      "target": "entity:Sessions",
+      "target": "entity:UserFiles",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/index",
+      "target": "entity:UserDevices",
       "relationship": "accesses"
     },
     {
@@ -545,14 +536,74 @@
       "relationship": "triggers"
     },
     {
+      "source": "lambda:api/user/login",
+      "target": "entity:Users",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/login",
+      "target": "entity:Sessions",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/login",
+      "target": "entity:Accounts",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/login",
+      "target": "entity:VerificationTokens",
+      "relationship": "accesses"
+    },
+    {
       "source": "service:API Gateway",
       "target": "lambda:api/user/login",
       "relationship": "triggers"
     },
     {
+      "source": "lambda:api/user/logout",
+      "target": "entity:Users",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/logout",
+      "target": "entity:Sessions",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/logout",
+      "target": "entity:Accounts",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/logout",
+      "target": "entity:VerificationTokens",
+      "relationship": "accesses"
+    },
+    {
       "source": "service:API Gateway",
       "target": "lambda:api/user/logout",
       "relationship": "triggers"
+    },
+    {
+      "source": "lambda:api/user/refresh",
+      "target": "entity:Users",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/refresh",
+      "target": "entity:Sessions",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/refresh",
+      "target": "entity:Accounts",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/refresh",
+      "target": "entity:VerificationTokens",
+      "relationship": "accesses"
     },
     {
       "source": "service:API Gateway",
@@ -566,17 +617,17 @@
     },
     {
       "source": "lambda:api/user/register",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/user/register",
-      "target": "entity:Devices",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/user/register",
       "target": "entity:Sessions",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/register",
+      "target": "entity:Accounts",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:api/user/register",
+      "target": "entity:VerificationTokens",
       "relationship": "accesses"
     },
     {
@@ -586,22 +637,12 @@
     },
     {
       "source": "lambda:api/user/subscribe",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/user/subscribe",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:api/user/subscribe",
       "target": "entity:Devices",
       "relationship": "accesses"
     },
     {
       "source": "lambda:api/user/subscribe",
-      "target": "entity:Sessions",
+      "target": "entity:UserDevices",
       "relationship": "accesses"
     },
     {
@@ -611,22 +652,12 @@
     },
     {
       "source": "lambda:s3/S3ObjectCreated",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:s3/S3ObjectCreated",
       "target": "entity:Files",
       "relationship": "accesses"
     },
     {
       "source": "lambda:s3/S3ObjectCreated",
-      "target": "entity:Devices",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:s3/S3ObjectCreated",
-      "target": "entity:Sessions",
+      "target": "entity:UserFiles",
       "relationship": "accesses"
     },
     {
@@ -636,22 +667,22 @@
     },
     {
       "source": "lambda:scheduled/CleanupExpiredRecords",
-      "target": "entity:Users",
+      "target": "entity:FileDownloads",
       "relationship": "accesses"
     },
     {
       "source": "lambda:scheduled/CleanupExpiredRecords",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:scheduled/CleanupExpiredRecords",
-      "target": "entity:Devices",
+      "target": "entity:DeviceEvents",
       "relationship": "accesses"
     },
     {
       "source": "lambda:scheduled/CleanupExpiredRecords",
       "target": "entity:Sessions",
+      "relationship": "accesses"
+    },
+    {
+      "source": "lambda:scheduled/CleanupExpiredRecords",
+      "target": "entity:VerificationTokens",
       "relationship": "accesses"
     },
     {
@@ -661,22 +692,12 @@
     },
     {
       "source": "lambda:scheduled/PruneDevices",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:scheduled/PruneDevices",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:scheduled/PruneDevices",
       "target": "entity:Devices",
       "relationship": "accesses"
     },
     {
       "source": "lambda:scheduled/PruneDevices",
-      "target": "entity:Sessions",
+      "target": "entity:UserDevices",
       "relationship": "accesses"
     },
     {
@@ -686,22 +707,12 @@
     },
     {
       "source": "lambda:sqs/EndpointCleanupHelpers",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:sqs/EndpointCleanupHelpers",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:sqs/EndpointCleanupHelpers",
       "target": "entity:Devices",
       "relationship": "accesses"
     },
     {
       "source": "lambda:sqs/EndpointCleanupHelpers",
-      "target": "entity:Sessions",
+      "target": "entity:UserDevices",
       "relationship": "accesses"
     },
     {
@@ -711,22 +722,12 @@
     },
     {
       "source": "lambda:sqs/SendPushNotification",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:sqs/SendPushNotification",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:sqs/SendPushNotification",
       "target": "entity:Devices",
       "relationship": "accesses"
     },
     {
       "source": "lambda:sqs/SendPushNotification",
-      "target": "entity:Sessions",
+      "target": "entity:UserDevices",
       "relationship": "accesses"
     },
     {
@@ -741,43 +742,23 @@
     },
     {
       "source": "lambda:sqs/StartFileUpload",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:sqs/StartFileUpload",
       "target": "entity:Files",
       "relationship": "accesses"
     },
     {
       "source": "lambda:sqs/StartFileUpload",
-      "target": "entity:Devices",
+      "target": "entity:FileDownloads",
       "relationship": "accesses"
     },
     {
       "source": "lambda:sqs/StartFileUpload",
-      "target": "entity:Sessions",
+      "target": "entity:UserFiles",
       "relationship": "accesses"
     },
     {
       "source": "service:SQS",
       "target": "lambda:sqs/StartFileUpload",
       "relationship": "triggers"
-    },
-    {
-      "source": "lambda:standalone/ApiGatewayAuthorizer",
-      "target": "entity:Users",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:standalone/ApiGatewayAuthorizer",
-      "target": "entity:Files",
-      "relationship": "accesses"
-    },
-    {
-      "source": "lambda:standalone/ApiGatewayAuthorizer",
-      "target": "entity:Devices",
-      "relationship": "accesses"
     },
     {
       "source": "lambda:standalone/ApiGatewayAuthorizer",

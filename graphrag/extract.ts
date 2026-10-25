@@ -5,7 +5,8 @@
  *
  * This script dynamically discovers:
  * - Lambdas from src/lambdas/ directory
- * - Entity relationships from src/entities/ directory
+ * - Entities from the tables exported by src/db/schema.ts
+ * - Lambda entity access from the named imports in each Lambda dependency set
  * - Service dependencies from build/graph.json transitive dependencies
  *
  * Semantic metadata (triggers, purposes) is read from graphrag/metadata.json
@@ -13,7 +14,7 @@
 
 import fs from 'fs/promises'
 import path from 'path'
-import {Project, SyntaxKind} from 'ts-morph'
+import {Node as TsNode, Project, type SourceFile, SyntaxKind} from 'ts-morph'
 import {fileURLToPath} from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -36,7 +37,7 @@ interface Edge {
 interface KnowledgeGraph {
   nodes: Node[]
   edges: Edge[]
-  metadata: {version: string; description: string; sources: {lambdas: string; dependencies: string; metadata: string}}
+  metadata: {version: string; description: string; sources: {lambdas: string; entities: string; typespec: string; dependencies: string; metadata: string}}
 }
 
 interface DependencyGraph {
@@ -112,9 +113,9 @@ async function discoverLambdas(): Promise<LambdaEntry[]> {
         await walk(fullPath)
       } else if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts')) {
         // File-based routing: event.post.ts, index.get.ts, webhook.post.ts
-        const routeMatch = entry.name.match(/^(.+)\.(post|get|delete|put|patch)\.ts$/)
-        if (routeMatch) {
-          const name = path.relative(lambdasDir, path.join(dir, routeMatch[1]))
+        const routeName = entry.name.match(/^(.+)\.(post|get|delete|put|patch)\.ts$/)?.[1]
+        if (routeName) {
+          const name = path.relative(lambdasDir, path.join(dir, routeName))
           const entryPoint = `src/lambdas/${path.relative(lambdasDir, fullPath)}`
           lambdas.push({name, entryPoint})
           continue
@@ -134,41 +135,45 @@ async function discoverLambdas(): Promise<LambdaEntry[]> {
 }
 
 /**
- * Discover Entity names dynamically from Drizzle schema via ts-morph AST walk.
+ * Index the Drizzle tables exported by a schema file, keyed by the table's original declaration.
  *
- * Finds all exported VariableDeclarations whose initializer is a CallExpression
- * to `pgTable`, then extracts the variable name and PascalCases it.
+ * Covers tables declared locally with `pgTable(...)` and tables re-exported from a package
+ * (`export {authSessions as sessions} from '@j0nathan-ll0yd/auth/schema'`, declared as
+ * `PgTableWithColumns`). Each entity is named from its export name in the schema file.
+ * Map iteration order is schema export order.
  *
- * Replaces the previous regex-based scanner per C1 compiler-API discipline.
+ * Uses the compiler API per C1 discipline.
  */
-async function discoverEntities(): Promise<string[]> {
-  const schemaPath = path.join(projectRoot, 'src', 'db', 'schema.ts')
-  const project = new Project({skipAddingFilesFromTsConfig: true, compilerOptions: {allowJs: true}})
-  const sourceFile = project.addSourceFileAtPath(schemaPath)
-
-  const entities: string[] = []
-  for (const varStmt of sourceFile.getVariableStatements()) {
-    if (!varStmt.isExported()) {
-      continue
-    }
-    for (const decl of varStmt.getDeclarations()) {
-      const init = decl.getInitializer()
-      if (!init || !init.isKind(SyntaxKind.CallExpression)) {
-        continue
-      }
-      const callTarget = init.getExpression()
-      if (callTarget.isKind(SyntaxKind.Identifier) && callTarget.getText() === 'pgTable') {
-        const varName = decl.getName()
-        const entityName = varName.charAt(0).toUpperCase() + varName.slice(1)
-        entities.push(entityName)
+export function buildTableIndex(schemaFile: SourceFile): Map<TsNode, string> {
+  const tables = new Map<TsNode, string>()
+  for (const [exportName, declarations] of schemaFile.getExportedDeclarations()) {
+    for (const declaration of declarations) {
+      if (isTableDeclaration(declaration)) {
+        tables.set(declaration, tableVarToEntityName(exportName))
       }
     }
   }
+  return tables
+}
 
-  project.removeSourceFile(sourceFile)
+function isTableDeclaration(node: TsNode): boolean {
+  if (!TsNode.isVariableDeclaration(node)) {
+    return false
+  }
+  const init = node.getInitializer()
+  if (init) {
+    return init.isKind(SyntaxKind.CallExpression) && init.getExpression().getText() === 'pgTable'
+  }
+  return node.getTypeNode()?.getText().startsWith('PgTableWithColumns') ?? false
+}
 
-  // Map 'verification' table to 'VerificationTokens' for consistency with existing naming
-  return entities.map((e) => (e === 'Verification' ? 'VerificationTokens' : e))
+/**
+ * PascalCase a Drizzle table variable into its entity name.
+ * The 'verification' table maps to 'VerificationTokens' for consistency with existing naming.
+ */
+function tableVarToEntityName(varName: string): string {
+  const entityName = varName.charAt(0).toUpperCase() + varName.slice(1)
+  return entityName === 'Verification' ? 'VerificationTokens' : entityName
 }
 
 /**
@@ -188,16 +193,19 @@ async function discoverTypeSpecModels(): Promise<TypeSpecModelMetadata[]> {
   const modelRegex = /\/\*\*\s*\n\s*\*\s*([^*]+)\s*\n[^*]*\*\/\s*\nmodel\s+(\w+)\s*\{/g
   let match
   while ((match = modelRegex.exec(content)) !== null) {
-    const description = match[1].trim()
-    const name = match[2]
+    const [whole, rawDescription, name] = match
+    if (rawDescription === undefined || name === undefined) {
+      continue
+    }
+    const description = rawDescription.trim()
 
     // Extract field names for context
-    const modelStart = match.index + match[0].length
+    const modelStart = match.index + whole.length
     const modelEnd = content.indexOf('}', modelStart)
     const modelBody = content.slice(modelStart, modelEnd)
     const fields = modelBody.split('\n').map((line) => line.trim()).filter((line) =>
       line && !line.startsWith('*') && !line.startsWith('/') && line.includes(':')
-    ).map((line) => line.split(':')[0].replace('?', '').trim()).filter((field) => field.length > 0)
+    ).map((line) => (line.split(':')[0] ?? '').replace('?', '').trim()).filter((field) => field.length > 0)
 
     models.push({name, type: 'model', description, fields})
   }
@@ -205,16 +213,19 @@ async function discoverTypeSpecModels(): Promise<TypeSpecModelMetadata[]> {
   // Parse enum definitions
   const enumRegex = /\/\*\*\s*\n\s*\*\s*([^*]+)\s*\n[^*]*\*\/\s*\nenum\s+(\w+)\s*\{/g
   while ((match = enumRegex.exec(content)) !== null) {
-    const description = match[1].trim()
-    const name = match[2]
+    const [whole, rawDescription, name] = match
+    if (rawDescription === undefined || name === undefined) {
+      continue
+    }
+    const description = rawDescription.trim()
 
     // Extract enum values
-    const enumStart = match.index + match[0].length
+    const enumStart = match.index + whole.length
     const enumEnd = content.indexOf('}', enumStart)
     const enumBody = content.slice(enumStart, enumEnd)
     const values = enumBody.split('\n').map((line) => line.trim()).filter((line) =>
       line && !line.startsWith('*') && !line.startsWith('/') && line.includes(':')
-    ).map((line) => line.split(':')[0].trim()).filter((value) => value.length > 0)
+    ).map((line) => (line.split(':')[0] ?? '').trim()).filter((value) => value.length > 0)
 
     models.push({name, type: 'enum', description, fields: values})
   }
@@ -285,7 +296,7 @@ function parseTypeSpecInterface(content: string, interfaceMatch: RegExpMatchArra
     const operationName = methodMatch[1]
 
     // Skip decorator function names and common non-method words
-    if (skipWords.has(operationName.toLowerCase())) {
+    if (operationName === undefined || skipWords.has(operationName.toLowerCase())) {
       continue
     }
 
@@ -434,12 +445,12 @@ function extractExternalServices(deps: string[], externalServices: ServiceMetada
 
   for (const dep of deps) {
     // Match src/lib/vendor/* patterns (non-AWS)
-    const vendorMatch = dep.match(/src\/lib\/vendor\/(\w+)/)
-    if (vendorMatch && vendorMatch[1] !== 'AWS' && vendorMatch[1] !== 'Drizzle') {
-      const vendorName = vendorMatch[1]
+    const vendorName = dep.match(/src\/lib\/vendor\/(\w+)/)?.[1]
+    if (vendorName && vendorName !== 'AWS' && vendorName !== 'Drizzle') {
       // Check explicit mapping first
-      if (vendorToService[vendorName]) {
-        services.add(vendorToService[vendorName])
+      const mappedService = vendorToService[vendorName]
+      if (mappedService) {
+        services.add(mappedService)
       } else {
         // Fall back to case-insensitive name matching
         const service = externalServices.find((s) => s.name.toLowerCase() === vendorName.toLowerCase())
@@ -450,10 +461,9 @@ function extractExternalServices(deps: string[], externalServices: ServiceMetada
     }
 
     // Match src/types/vendor/* patterns (for Feedly, etc.)
-    const typeVendorMatch = dep.match(/src\/types\/vendor\/\w+\/(\w+)/)
-    if (typeVendorMatch) {
-      const vendorName = typeVendorMatch[1]
-      const service = externalServices.find((s) => s.name.toLowerCase() === vendorName.toLowerCase())
+    const typeVendorName = dep.match(/src\/types\/vendor\/\w+\/(\w+)/)?.[1]
+    if (typeVendorName) {
+      const service = externalServices.find((s) => s.name.toLowerCase() === typeVendorName.toLowerCase())
       if (service) {
         services.add(service.name)
       }
@@ -472,53 +482,97 @@ function extractExternalServices(deps: string[], externalServices: ServiceMetada
   return [...services]
 }
 
+/** Directories whose functions are followed when resolving which tables a query reaches */
+const DATA_LAYER_DIRS = ['/src/entities/', '/src/db/']
+
+function isDataLayerFunction(node: TsNode): boolean {
+  if (!TsNode.isVariableDeclaration(node) && !TsNode.isFunctionDeclaration(node)) {
+    return false
+  }
+  const filePath = node.getSourceFile().getFilePath()
+  return DATA_LAYER_DIRS.some((dir) => filePath.includes(dir))
+}
+
+/** Resolve a name node to its original declarations, following import and re-export aliases */
+function resolveDeclarations(nameNode: TsNode): TsNode[] {
+  const symbol = nameNode.getSymbol()
+  if (!symbol) {
+    return []
+  }
+  const target = symbol.isAlias() ? (symbol.getAliasedSymbol() ?? symbol) : symbol
+  return target.getDeclarations()
+}
+
 /**
- * Extract entities used by a Lambda from its transitive dependencies
- * Detects both direct entity imports and queries/ module access
+ * Extract the entities a Lambda accesses from the named imports of its files.
+ *
+ * Each non-type named import is resolved to its declaration (through the `#entities/queries`
+ * index). A table declaration maps to its entity. A data-layer function (under
+ * src/entities/ or src/db/) maps to every table its body references, following calls into
+ * other data-layer functions (cascades, `#db/fkEnforcement`). Imports that reach no table add
+ * no entity. Data-layer files are not scanned as importers: their imports and re-exports are
+ * not usage by the Lambda.
+ *
+ * Granularity is per file: a service file in the Lambda's dependency set contributes every
+ * query it imports, even if the Lambda calls only part of that service.
+ *
+ * @param project - ts-morph project that can resolve the importer files and their imports
+ * @param tables - table declarations mapped to entity names, from buildTableIndex
+ * @param importerFiles - absolute paths of the Lambda entry point and its transitive dependencies
+ * @returns entity names the Lambda accesses, in schema export order
  */
-function extractEntities(deps: string[], knownEntities: string[]): string[] {
-  const entities: Set<string> = new Set()
+export function extractEntityAccess(project: Project, tables: Map<TsNode, string>, importerFiles: string[]): string[] {
+  const memo = new Map<TsNode, Set<string>>()
 
-  // Map query modules to entity names they access
-  const queryModuleToEntities: Record<string, string[]> = {
-    'user-queries': ['Users'],
-    'file-queries': ['Files', 'FileDownloads'],
-    'device-queries': ['Devices'],
-    'session-queries': ['Sessions', 'Accounts', 'VerificationTokens'],
-    'relationship-queries': ['UserFiles', 'UserDevices']
-  }
-
-  for (const dep of deps) {
-    // Match src/entities/queries/* patterns (Drizzle ORM pattern)
-    const queryMatch = dep.match(/src\/entities\/queries\/(\w+-queries)/)
-    if (queryMatch) {
-      const queryModule = queryMatch[1]
-      const mappedEntities = queryModuleToEntities[queryModule] || []
-      for (const e of mappedEntities) {
-        entities.add(e)
+  function entitiesOf(declaration: TsNode): Set<string> {
+    const table = tables.get(declaration)
+    if (table) {
+      return new Set([table])
+    }
+    if (!isDataLayerFunction(declaration)) {
+      return new Set()
+    }
+    const cached = memo.get(declaration)
+    if (cached) {
+      return cached
+    }
+    const entities = new Set<string>()
+    memo.set(declaration, entities) // set before recursing: guards against cycles
+    for (const identifier of declaration.getDescendantsOfKind(SyntaxKind.Identifier)) {
+      for (const target of resolveDeclarations(identifier)) {
+        if (target !== declaration) {
+          for (const entity of entitiesOf(target)) {
+            entities.add(entity)
+          }
+        }
       }
     }
+    return entities
+  }
 
-    // Match src/entities/queries barrel import (without specific file)
-    // This handles paths like "src/entities/queries" or "src/entities/queries/index"
-    if (dep === 'src/entities/queries' || dep.includes('src/entities/queries/index') || dep.includes('src/entities/queries.ts')) {
-      // Barrel import means access to all entities - add common ones
-      entities.add('Users')
-      entities.add('Files')
-      entities.add('Devices')
-      entities.add('Sessions')
+  const accessed = new Set<string>()
+  for (const filePath of importerFiles) {
+    const sourceFile = project.getSourceFile(filePath)
+    if (!sourceFile || DATA_LAYER_DIRS.some((dir) => sourceFile.getFilePath().includes(dir))) {
+      continue
     }
-
-    // Legacy: Match src/entities/* patterns (direct entity imports)
-    const entityMatch = dep.match(/src\/entities\/(\w+)\.ts/)
-    if (entityMatch) {
-      const entityName = entityMatch[1]
-      if (knownEntities.includes(entityName)) {
-        entities.add(entityName)
+    for (const importDecl of sourceFile.getImportDeclarations()) {
+      if (importDecl.isTypeOnly()) {
+        continue
+      }
+      for (const namedImport of importDecl.getNamedImports()) {
+        if (namedImport.isTypeOnly()) {
+          continue
+        }
+        for (const declaration of resolveDeclarations(namedImport.getNameNode())) {
+          for (const entity of entitiesOf(declaration)) {
+            accessed.add(entity)
+          }
+        }
       }
     }
   }
-  return [...entities]
+  return [...new Set(tables.values())].filter((entity) => accessed.has(entity))
 }
 
 /**
@@ -529,9 +583,13 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
   const edges: Edge[] = []
 
   // Load all data sources
-  const [lambdaEntries, entityNames, depGraph, metadata, typeSpecModels, typeSpecEndpoints] = await Promise.all([
+  // One compiler project resolves the schema tables and every Lambda's imports (#aliases via tsconfig paths)
+  const sourceProject = new Project({tsConfigFilePath: path.join(projectRoot, 'tsconfig.json')})
+  const tables = buildTableIndex(sourceProject.getSourceFileOrThrow(path.join(projectRoot, 'src', 'db', 'schema.ts')))
+  const entityNames = [...new Set(tables.values())]
+
+  const [lambdaEntries, depGraph, metadata, typeSpecModels, typeSpecEndpoints] = await Promise.all([
     discoverLambdas(),
-    discoverEntities(),
     loadDependencyGraph(),
     loadMetadata(),
     discoverTypeSpecModels(),
@@ -617,7 +675,7 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
     }
   }
 
-  // 7. Add Lambda → Service/External edges (derived from dependency graph)
+  // 7. Add Lambda → Service/External/Entity edges (derived from dependency graph and imports)
   for (const lambdaName of lambdaNames) {
     const entryPoint = lambdaEntryPoints.get(lambdaName) || ''
     const deps = depGraph.transitiveDependencies[entryPoint] || []
@@ -635,7 +693,8 @@ export async function extractKnowledgeGraph(): Promise<KnowledgeGraph> {
     }
 
     // Entities
-    const entities = extractEntities(deps, entityNames)
+    const importerFiles = [entryPoint, ...deps].map((file) => path.join(projectRoot, file))
+    const entities = extractEntityAccess(sourceProject, tables, importerFiles)
     for (const entityName of entities) {
       edges.push({source: `lambda:${lambdaName}`, target: `entity:${entityName}`, relationship: 'accesses'})
     }
@@ -826,4 +885,4 @@ if (import.meta.url === `file://${__filename}`) {
   main()
 }
 
-export { Edge, KnowledgeGraph, Node }
+export type { Edge, KnowledgeGraph, Node }
