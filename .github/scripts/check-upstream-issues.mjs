@@ -6,11 +6,13 @@
  *   - Conditional:  "pkg@<1.2.3" or "pkg@>=1.0.0 <2.0.0"  → deterministic ACTIVE/STALE
  *   - Simple:       "pkg"                                    → REVIEW (cannot auto-determine)
  *   - Scoped:       "parent>pkg"                             → REVIEW (cannot auto-determine)
+ *   - Removal:      "parent>pkg": "-"                        → ACTIVE while parent resolves, else STALE
  *
  * Statuses:
  *   ACTIVE — lockfile has versions in the vulnerable range; override is still needed
  *   STALE  — no resolved version matches the condition; override is a no-op (safe to remove)
  *   DEAD   — package has zero resolved versions in the lockfile (removed dependency)
+ *            Not applied to removal overrides: the package is absent BECAUSE the override removes it.
  *   REVIEW — simple/scoped override; requires manual verification
  *
  * Limitation: Inline version comparison handles dotted numeric versions (X.Y.Z) only.
@@ -57,11 +59,12 @@ try {
 
 /**
  * Collect all resolved versions for a package name from the lockfile.
- * Matches patterns like "  hono@4.12.9:" in the packages section.
+ * Matches patterns like "  hono@4.12.9:" in the packages section. pnpm quotes keys that
+ * start with @, so a scoped name appears as "  '@scope/pkg@1.2.3':".
  */
 function getResolvedVersions(pkgName) {
   const escaped = pkgName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const re = new RegExp(`^  ${escaped}@(\\d[\\d.]*):`, 'gm')
+  const re = new RegExp(`^  '?${escaped}@(\\d[\\d.]*)'?:`, 'gm')
   const versions = new Set()
   let m
   while ((m = re.exec(lockContent)) !== null) {
@@ -133,27 +136,44 @@ function satisfiesRange(version, range) {
  * Returns { type, pkgName, conditionRange }
  */
 function parseOverrideKey(key) {
-  // Scoped override: "parent>pkg"
-  if (key.includes('>') && !key.includes('@')) {
-    return {type: 'scoped', pkgName: key.split('>').pop(), conditionRange: null}
+  // Conditional: "pkg@<condition" or "pkg@>=X <Y". The name (optionally @scope/name) is followed
+  // by @, a comparator, and version characters only. Checked first because its comparators
+  // contain '>'; a package name after the range makes it a scoped key instead.
+  const condMatch = key.match(/^((?:@[^/]+\/)?[^@>]+)@((?:>=|<=|>|<)[\d.\sx*<>=|^~-]+)$/)
+  if (condMatch) {
+    return {type: 'conditional', parentName: null, pkgName: condMatch[1], conditionRange: condMatch[2]}
   }
 
-  // Conditional: "pkg@<condition" or "pkg@>=X <Y"
-  // Match the last @ that's followed by a comparator operator
-  const condMatch = key.match(/^(.+?)@((?:>=|<=|>|<).+)$/)
-  if (condMatch) {
-    return {type: 'conditional', pkgName: condMatch[1], conditionRange: condMatch[2]}
+  // Scoped override: "parent>pkg". Either side may be an @scope/name; the parent may carry
+  // @version or a comparator range ("@types/node@<21>undici-types").
+  const scopedMatch = key.match(/^((?:@[^/]+\/)?[^@>]+(?:@(?:>=|<=|>|<)?[^>]+)?)>(.+)$/)
+  if (scopedMatch) {
+    return {type: 'scoped', parentName: stripVersion(scopedMatch[1]), pkgName: stripVersion(scopedMatch[2]), conditionRange: null}
   }
 
   // Simple global: "pkg"
-  return {type: 'simple', pkgName: key, conditionRange: null}
+  return {type: 'simple', parentName: null, pkgName: key, conditionRange: null}
+}
+
+/** Drop a trailing @version from a package selector, keeping a leading @scope */
+function stripVersion(selector) {
+  return selector.replace(/(.)@.*$/, '$1')
 }
 
 // --- Analyze each override ---
 const results = []
 
 for (const [key, value] of overrideEntries) {
-  const {type, pkgName, conditionRange} = parseOverrideKey(key)
+  const {type, parentName, pkgName, conditionRange} = parseOverrideKey(key)
+
+  // Removal override ("parent>pkg": "-"): pnpm drops pkg from parent's dependencies, so pkg
+  // is expected to be absent. The override does work while the parent is still installed.
+  if (value === '-' && type === 'scoped') {
+    const parentResolved = getResolvedVersions(parentName)
+    results.push({key, value, pkgName: parentName, resolved: parentResolved, status: parentResolved.length > 0 ? 'ACTIVE' : 'STALE'})
+    continue
+  }
+
   const resolved = getResolvedVersions(pkgName)
 
   let status

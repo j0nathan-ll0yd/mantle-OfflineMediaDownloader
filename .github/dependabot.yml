@@ -94,7 +94,6 @@ updates:
   - dependency-name: "vitest"
   - dependency-name: "@vitest/*"
   - dependency-name: "vite"
-  - dependency-name: "unbuild"
   - dependency-name: "dprint"
   - dependency-name: "eslint"
   - dependency-name: "@typescript-eslint/*"

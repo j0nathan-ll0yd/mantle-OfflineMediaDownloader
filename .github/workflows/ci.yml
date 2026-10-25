@@ -413,3 +413,30 @@ jobs:
           # `packages: read` permission scopes the workflow token but does NOT place it in a
           # run step's environment. Mirrors mantle ci.yml and design-system ci.yml.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Dependency advisory gate. Runs `pnpm audit --audit-level=high` unfiltered on every pull
+  # request and push to main, so a high or critical advisory fails the job. The only
+  # exceptions live in pnpm-workspace.yaml `auditConfig.ignoreGhsas`, where each entry
+  # carries its scope, the reason the fix is blocked, and a removal condition.
+  # `pnpm audit` reads pnpm-lock.yaml, so no install step runs. The job id is the
+  # status-check context.
+  audit:
+    name: audit
+    runs-on: [self-hosted, linux, arm64, node]
+    # Backstop against a hung registry call; the audit itself takes seconds.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      # The @j0nathan-ll0yd scope resolves from GitHub Packages, which requires auth even
+      # for reads. Authenticate before any registry call, as every other job does.
+      - name: Authenticate to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN"
+      - name: Audit dependencies (high and critical)
+        run: pnpm audit --audit-level=high

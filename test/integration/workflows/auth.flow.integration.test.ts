@@ -134,6 +134,26 @@ describe('Auth Flow Integration Tests', () => {
       expect(result.statusCode).toBe(500)
     })
 
+    test('should reject an Apple ID token whose signature was tampered with', async () => {
+      // A well-formed token from the mock JWKS key, with one signature byte flipped. Better Auth
+      // verifies it against the mocked JWKS, so only the signature check can reject it.
+      const testEmail = `tampered-${Date.now()}@example.com`
+      const idToken = generateAppleIdToken({sub: 'apple-user-tampered-' + Date.now(), email: testEmail, aud: 'lifegames.OfflineMediaDownloader'})
+      const [header, payload, signature] = idToken.split('.') as [string, string, string]
+      // Flip a middle character: the last base64url character can carry only padding bits
+      const middle = Math.floor(signature.length / 2)
+      const flipped = signature[middle] === 'A' ? 'B' : 'A'
+      const tamperedToken = `${header}.${payload}.${signature.slice(0, middle)}${flipped}${signature.slice(middle + 1)}`
+
+      const event = createAuthEvent({idToken: tamperedToken}, '/auth/login')
+      const result = await loginHandler(event, mockContext)
+
+      expect(result.statusCode).toBe(500)
+      const db = await getTestDbAsync()
+      const users = await db.execute(sql`SELECT * FROM users WHERE email = ${testEmail}`)
+      expect([...users]).toHaveLength(0)
+    })
+
     test('should validate request body - missing idToken', async () => {
       const body = {} as AuthRequestBody
       const event = createAuthEvent(body, '/auth/login')
