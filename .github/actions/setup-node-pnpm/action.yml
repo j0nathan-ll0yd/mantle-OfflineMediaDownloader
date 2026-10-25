@@ -1,5 +1,5 @@
 name: 'Setup Node.js and pnpm'
-description: 'Standard Node.js and pnpm setup with caching'
+description: 'Standard Node.js and pnpm setup (cold install, no store cache)'
 
 runs:
   using: 'composite'
@@ -8,20 +8,12 @@ runs:
       uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1  # v4
 
     - name: Setup Node.js
-      id: setup-node
       uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
       with:
         node-version-file: '.nvmrc'
-        cache: 'pnpm'
-
-    - name: Report cache status
-      shell: bash
-      run: |
-        if [ "${{ steps.setup-node.outputs.cache-hit }}" = "true" ]; then
-          echo "::notice::pnpm cache HIT - dependencies restored from cache"
-        else
-          echo "::notice::pnpm cache MISS - installing dependencies fresh"
-        fi
+        # No `cache: 'pnpm'`. On the self-hosted fleet a restore of the ~406 MB store
+        # took 67 s against a 20.5 s cold install on the same head (atlas decision 0168
+        # item 5), and the extra tarball filled the VM disk on lockfile-change heads.
 
     # The @j0nathan-ll0yd scope (the Mantle framework packages and the shared
     # dprint + tsconfig config) lives on GitHub Packages, which requires auth even

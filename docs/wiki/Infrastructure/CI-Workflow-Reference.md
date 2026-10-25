@@ -6,8 +6,8 @@ Complete reference for all GitHub Actions workflows in the project.
 
 | Workflow | Trigger | Schedule | Purpose |
 |----------|---------|----------|---------|
-| `unit-tests.yml` | push, PR | - | TypeSpec, types, lint, unit tests |
-| `integration-tests.yml` | push, PR | - | LocalStack + PostgreSQL integration tests |
+| `unit-tests.yml` | push to main, called by `pr-checks.yml` | - | TypeSpec, types, lint, unit tests |
+| `integration-tests.yml` | push to main, PR | - | LocalStack + PostgreSQL integration tests |
 | `agent-compliance.yml` | push, PR to main | - | MCP convention validation |
 | `mutation-tests.yml` | schedule | Sun 6 AM UTC | Stryker mutation testing |
 | `dependency-check.yml` | push, PR | - | Architectural boundary validation |
@@ -20,11 +20,11 @@ Complete reference for all GitHub Actions workflows in the project.
 
 ### unit-tests.yml
 
-**Purpose**: Core CI pipeline for every push and PR.
+**Purpose**: Core CI pipeline for every PR head and every push to main.
 
 **Triggers**:
-- Push to any branch
-- Pull request to main
+- Push to main
+- `workflow_call` from `pr-checks.yml` (`full-ci`), once per PR head. `pr-ready` gates on its result.
 
 **Steps**:
 1. TypeSpec compilation check
@@ -53,8 +53,8 @@ Complete reference for all GitHub Actions workflows in the project.
 **Purpose**: Full integration tests with LocalStack and PostgreSQL.
 
 **Triggers**:
-- Push to any branch
-- Pull request to main
+- Push to main
+- Pull request to main. This run produces the required `integration-tests` context.
 
 **Services Started**:
 - LocalStack (AWS service emulation)
