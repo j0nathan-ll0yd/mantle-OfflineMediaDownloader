@@ -137,14 +137,16 @@ function satisfiesRange(version, range) {
  */
 function parseOverrideKey(key) {
   // Conditional: "pkg@<condition" or "pkg@>=X <Y". The name (optionally @scope/name) is followed
-  // by @ and a comparator. Checked first because its comparators contain '>'.
-  const condMatch = key.match(/^((?:@[^/]+\/)?[^@>]+)@((?:>=|<=|>|<).+)$/)
+  // by @, a comparator, and version characters only. Checked first because its comparators
+  // contain '>'; a package name after the range makes it a scoped key instead.
+  const condMatch = key.match(/^((?:@[^/]+\/)?[^@>]+)@((?:>=|<=|>|<)[\d.\sx*<>=|^~-]+)$/)
   if (condMatch) {
     return {type: 'conditional', parentName: null, pkgName: condMatch[1], conditionRange: condMatch[2]}
   }
 
-  // Scoped override: "parent>pkg". Either side may be an @scope/name; the parent may carry @version.
-  const scopedMatch = key.match(/^((?:@[^/]+\/)?[^@>]+(?:@[^>]+)?)>(.+)$/)
+  // Scoped override: "parent>pkg". Either side may be an @scope/name; the parent may carry
+  // @version or a comparator range ("@types/node@<21>undici-types").
+  const scopedMatch = key.match(/^((?:@[^/]+\/)?[^@>]+(?:@(?:>=|<=|>|<)?[^>]+)?)>(.+)$/)
   if (scopedMatch) {
     return {type: 'scoped', parentName: stripVersion(scopedMatch[1]), pkgName: stripVersion(scopedMatch[2]), conditionRange: null}
   }
