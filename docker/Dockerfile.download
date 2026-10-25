@@ -34,8 +34,8 @@ RUN microdnf install -y unzip tar xz && microdnf clean all
 # --- yt-dlp ---
 # This version/checksum pair is bumped atomically by the automated weekly update
 # (.github/workflows/update-yt-dlp.yml) and the local helper (bin/update-yt-dlp.sh).
-ARG YTDLP_VERSION=2026.08.19
-ARG YTDLP_SHA256=58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a
+ARG YTDLP_VERSION=2026.10.21
+ARG YTDLP_SHA256=d8bd33fca9d5b23bd5b9952b3fca36db5c46331933fda9f598a3da14ce2c243f
 ADD --checksum=sha256:${YTDLP_SHA256} --chmod=755 \
   https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp_linux \
   /opt/bin/yt-dlp
