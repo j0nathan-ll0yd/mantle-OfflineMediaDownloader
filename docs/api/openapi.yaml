@@ -7,9 +7,10 @@ paths:
     post:
       operationId: postDeviceEvent
       responses:
-        "200": &a1
+        "200":
           description: Successful response
-        "204": *a1
+        "204":
+          description: Successful response
         "400":
           description: Bad request - validation failed or invalid input
           content:
@@ -33,13 +34,18 @@ paths:
     post:
       operationId: postDeviceRegister
       responses:
-        "200": &a2
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.DeviceRegistrationResponse"
-        "201": *a2
+        "201":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.DeviceRegistrationResponse"
         "400":
           description: Bad request - validation failed or invalid input
           content:
@@ -62,13 +68,18 @@ paths:
     post:
       operationId: postFeedlyWebhook
       responses:
-        "200": &a3
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.WebhookResponse"
-        "202": *a3
+        "202":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.WebhookResponse"
         "400":
           description: Bad request - validation failed or invalid input
           content:
@@ -125,7 +136,7 @@ paths:
         - name: status
           in: query
           required: true
-          schema: &a7
+          schema:
             default: downloaded
             type: string
   /files/{fileId}:
@@ -172,14 +183,24 @@ paths:
     delete:
       operationId: deleteUser
       responses:
-        "200": &a4
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.PartialDeletionResponse"
-        "204": *a4
-        "207": *a4
+        "204":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.PartialDeletionResponse"
+        "207":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.PartialDeletionResponse"
         "400":
           description: Bad request - validation failed or invalid input
           content:
@@ -236,9 +257,10 @@ paths:
     post:
       operationId: postUserLogout
       responses:
-        "200": &a5
+        "200":
           description: Successful response
-        "204": *a5
+        "204":
+          description: Successful response
         "400":
           description: Bad request - validation failed or invalid input
           content:
@@ -329,13 +351,18 @@ paths:
     post:
       operationId: postUserSubscribe
       responses:
-        "200": &a6
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.SubscriptionResponse"
-        "201": *a6
+        "201":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Models.SubscriptionResponse"
         "400":
           description: Bad request - validation failed or invalid input
           content:
@@ -368,6 +395,294 @@ paths:
               $ref: "#/components/schemas/Models.SubscriptionRequest"
 components:
   schemas:
+    Models.AppLaunchedEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: app_launched
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        appVersion:
+          type: string
+        buildNumber:
+          type: string
+        osVersion:
+          type: string
+        deviceModel:
+          type: string
+      required:
+        - eventType
+        - timestamp
+        - appVersion
+        - buildNumber
+        - osVersion
+        - deviceModel
+      additionalProperties: false
+    Models.BackgroundTaskCompletedEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: background_task_completed
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        taskName:
+          type: string
+        durationMs:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - eventType
+        - timestamp
+        - taskName
+        - durationMs
+      additionalProperties: false
+    Models.BackgroundTaskExpiredEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: background_task_expired
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        taskName:
+          type: string
+      required:
+        - eventType
+        - timestamp
+        - taskName
+      additionalProperties: false
+    Models.CertificatePinningFailedEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: certificate_pinning_failed
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        host:
+          type: string
+        errorMessage:
+          type: string
+      required:
+        - eventType
+        - timestamp
+        - host
+        - errorMessage
+      additionalProperties: false
+    Models.ClientEventType:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: string
+      enum:
+        - push_delivered
+        - push_received
+        - push_opened
+        - download_completed_locally
+        - playback_started
+        - playback_completed
+        - file_sync_mismatch
+        - certificate_pinning_failed
+        - token_refresh_succeeded
+        - token_refresh_failed
+        - session_expired
+        - background_task_completed
+        - background_task_expired
+        - app_launched
+        - network_error
+    Models.DownloadCompletedLocallyEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: download_completed_locally
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        fileId:
+          type: string
+        fileSizeBytes:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        durationMs:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+        - eventType
+        - timestamp
+        - fileId
+        - fileSizeBytes
+        - durationMs
+      additionalProperties: false
+    Models.FileSyncMismatchEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: file_sync_mismatch
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        localCount:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        serverCount:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        missingFileIds:
+          type: array
+          items:
+            type: string
+      required:
+        - eventType
+        - timestamp
+        - localCount
+        - serverCount
+      additionalProperties: false
+    Models.NetworkErrorEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: network_error
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        endpoint:
+          type: string
+        statusCode:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        errorMessage:
+          type: string
+      required:
+        - eventType
+        - timestamp
+        - endpoint
+        - errorMessage
+      additionalProperties: false
+    Models.PlaybackCompletedEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: playback_completed
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        fileId:
+          type: string
+        playbackDurationSec:
+          type: number
+          minimum: 0
+      required:
+        - eventType
+        - timestamp
+        - fileId
+        - playbackDurationSec
+      additionalProperties: false
+    Models.PlaybackStartedEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: playback_started
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        fileId:
+          type: string
+        durationSec:
+          type: number
+          minimum: 0
+      required:
+        - eventType
+        - timestamp
+        - fileId
+      additionalProperties: false
+    Models.SessionExpiredEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: session_expired
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        sessionId:
+          type: string
+      required:
+        - eventType
+        - timestamp
+      additionalProperties: false
+    Models.TokenRefreshFailedEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: token_refresh_failed
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        errorType:
+          type: string
+        errorMessage:
+          type: string
+      required:
+        - eventType
+        - timestamp
+        - errorType
+        - errorMessage
+      additionalProperties: false
+    Models.TokenRefreshSucceededEvent:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        eventType:
+          type: string
+          const: token_refresh_succeeded
+        timestamp:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        sessionId:
+          type: string
+      required:
+        - eventType
+        - timestamp
+      additionalProperties: false
     Models.DeviceRegistrationRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -389,7 +704,6 @@ components:
         - systemVersion
         - token
       additionalProperties: false
-      id: DeviceRegistrationRequest
     Models.ClientEventRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -399,7 +713,6 @@ components:
       required:
         - message
       additionalProperties: false
-      id: ClientEventRequest
     Models.DeviceRegistrationResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -409,7 +722,6 @@ components:
       required:
         - endpointArn
       additionalProperties: false
-      id: DeviceRegistrationResponse
     Models.Device:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -433,7 +745,6 @@ components:
         - systemVersion
         - token
       additionalProperties: false
-      id: Device
     Models.ErrorResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -455,7 +766,6 @@ components:
         - error
         - requestId
       additionalProperties: false
-      id: ErrorResponse
     Models.FeedlyWebhookRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -465,7 +775,6 @@ components:
       required:
         - articleURL
       additionalProperties: false
-      id: FeedlyWebhookRequest
     Models.FileListResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -480,7 +789,6 @@ components:
         - contents
         - keyCount
       additionalProperties: false
-      id: FileListResponse
     Models.File:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -525,7 +833,6 @@ components:
       required:
         - fileId
       additionalProperties: false
-      id: File
     Models.FileStatus:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: string
@@ -534,7 +841,6 @@ components:
         - Downloading
         - Downloaded
         - Failed
-      id: FileStatus
     Models.ForbiddenError:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -556,7 +862,6 @@ components:
         - error
         - requestId
       additionalProperties: false
-      id: ForbiddenError
     Models.InternalServerError:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -578,7 +883,6 @@ components:
         - error
         - requestId
       additionalProperties: false
-      id: InternalServerError
     Models.TokenRefreshResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -597,7 +901,6 @@ components:
         - sessionId
         - userId
       additionalProperties: false
-      id: TokenRefreshResponse
     Models.UnauthorizedError:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -619,7 +922,6 @@ components:
         - error
         - requestId
       additionalProperties: false
-      id: UnauthorizedError
     Models.UserLoginRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -629,7 +931,6 @@ components:
       required:
         - idToken
       additionalProperties: false
-      id: UserLoginRequest
     Models.UserLoginResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -648,7 +949,6 @@ components:
         - sessionId
         - userId
       additionalProperties: false
-      id: UserLoginResponse
     Models.UserRegistrationRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -662,7 +962,6 @@ components:
       required:
         - idToken
       additionalProperties: false
-      id: UserRegistrationRequest
     Models.UserRegistrationResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -681,7 +980,6 @@ components:
         - sessionId
         - userId
       additionalProperties: false
-      id: UserRegistrationResponse
     Models.UserSubscriptionRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -694,7 +992,6 @@ components:
         - endpointArn
         - topicArn
       additionalProperties: false
-      id: UserSubscriptionRequest
     Models.UserSubscriptionResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -704,7 +1001,6 @@ components:
       required:
         - subscriptionArn
       additionalProperties: false
-      id: UserSubscriptionResponse
     Models.WebhookResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -720,16 +1016,16 @@ components:
       required:
         - status
       additionalProperties: false
-      id: WebhookResponse
     Models.ListFilesQuery:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
       properties:
-        status: *a7
+        status:
+          default: downloaded
+          type: string
       required:
         - status
       additionalProperties: false
-      id: ListFilesQuery
     Models.DeleteFileResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -742,7 +1038,6 @@ components:
         - deleted
         - fileRemoved
       additionalProperties: false
-      id: DeleteFileResponse
     Models.PartialDeletionResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -755,7 +1050,6 @@ components:
         - message
         - failedOperations
       additionalProperties: false
-      id: PartialDeletionResponse
     Models.LoginRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -765,7 +1059,6 @@ components:
       required:
         - idToken
       additionalProperties: false
-      id: LoginRequest
     Models.RegistrationRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -779,7 +1072,6 @@ components:
       required:
         - idToken
       additionalProperties: false
-      id: RegistrationRequest
     Models.SubscriptionRequest:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -792,7 +1084,6 @@ components:
         - endpointArn
         - topicArn
       additionalProperties: false
-      id: SubscriptionRequest
     Models.SubscriptionResponse:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
@@ -800,7 +1091,6 @@ components:
         subscriptionArn:
           type: string
       additionalProperties: false
-      id: SubscriptionResponse
     Notifications.DownloadProgressPayload:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object
