@@ -119,7 +119,7 @@ allowBuilds:
 # AUDIT
 # -----------------------------------------------------------------------------
 # The CI `audit` job runs `pnpm audit --audit-level=high` on every pull request and
-# push. This is its only exception. Each entry needs a scope, the reason the fix is
+# push. These are its only exceptions. Each entry needs a scope, the reason the fix is
 # blocked, and a removal condition.
 auditConfig:
   ignoreGhsas:
@@ -135,16 +135,38 @@ auditConfig:
     # Remove when an inspector or puppeteer-core release declares zod 4 WITH provenance
     # through its whole dependency chain, and that importer is upgraded.
     - GHSA-mrhx-c7xc-m3w5
+    # GHSA-67mh-4wv8-2f99 (esbuild <=0.24.2, moderate: any website can send requests to
+    # the esbuild development server). Scope: dev-only. esbuild 0.18.20 is reached only
+    # through drizzle-kit > @esbuild-kit/esm-loader > @esbuild-kit/core-utils (~0.18.20).
+    # Nothing here runs the esbuild dev server, and no Lambda bundles esbuild code; the
+    # mantle build bundler resolves esbuild 0.28.1. Fix blocked: no fixed release exists
+    # on the 0.18 line, and forcing 0.25 or later breaks the importer range (the former
+    # esbuild >=0.28.1 override, removed for that reason). Remove when drizzle-kit drops
+    # @esbuild-kit, or an @esbuild-kit/core-utils release admits esbuild >=0.25.0.
+    - GHSA-67mh-4wv8-2f99
 
 overrides:
   # Security updates for transitive dev tools; see pnpm audit advisories.
   # The CI `audit` job (pnpm audit --audit-level=high) gates regressions. An override
   # is only allowed where every importer's declared range admits the forced version.
-  'drizzle-zod>zod': '^4.3.4'
-  'undici-types': '7.16.0'
-  'ws': '>=8.20.1'
-  'protobufjs': '>=7.5.8'
-  'esbuild': '>=0.28.1'
+  # Not an advisory: avoids ERR_PNPM_TRUST_DOWNGRADE. @types/node 18.19.x (via lancedb's
+  # optional openai) declares undici-types ~5.26.4, and 20.19.x (via apache-arrow, lancedb's
+  # peer) declares ~6.21.0. undici-types 5.26.5 and 6.21.0 ship without the provenance that
+  # earlier releases had, so trustPolicy no-downgrade refuses them. 7.16.0 has provenance and
+  # is type declarations only. Scoped to @types/node below 21, so @types/node 26 resolves its
+  # own ~8.3.0 (with provenance). This is outside those two importers' ranges. Remove when
+  # lancedb's chain moves to @types/node 21 or later, or a provenance-attested release exists
+  # on undici-types 5.26.x and 6.21.x.
+  '@types/node@<21>undici-types': '7.16.0'
+  # ws GHSA-96hv-2xvq-fx4p (high, fixed 8.21.0) and GHSA-58qx-3vcg-4xpx (fixed 8.20.1).
+  # Importers: @modelcontextprotocol/inspector-server ^8.18.0, puppeteer-core ^8.21.0.
+  # Remove when every ws importer declares ^8.21.0 or higher.
+  'ws': '^8.21.0'
+  # protobufjs 7.x advisories, the newest GHSA-j3f2-48v5-ccww (fixed 7.6.5),
+  # GHSA-wcpc-wj8m-hjx6 (high, fixed 7.6.1), and GHSA-f38q-mgvj-vph7 (fixed 7.6.3).
+  # 7.6.6 is the newest 7.x. Importer: onnxruntime-web ^7.2.4 (under
+  # @huggingface/transformers). Remove when onnxruntime-web declares ^7.6.6 or higher.
+  'protobufjs': '^7.6.6'
   # typed-rest-client 2.3.1 pins qs to exactly 6.15.1 (GHSA-x5fp-wj9c-mxmx,
   # GHSA-4mjr-xmp4-gh2g; fixed in qs 6.16.0). 2.3.0 declares qs ^6.14.1, so it
   # resolves the fixed qs. Its only importer, @stryker-mutator/core (up to 10.1.1),

@@ -416,7 +416,7 @@ jobs:
 
   # Dependency advisory gate. Runs `pnpm audit --audit-level=high` unfiltered on every pull
   # request and push to main, so a high or critical advisory fails the job. The only
-  # exception lives in pnpm-workspace.yaml `auditConfig.ignoreGhsas`, where each entry
+  # exceptions live in pnpm-workspace.yaml `auditConfig.ignoreGhsas`, where each entry
   # carries its scope, the reason the fix is blocked, and a removal condition.
   # `pnpm audit` reads pnpm-lock.yaml, so no install step runs. The job id is the
   # status-check context.
