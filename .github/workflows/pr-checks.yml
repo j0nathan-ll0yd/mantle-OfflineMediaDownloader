@@ -43,20 +43,27 @@ jobs:
       contents: read
       packages: read # read @j0nathan-ll0yd/* (Mantle framework + shared config) from GitHub Packages
     steps:
+      # Name the needed job and its result; do not assert a cause. full-ci runs
+      # validate, lint-and-types, build-and-validate and test (unit-tests.yml),
+      # and any of them, or an infrastructure step, can fail it.
       - name: Check all jobs succeeded
+        env:
+          FULL_CI_RESULT: ${{ needs.full-ci.result }}
         run: |
-          if [ "${{ needs.full-ci.result }}" != "success" ]; then
-            echo "::error::Unit tests failed"
+          if [ "$FULL_CI_RESULT" != "success" ]; then
+            echo "::error::Needed job full-ci (unit-tests.yml) finished with result '$FULL_CI_RESULT', not 'success'. See the full-ci jobs in this run for the failed step."
             exit 1
           fi
-          echo "All checks passed!"
+          echo "All needed jobs succeeded: full-ci=$FULL_CI_RESULT"
 
+      # always(): the summary matters most when the check above fails.
       - name: Post summary
+        if: always()
         run: |
           {
             echo "## PR Check Summary"
             echo ""
-            echo "| Check | Status |"
-            echo "|-------|--------|"
-            echo "| Unit Tests | ${{ needs.full-ci.result }} |"
+            echo "| Needed job | Result |"
+            echo "|------------|--------|"
+            echo "| full-ci (unit-tests.yml) | ${{ needs.full-ci.result }} |"
           } >> "$GITHUB_STEP_SUMMARY"
