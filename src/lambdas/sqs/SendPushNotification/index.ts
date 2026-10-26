@@ -10,7 +10,7 @@ import {addAnnotation, addMetadata, endSpan, logError, logInfo, metrics, MetricU
 import type {FileNotificationType} from '#types/notificationTypes'
 import {pushNotificationAttributesSchema} from '#types/schemas'
 import {validateSchema} from '@j0nathan-ll0yd/validation'
-import {cleanupDisabledEndpoints} from './endpointCleanupHelpers.js'
+import {cleanupDisabledEndpoints} from '#services/device/endpointCleanupService'
 import {getDevice, getDeviceIdsForUser, mapSettledToDeviceResults, processNotificationResults, sendNotificationToDevice} from './pushHelpers.js'
 
 const sqs = defineSqsHandler<string>({operationName: 'SendPushNotification', parseBody: false, queue: 'SendPushNotification'})

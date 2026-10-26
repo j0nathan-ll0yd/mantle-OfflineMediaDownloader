@@ -57,7 +57,7 @@ vi.mock('#services/notification/transformers',
     transformToAPNSNotification: vi.fn(() => ({Message: 'background', TargetArn: 'arn:test'}))
   }))
 
-vi.mock('#lambdas/sqs/SendPushNotification/endpointCleanupHelpers', () => ({cleanupDisabledEndpoints: vi.fn(() => Promise.resolve([]))}))
+vi.mock('#services/device/endpointCleanupService', () => ({cleanupDisabledEndpoints: vi.fn(() => Promise.resolve([]))}))
 
 vi.mock('#types/schemas', () => ({pushNotificationAttributesSchema: {}}))
 
@@ -66,7 +66,7 @@ import {publish} from '@j0nathan-ll0yd/aws'
 import {validateSchema} from '@j0nathan-ll0yd/validation'
 import {getDevice, getUserDevicesByUserId} from '#entities/queries'
 import {transformToAPNSAlertNotification, transformToAPNSNotification} from '#services/notification/transformers'
-import {cleanupDisabledEndpoints} from '#lambdas/sqs/SendPushNotification/endpointCleanupHelpers'
+import {cleanupDisabledEndpoints} from '#services/device/endpointCleanupService'
 import {metrics} from '@j0nathan-ll0yd/observability'
 
 describe('SendPushNotification Lambda', () => {

@@ -13,11 +13,11 @@ vi.mock('@j0nathan-ll0yd/validation', async () => {
 })
 
 vi.mock('#entities/queries', () => ({getDeviceByEndpointArn: vi.fn()}))
-vi.mock('../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js', () => ({cleanupDisabledEndpoint: vi.fn()}))
+vi.mock('#services/device/endpointCleanupService', () => ({cleanupDisabledEndpoint: vi.fn()}))
 
 const {handler} = (await import('#lambdas/sqs/EndpointCleanupHelpers/index.js')) as unknown as MockedModule<typeof EndpointMod>
 import {getDeviceByEndpointArn} from '#entities/queries'
-import {cleanupDisabledEndpoint} from '../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js'
+import {cleanupDisabledEndpoint} from '#services/device/endpointCleanupService'
 import {logError, logInfo} from '@j0nathan-ll0yd/observability'
 
 function makeSqsRecord(body: string): SQSRecord {

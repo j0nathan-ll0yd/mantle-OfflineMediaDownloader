@@ -7,7 +7,7 @@ not enforce foreign key constraints at the database layer. Deletion of a parent 
 by deletion of all its child records — application code enforces the ordering the database cannot.
 
 Source of truth for behavior: `src/entities/queries/cascadeOperations.ts` (all cascade operations),
-`src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.ts` (endpoint cleanup ordering).
+`src/services/device/endpointCleanupService.ts` (endpoint cleanup ordering).
 The table schemas (columns, FK declarations) are owned by `src/db/schema.ts` — this spec does NOT
 restate them.
 
