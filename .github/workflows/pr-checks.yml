@@ -47,14 +47,15 @@ jobs:
       # validate, lint-and-types, build-and-validate and test (unit-tests.yml),
       # and any of them, or an infrastructure step, can fail it.
       - name: Check all jobs succeeded
-        env:
-          FULL_CI_RESULT: ${{ needs.full-ci.result }}
+        # The needs result is read inline, not through env, so atlas A2b can observe the
+        # structural claim that pr-ready reads needs.full-ci.result (decision 0168). The value is
+        # a fixed GitHub enum (success/failure/cancelled/skipped), so inlining it is safe.
         run: |
-          if [ "$FULL_CI_RESULT" != "success" ]; then
-            echo "::error::Needed job full-ci (unit-tests.yml) finished with result '$FULL_CI_RESULT', not 'success'. See the full-ci jobs in this run for the failed step."
+          if [ "${{ needs.full-ci.result }}" != "success" ]; then
+            echo "::error::Needed job full-ci (unit-tests.yml) finished with result '${{ needs.full-ci.result }}', not 'success'. See the full-ci jobs in this run for the failed step."
             exit 1
           fi
-          echo "All needed jobs succeeded: full-ci=$FULL_CI_RESULT"
+          echo "All needed jobs succeeded: full-ci=${{ needs.full-ci.result }}"
 
       # always(): the summary matters most when the check above fails.
       - name: Post summary
