@@ -2,7 +2,7 @@ import {defineSqsHandler} from '@j0nathan-ll0yd/core'
 import {logError, logInfo, metrics, MetricUnit} from '@j0nathan-ll0yd/observability'
 import {z} from '@j0nathan-ll0yd/validation'
 import {getDeviceByEndpointArn} from '#entities/queries'
-import {cleanupDisabledEndpoint} from '../SendPushNotification/endpointCleanupHelpers.js'
+import {cleanupDisabledEndpoint} from '#services/device/endpointCleanupService'
 
 const snsWrapperSchema = z.object({Message: z.string().optional()})
 

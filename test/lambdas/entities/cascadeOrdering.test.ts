@@ -15,7 +15,7 @@ vi.mock('#entities/queries', () => ({deleteDevice: vi.fn(), deleteUserDevicesByD
 
 vi.mock('@j0nathan-ll0yd/aws', () => ({deleteEndpoint: vi.fn()}))
 
-import {cleanupDisabledEndpoint, cleanupDisabledEndpoints} from '#lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js'
+import {cleanupDisabledEndpoint, cleanupDisabledEndpoints} from '#services/device/endpointCleanupService'
 import {deleteDevice, deleteUserDevicesByDeviceId, getDevice} from '#entities/queries'
 import {deleteEndpoint} from '@j0nathan-ll0yd/aws'
 

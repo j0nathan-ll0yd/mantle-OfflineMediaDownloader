@@ -8,7 +8,7 @@ delivery to others. Reactively cleans up disabled APNs endpoints (invalid token,
 when APNs rejects a push, removing the stale device registration to prevent future spurious sends.
 
 Source of truth for behavior: `src/lambdas/sqs/SendPushNotification/index.ts`,
-`src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.ts`,
+`src/services/device/endpointCleanupService.ts`,
 `src/lambdas/sqs/SendPushNotification/pushHelpers.ts`. The SQS message attribute schema
 (`pushNotificationAttributesSchema`) is owned by `src/types/schemas.ts` — this spec does NOT
 restate it.

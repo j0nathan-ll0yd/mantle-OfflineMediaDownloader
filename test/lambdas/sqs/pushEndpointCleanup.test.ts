@@ -33,12 +33,12 @@ vi.mock('../../../src/lambdas/sqs/SendPushNotification/pushHelpers.js',
     sendNotificationToDevice: vi.fn()
   }))
 
-vi.mock('../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js', () => ({cleanupDisabledEndpoints: vi.fn()}))
+vi.mock('#services/device/endpointCleanupService', () => ({cleanupDisabledEndpoints: vi.fn()}))
 
 const {handler} = (await import('#lambdas/sqs/SendPushNotification/index.js')) as unknown as MockedModule<typeof PushNotificationMod>
 
 import {validateSchema} from '@j0nathan-ll0yd/validation'
-import {cleanupDisabledEndpoints} from '../../../src/lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js'
+import {cleanupDisabledEndpoints} from '#services/device/endpointCleanupService'
 import {getDeviceIdsForUser, mapSettledToDeviceResults, processNotificationResults} from '../../../src/lambdas/sqs/SendPushNotification/pushHelpers.js'
 
 const DEVICE_ID = 'device-disabled-123'

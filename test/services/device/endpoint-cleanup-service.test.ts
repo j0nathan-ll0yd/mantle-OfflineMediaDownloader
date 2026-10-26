@@ -20,9 +20,7 @@ vi.mock('@j0nathan-ll0yd/core',
     isOk: vi.fn((result: {success: boolean}) => result.success)
   }))
 
-const {cleanupDisabledEndpoint, cleanupDisabledEndpointByDeviceId, cleanupDisabledEndpoints} = await import(
-  '#lambdas/sqs/SendPushNotification/endpointCleanupHelpers.js'
-)
+const {cleanupDisabledEndpoint, cleanupDisabledEndpointByDeviceId, cleanupDisabledEndpoints} = await import('#services/device/endpointCleanupService')
 import {deleteDevice as deleteDeviceRecord, deleteUserDevicesByDeviceId, getDevice} from '#entities/queries'
 import {deleteEndpoint} from '@j0nathan-ll0yd/aws'
 import {logError, logInfo} from '@j0nathan-ll0yd/observability'
