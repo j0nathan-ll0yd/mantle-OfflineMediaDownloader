@@ -13,8 +13,8 @@
  * This is an application service that orchestrates infrastructure operations (SNS).
  * It lives outside the domain layer to maintain domain purity.
  *
- * @see src/lambdas/SendPushNotification for detection
- * @see src/lambdas/PruneDevices for proactive cleanup
+ * @see src/lambdas/sqs/SendPushNotification for detection
+ * @see src/lambdas/scheduled/PruneDevices for proactive cleanup
  */
 import {deleteDevice as deleteDeviceRecord, deleteUserDevicesByDeviceId, getDevice} from '#entities/queries'
 import {deleteEndpoint} from '@j0nathan-ll0yd/aws'
