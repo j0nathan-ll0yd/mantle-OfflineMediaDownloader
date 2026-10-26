@@ -320,6 +320,12 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Check conventions
         run: npx mantle check --severity HIGH
+      # `mantle check deps` is a separate subcommand; `mantle check` does not run it. It enforces
+      # the dependency architecture rules, including no-handler-to-handler-imports: one handler
+      # is one Lambda directory (src/lambdas/<trigger>/<name>), and handlers must not import
+      # each other (mantle #479, CLI 2.26.0).
+      - name: Check dependency architecture
+        run: npx mantle check deps
 
   # Published-package version-drift gate. This repo publishes NOTHING today, so the check
   # short-circuits to exit 0 in well under a second — it is wired now precisely so it is
