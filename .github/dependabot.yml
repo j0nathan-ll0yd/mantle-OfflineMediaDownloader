@@ -16,15 +16,20 @@
 # Deliberately NOT set:
 #   replaces-base -- would route *every* npm dependency through GitHub Packages,
 #     which does not proxy registry.npmjs.org.
-#   scope         -- would make Dependabot regenerate .npmrc purely from these
-#     credentials and discard the committed one, dropping the supply-chain
-#     hardening in .npmrc (enable-pre-post-scripts=false, minimum-release-age).
-#     The committed `@j0nathan-ll0yd:registry=` line already does the scope
-#     mapping and Dependabot appends the credential from here.
+#
+# `scope` is required (mantle #489). Keep it equal to the `@j0nathan-ll0yd:registry=`
+# line in .npmrc. Without it, Dependabot infers scope mappings: it probes this
+# registry for every lockfile package and maps any scope that answers 200. GitHub
+# Packages answers for `@types/*` and `@microsoft/*` with stale copies, so pnpm
+# fetched those scopes from here and every npm update failed. With `scope` set,
+# Dependabot builds its .npmrc from these credentials only and ignores the
+# committed file. That drops nothing: per atlas 0032, .npmrc holds only this
+# registry mapping, and every pnpm setting lives in pnpm-workspace.yaml.
 registries:
   github-packages:
     type: npm-registry
     url: https://npm.pkg.github.com
+    scope: "@j0nathan-ll0yd"
     token: ${{secrets.GH_PACKAGES_READ_TOKEN}}
 updates:
 - commit-message:
