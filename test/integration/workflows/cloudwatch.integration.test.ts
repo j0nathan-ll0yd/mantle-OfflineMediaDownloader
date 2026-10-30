@@ -13,6 +13,7 @@ process.env.AWS_REGION = 'us-west-2'
 
 import {afterAll, beforeAll, describe, expect, test} from 'vitest'
 import {
+  CLOUDWATCH_LOGS_NOT_ENABLED,
   createTestLogGroup,
   createTestLogStream,
   deleteTestLogGroup,
@@ -30,7 +31,7 @@ describe('CloudWatch Logs Integration Tests', () => {
   beforeAll(async () => {
     cloudWatchAvailable = await isCloudWatchLogsAvailable()
     if (!cloudWatchAvailable) {
-      console.log('CloudWatch Logs service not available in LocalStack - tests will be skipped')
+      console.log(`CloudWatch Logs tests will be skipped: ${CLOUDWATCH_LOGS_NOT_ENABLED}`)
       return
     }
 
@@ -48,7 +49,7 @@ describe('CloudWatch Logs Integration Tests', () => {
 
   test('should create log group and stream', async ({skip}) => {
     if (!cloudWatchAvailable) {
-      skip()
+      skip(CLOUDWATCH_LOGS_NOT_ENABLED)
       return
     }
 
@@ -72,7 +73,7 @@ describe('CloudWatch Logs Integration Tests', () => {
 
   test('should write and retrieve log events', async ({skip}) => {
     if (!cloudWatchAvailable) {
-      skip()
+      skip(CLOUDWATCH_LOGS_NOT_ENABLED)
       return
     }
 
@@ -90,7 +91,7 @@ describe('CloudWatch Logs Integration Tests', () => {
 
   test('should handle empty log stream', async ({skip}) => {
     if (!cloudWatchAvailable) {
-      skip()
+      skip(CLOUDWATCH_LOGS_NOT_ENABLED)
       return
     }
 
@@ -104,7 +105,7 @@ describe('CloudWatch Logs Integration Tests', () => {
 
   test('should write JSON log events', async ({skip}) => {
     if (!cloudWatchAvailable) {
-      skip()
+      skip(CLOUDWATCH_LOGS_NOT_ENABLED)
       return
     }
 

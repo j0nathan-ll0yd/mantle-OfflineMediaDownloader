@@ -12,8 +12,15 @@ import {POLLING, TIMEOUTS} from './timeout-config'
 let cloudWatchAvailableCache: boolean | null = null
 
 /**
+ * The emulator error when 'logs' is missing from its SERVICES list. Tests skip with this note.
+ */
+export const CLOUDWATCH_LOGS_NOT_ENABLED = "Service 'logs' is not enabled"
+
+/**
  * Checks if CloudWatch Logs service is available in LocalStack.
  * Results are cached to avoid repeated checks.
+ * @returns False only when the emulator reports that the logs service is not enabled
+ * @throws Any other error (for example, credentials or connection errors), so the suite fails instead of skipping
  */
 export async function isCloudWatchLogsAvailable(): Promise<boolean> {
   if (cloudWatchAvailableCache !== null) {
@@ -28,23 +35,12 @@ export async function isCloudWatchLogsAvailable(): Promise<boolean> {
     cloudWatchAvailableCache = true
     return true
   } catch (error) {
-    // Check for "Service 'logs' is not enabled" error
-    if (error instanceof Error && error.message.includes('not enabled')) {
+    if (error instanceof Error && error.message.includes(CLOUDWATCH_LOGS_NOT_ENABLED)) {
       cloudWatchAvailableCache = false
       return false
     }
-    // For other errors, assume service might be available but having issues
-    cloudWatchAvailableCache = false
-    return false
+    throw error
   }
-}
-
-/**
- * Skip helper for CloudWatch tests - use with test.skipIf()
- */
-export async function skipIfCloudWatchUnavailable(): Promise<boolean> {
-  const available = await isCloudWatchLogsAvailable()
-  return !available
 }
 
 /**
