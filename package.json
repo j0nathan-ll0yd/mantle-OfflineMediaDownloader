@@ -140,7 +140,7 @@
     "@j0nathan-ll0yd/config": "^1.2.1",
     "@j0nathan-ll0yd/eslint-config": "^1.1.0",
     "@j0nathan-ll0yd/testing": "^1.1.15",
-    "@lancedb/lancedb": "^0.31.0",
+    "@lancedb/lancedb": "^0.40.0",
     "@modelcontextprotocol/inspector": "^0.22.0",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/typescript-checker": "^9.6.1",
