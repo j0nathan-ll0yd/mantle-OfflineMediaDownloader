@@ -12,32 +12,78 @@
 process.env.AWS_REGION = 'us-west-2'
 
 import {afterAll, beforeAll, describe, expect, test} from 'vitest'
-import {createTestFunction, deleteTestFunction, invokeFunction, isLambdaAvailable, listFunctions} from '../helpers/lambda-invocation-helpers'
+import {
+  createTestFunction,
+  deleteTestFunction,
+  invokeFunction,
+  isLambdaAvailable,
+  LAMBDA_NOT_ENABLED,
+  LambdaContainerUnavailableError,
+  listFunctions
+} from '../helpers/lambda-invocation-helpers'
 
 describe('Lambda Invocation Integration Tests', () => {
   let lambdaAvailable = false
   const testFunctionName = `test-function-${Date.now()}`
   let functionCreated = false
+  // Set when the emulator cannot start the function container; invoke tests skip with this reason
+  let containerUnavailableReason: string | undefined
 
   beforeAll(async () => {
     lambdaAvailable = await isLambdaAvailable()
     if (!lambdaAvailable) {
-      console.log('LocalStack Lambda not available - some tests will be skipped')
+      console.log(`Lambda tests will be skipped: ${LAMBDA_NOT_ENABLED}`)
       return
     }
 
-    // Try to create a test function
-    functionCreated = await createTestFunction(testFunctionName)
-    if (!functionCreated) {
-      console.log('Could not create test function - some tests will be skipped')
+    try {
+      await createTestFunction(testFunctionName)
+      functionCreated = true
+    } catch (error) {
+      if (!(error instanceof LambdaContainerUnavailableError)) {
+        throw error
+      }
+      containerUnavailableReason = error.message
+      console.log(`Skipping invoke tests: ${containerUnavailableReason}`)
     }
   })
 
   afterAll(async () => {
-    if (functionCreated) {
+    if (lambdaAvailable) {
       await deleteTestFunction(testFunctionName)
     }
   })
+
+  /**
+   * Invokes the test function, or skips the test with the emulator's reason when it cannot start the function container.
+   * A FunctionError raised by the function's own code propagates and fails the test.
+   */
+  async function invokeTestFunctionOrSkip(skip: (note?: string) => never, payload: unknown) {
+    if (!lambdaAvailable) {
+      skip(LAMBDA_NOT_ENABLED)
+    }
+    if (containerUnavailableReason) {
+      skip(containerUnavailableReason)
+    }
+    try {
+      return await invokeFunction(testFunctionName, payload)
+    } catch (error) {
+      if (error instanceof LambdaContainerUnavailableError) {
+        console.log(`Skipping invoke test: ${error.message}`)
+        skip(error.message)
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Parses the echo function's JSON body, failing the test with a clear message when the body is missing.
+   */
+  function parseEchoBody(payload: unknown): {echo: unknown; timestamp: unknown} {
+    const body = (payload as {body?: unknown} | undefined)?.body
+    expect(typeof body).toBe('string')
+    return JSON.parse(body as string)
+  }
 
   test('should verify LocalStack Lambda service is available', async () => {
     const available = await isLambdaAvailable()
@@ -47,7 +93,7 @@ describe('Lambda Invocation Integration Tests', () => {
 
   test('should list Lambda functions', async ({skip}) => {
     if (!lambdaAvailable) {
-      skip()
+      skip(LAMBDA_NOT_ENABLED)
       return
     }
 
@@ -61,64 +107,39 @@ describe('Lambda Invocation Integration Tests', () => {
   })
 
   test('should invoke Lambda function with payload', async ({skip}) => {
-    if (!lambdaAvailable || !functionCreated) {
-      skip()
-      return
-    }
-
     const payload = {message: 'Hello', data: {value: 42}}
-    const result = await invokeFunction(testFunctionName, payload)
+    const result = await invokeTestFunctionOrSkip(skip, payload)
 
     expect(result.statusCode).toBe(200)
-    expect(result.payload).toBeDefined()
 
     // The echo function returns the input in the body
-    const body = (result.payload as {body?: string})?.body
-    if (body) {
-      const parsed = JSON.parse(body)
-      expect(parsed.echo).toEqual(payload)
-      expect(parsed.timestamp).toBeDefined()
-    }
+    const parsed = parseEchoBody(result.payload)
+    expect(parsed.echo).toEqual(payload)
+    expect(parsed.timestamp).toBeDefined()
   })
 
   test('should handle empty payload', async ({skip}) => {
-    if (!lambdaAvailable || !functionCreated) {
-      skip()
-      return
-    }
-
-    const result = await invokeFunction(testFunctionName, {})
+    const result = await invokeTestFunctionOrSkip(skip, {})
 
     expect(result.statusCode).toBe(200)
-    expect(result.payload).toBeDefined()
+    expect(parseEchoBody(result.payload).echo).toEqual({})
   })
 
   test('should handle complex payload', async ({skip}) => {
-    if (!lambdaAvailable || !functionCreated) {
-      skip()
-      return
-    }
-
     const complexPayload = {array: [1, 2, 3], nested: {deep: {value: 'test'}}, nullValue: null, number: 123.456, boolean: true}
 
-    const result = await invokeFunction(testFunctionName, complexPayload)
+    const result = await invokeTestFunctionOrSkip(skip, complexPayload)
 
     expect(result.statusCode).toBe(200)
-    expect(result.payload).toBeDefined()
+    expect(parseEchoBody(result.payload).echo).toEqual(complexPayload)
   })
 
   test('should handle invocation of non-existent function', async ({skip}) => {
     if (!lambdaAvailable) {
-      skip()
+      skip(LAMBDA_NOT_ENABLED)
       return
     }
 
-    try {
-      await invokeFunction('non-existent-function-xyz-123', {test: true})
-      // If it doesn't throw, that's also valid behavior for LocalStack
-    } catch (error) {
-      // Expected - function doesn't exist
-      expect(error).toBeDefined()
-    }
+    await expect(invokeFunction('non-existent-function-xyz-123', {test: true})).rejects.toMatchObject({name: 'ResourceNotFoundException'})
   })
 })
