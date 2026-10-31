@@ -7,19 +7,66 @@
  */
 
 import {CreateFunctionCommand, DeleteFunctionCommand, GetFunctionCommand, InvokeCommand, ListFunctionsCommand} from '@aws-sdk/client-lambda'
+import type {FunctionConfiguration} from '@aws-sdk/client-lambda'
 import {createLambdaClient} from '@j0nathan-ll0yd/aws'
 
 const lambdaClient = createLambdaClient()
 
 /**
+ * The emulator error when 'lambda' is missing from its SERVICES list. Tests skip with this note.
+ */
+export const LAMBDA_NOT_ENABLED = "Service 'lambda' is not enabled"
+
+/**
  * Check if LocalStack Lambda service is available
+ * @returns False only when the emulator reports that the lambda service is not enabled
+ * @throws Any other error (for example, connection errors), so the suite fails instead of skipping
  */
 export async function isLambdaAvailable(): Promise<boolean> {
   try {
     await lambdaClient.send(new ListFunctionsCommand({}))
     return true
-  } catch {
-    return false
+  } catch (error) {
+    if (error instanceof Error && error.message.includes(LAMBDA_NOT_ENABLED)) {
+      return false
+    }
+    throw error
+  }
+}
+
+/**
+ * Emulator messages that mean the function container never started, so the function's own code never ran.
+ * - floci: Invoke returns FunctionError with "Failed to start Lambda container: ..." when it has no Docker socket.
+ * - LocalStack: the function ends in State "Failed" with StateReason "Docker not available" when it has no Docker socket.
+ */
+const CONTAINER_UNAVAILABLE_PATTERNS = [/^Failed to start Lambda container/, /Docker not available/]
+
+function isContainerUnavailable(message: string): boolean {
+  return CONTAINER_UNAVAILABLE_PATTERNS.some((pattern) => pattern.test(message))
+}
+
+/**
+ * Thrown when the emulator cannot start the function container. Tests skip on this error with its message as the reason.
+ */
+export class LambdaContainerUnavailableError extends Error {
+  constructor(reason: string) {
+    super(`Emulator cannot start the Lambda container: ${reason}`)
+    this.name = 'LambdaContainerUnavailableError'
+  }
+}
+
+/**
+ * Thrown when an invocation returns a FunctionError raised by the function's own code. Tests fail on this error.
+ */
+export class LambdaFunctionError extends Error {
+  readonly functionError: string
+  readonly payload: unknown
+
+  constructor(functionName: string, functionError: string, payload: unknown) {
+    super(`Lambda ${functionName} returned FunctionError ${functionError}: ${JSON.stringify(payload)}`)
+    this.name = 'LambdaFunctionError'
+    this.functionError = functionError
+    this.payload = payload
   }
 }
 
@@ -29,28 +76,34 @@ export async function isLambdaAvailable(): Promise<boolean> {
  * @param functionName - Name of the function to wait for
  * @param maxAttempts - Maximum polling attempts (default 30)
  * @param delayMs - Delay between attempts in ms (default 500)
- * @returns True if function became Active, false if timeout
+ * @throws LambdaContainerUnavailableError if the function fails because the emulator cannot start its container
+ * @throws Error if the function fails for any other reason or does not become Active in time
  */
-export async function waitForFunctionActive(functionName: string, maxAttempts = 30, delayMs = 500): Promise<boolean> {
+export async function waitForFunctionActive(functionName: string, maxAttempts = 30, delayMs = 500): Promise<void> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let configuration: FunctionConfiguration | undefined
     try {
-      const result = await lambdaClient.send(new GetFunctionCommand({FunctionName: functionName}))
-      const state = result.Configuration?.State
-      if (state === 'Active') {
-        return true
+      configuration = (await lambdaClient.send(new GetFunctionCommand({FunctionName: functionName}))).Configuration
+    } catch (error) {
+      // Function may not exist yet; any other error is real
+      if (!(error instanceof Error && error.name === 'ResourceNotFoundException')) {
+        throw error
       }
-      if (state === 'Failed') {
-        console.log(`Function ${functionName} is in Failed state`)
-        return false
-      }
-      // State is Pending or other transitional state, wait and retry
-    } catch {
-      // Function may not exist yet, wait and retry
     }
+    if (configuration?.State === 'Active') {
+      return
+    }
+    if (configuration?.State === 'Failed') {
+      const reason = configuration.StateReason ?? 'no StateReason'
+      if (isContainerUnavailable(reason)) {
+        throw new LambdaContainerUnavailableError(reason)
+      }
+      throw new Error(`Function ${functionName} is in Failed state: ${reason}`)
+    }
+    // State is Pending or other transitional state, wait and retry
     await new Promise((resolve) => setTimeout(resolve, delayMs))
   }
-  console.log(`Timeout waiting for function ${functionName} to become Active`)
-  return false
+  throw new Error(`Timeout waiting for function ${functionName} to become Active`)
 }
 
 /**
@@ -67,6 +120,8 @@ export async function listFunctions(): Promise<string[]> {
  * @param functionName - Name of the function to invoke
  * @param payload - Payload to send to the function
  * @returns Invocation result
+ * @throws LambdaContainerUnavailableError if the emulator cannot start the function container
+ * @throws LambdaFunctionError if the function's own code raised an error
  */
 export async function invokeFunction(functionName: string, payload: unknown): Promise<{statusCode: number | undefined; payload: unknown}> {
   const result = await lambdaClient.send(new InvokeCommand({FunctionName: functionName, Payload: Buffer.from(JSON.stringify(payload))}))
@@ -81,6 +136,14 @@ export async function invokeFunction(functionName: string, payload: unknown): Pr
     }
   }
 
+  if (result.FunctionError) {
+    const errorMessage = (responsePayload as {errorMessage?: unknown} | undefined)?.errorMessage
+    if (typeof errorMessage === 'string' && isContainerUnavailable(errorMessage)) {
+      throw new LambdaContainerUnavailableError(errorMessage)
+    }
+    throw new LambdaFunctionError(functionName, result.FunctionError, responsePayload)
+  }
+
   return {statusCode: result.StatusCode, payload: responsePayload}
 }
 
@@ -90,9 +153,10 @@ export async function invokeFunction(functionName: string, payload: unknown): Pr
  * Waits for the function to become Active before returning
  *
  * @param functionName - Name for the function
- * @returns True if created and became Active successfully
+ * @throws LambdaContainerUnavailableError if the emulator cannot start the function container
+ * @throws Error if creation fails for any other reason
  */
-export async function createTestFunction(functionName: string): Promise<boolean> {
+export async function createTestFunction(functionName: string): Promise<void> {
   // Minimal Lambda code that echoes input
   const code = `
     exports.handler = async (event) => {
@@ -108,22 +172,17 @@ export async function createTestFunction(functionName: string): Promise<boolean>
   const {createZipBuffer} = await import('./zip-utils')
   const zipBuffer = await createZipBuffer({'index.js': code})
 
-  try {
-    await lambdaClient.send(
-      new CreateFunctionCommand({
-        FunctionName: functionName,
-        Runtime: 'nodejs20.x',
-        Role: 'arn:aws:iam::000000000000:role/lambda-role',
-        Handler: 'index.handler',
-        Code: {ZipFile: zipBuffer}
-      })
-    )
-    // Wait for function to become Active before returning
-    return await waitForFunctionActive(functionName)
-  } catch (error) {
-    console.log(`Failed to create function ${functionName}:`, error)
-    return false
-  }
+  await lambdaClient.send(
+    new CreateFunctionCommand({
+      FunctionName: functionName,
+      Runtime: 'nodejs20.x',
+      Role: 'arn:aws:iam::000000000000:role/lambda-role',
+      Handler: 'index.handler',
+      Code: {ZipFile: zipBuffer}
+    })
+  )
+  // Wait for function to become Active before returning
+  await waitForFunctionActive(functionName)
 }
 
 /**
@@ -135,21 +194,5 @@ export async function deleteTestFunction(functionName: string): Promise<void> {
     await lambdaClient.send(new DeleteFunctionCommand({FunctionName: functionName}))
   } catch {
     // Ignore errors
-  }
-}
-
-/**
- * Skip test helper for when LocalStack Lambda is unavailable
- * @param testFn - Test function to wrap
- * @returns Wrapped test function
- */
-export function skipIfLambdaUnavailable(testFn: () => Promise<void>): () => Promise<void> {
-  return async () => {
-    const available = await isLambdaAvailable()
-    if (!available) {
-      console.log('Skipping test: LocalStack Lambda not available')
-      return
-    }
-    await testFn()
   }
 }

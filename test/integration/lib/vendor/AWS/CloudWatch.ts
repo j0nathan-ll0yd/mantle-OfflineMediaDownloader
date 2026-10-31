@@ -13,15 +13,9 @@ import {
   PutLogEventsCommand
 } from '@aws-sdk/client-cloudwatch-logs'
 import type {InputLogEvent, OutputLogEvent} from '@aws-sdk/client-cloudwatch-logs'
-import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import {createCloudWatchLogsClient} from '@j0nathan-ll0yd/aws'
 
-const USE_LOCALSTACK = process.env.USE_LOCALSTACK === 'true'
-const LOCALSTACK_ENDPOINT = process.env.AWS_ENDPOINT_URL ?? process.env.LOCALSTACK_ENDPOINT ?? 'http://localhost:4566'
-
-function createCloudWatchLogsClient(): CloudWatchLogsClient {
-  return new CloudWatchLogsClient(USE_LOCALSTACK ? {endpoint: LOCALSTACK_ENDPOINT, region: 'us-east-1'} : {})
-}
-
+// In LocalStack mode the Mantle factory pins explicit test credentials, so a developer's AWS_PROFILE never reaches the emulator
 const logsClient = createCloudWatchLogsClient()
 
 /**
